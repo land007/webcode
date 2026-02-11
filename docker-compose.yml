@@ -1,0 +1,29 @@
+services:
+  webcode:
+    build: .
+    container_name: webcode
+    ports:
+      - "23000:3000"
+      - "25173:5173"
+      - "25901:5901"
+      - "26080:6080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - projects:/home/ubuntu/projects
+      - vibe-kanban-data:/home/ubuntu/.local/share/vibe-kanban
+      - theia-data:/home/ubuntu/.theia
+      - user-data:/home/ubuntu/.local/share
+      - gitconfig:/home/ubuntu/.gitconfig-vol
+    environment:
+      - MODE=${MODE:-desktop}
+      - PASSWORD=${VNC_PASSWORD:-Msa@1234567}
+      - VNC_RESOLUTION=${VNC_RESOLUTION:-1920x1080}
+    shm_size: "512m"
+    restart: unless-stopped
+
+volumes:
+  projects:
+  vibe-kanban-data:
+  theia-data:
+  user-data:
+  gitconfig:

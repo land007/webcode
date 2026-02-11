@@ -1,0 +1,14 @@
+#!/bin/bash
+export XDG_SESSION_TYPE=x11
+export XDG_CURRENT_DESKTOP=GNOME-Flashback:GNOME
+export DESKTOP_SESSION=gnome-flashback-metacity
+
+# Start GNOME session in flashback mode
+gnome-session --session=gnome-flashback-metacity &
+
+# Start panel and settings daemon
+gnome-panel &
+/usr/libexec/gnome-settings-daemon-localeexec 2>/dev/null &
+
+# Wait for session manager
+wait

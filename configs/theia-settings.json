@@ -1,0 +1,23 @@
+{
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/.cache/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/.next/**": true,
+    "**/.nuxt/**": true,
+    "**/coverage/**": true,
+    "**/.venv/**": true,
+    "**/venv/**": true,
+    "**/__pycache__/**": true,
+    "**/target/**": true,
+    "**/.cargo/**": true,
+    "**/tmp/**": true
+  },
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/.git": true
+  }
+}
