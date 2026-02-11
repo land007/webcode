@@ -18,16 +18,48 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && echo "ubuntu ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# ─── 2. GNOME Flashback desktop (VNC-compatible, no GL needed) ──────
+# ─── 2. Node.js 22.x ────────────────────────────────────────────────
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# ─── 3. Theia IDE native build deps ─────────────────────────────────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libxkbfile-dev libsecret-1-dev python3-dev python3-setuptools make g++ pkg-config \
+        liblzma-dev bzip2 \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# ─── 4. Theia IDE (npm install + production build — SLOWEST STEP) ───
+COPY configs/theia-package.json /opt/theia/package.json
+RUN cd /opt/theia \
+    && npm install \
+    && NODE_OPTIONS=--max-old-space-size=3072 npx theia build --mode production \
+    && npm prune --omit=dev \
+    && chown -R ubuntu:ubuntu /opt/theia
+
+# ─── 5. Supervisor ──────────────────────────────────────────────────
+RUN apt-get update && apt-get install -y --no-install-recommends supervisor \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# ─── 6. GNOME Flashback desktop (VNC-compatible, no GL needed) ──────
 RUN apt-get update && apt-get install -y --no-install-recommends \
         gnome-session-flashback gnome-terminal nautilus \
         metacity dbus-x11 gnome-panel gnome-settings-daemon \
         adwaita-icon-theme gnome-themes-extra \
         xfonts-base fonts-dejavu-core fonts-liberation2 fontconfig \
+        fonts-hack \
+        dconf-cli \
         eog evince gnome-screenshot gedit xdg-user-dirs \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# ─── 3. VNC + noVNC ─────────────────────────────────────────────────
+# ─── 6b. GNOME / Terminal font defaults (dconf system-db) ───────────
+RUN mkdir -p /etc/dconf/profile /etc/dconf/db/local.d \
+    && printf 'user-db:user\nsystem-db:local\n' > /etc/dconf/profile/user \
+    && printf '[org/gnome/desktop/interface]\nmonospace-font-name='"'"'Hack 11'"'"'\n' \
+       > /etc/dconf/db/local.d/00-terminal-font \
+    && dconf update
+
+# ─── 7. VNC + noVNC ─────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y \
         tigervnc-standalone-server tigervnc-common tigervnc-tools \
         python3 python3-numpy \
@@ -36,13 +68,13 @@ RUN apt-get update && apt-get install -y \
     && ln -s /opt/noVNC/vnc.html /opt/noVNC/index.html \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# ─── 4. Chinese input (fcitx + googlepinyin) ────────────────────────
+# ─── 8. Chinese input (fcitx + googlepinyin) ────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
         fcitx fcitx-googlepinyin \
         fonts-noto-cjk fonts-noto-cjk-extra \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# ─── 5. Docker CLI (client only, auto-detect arch) ──────────────────
+# ─── 9. Docker CLI (client only, auto-detect arch) ──────────────────
 RUN install -m 0755 -d /etc/apt/keyrings \
     && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg \
     && chmod a+r /etc/apt/keyrings/docker.gpg \
@@ -52,7 +84,7 @@ RUN install -m 0755 -d /etc/apt/keyrings \
         docker-ce-cli docker-compose-plugin \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# ─── 6. Browser: amd64=Google Chrome, arm64=Chromium ─────────────────
+# ─── 10. Browser: amd64=Google Chrome, arm64=Chromium ────────────────
 RUN if [ "$(dpkg --print-architecture)" = "amd64" ]; then \
         curl -LO https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
         && apt-get update && apt-get install -y ./google-chrome-stable_current_amd64.deb \
@@ -64,55 +96,28 @@ RUN if [ "$(dpkg --print-architecture)" = "amd64" ]; then \
     fi \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# ─── 7. Node.js 22.x ────────────────────────────────────────────────
-RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
-    && apt-get install -y nodejs \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# ─── 8. Theia IDE (npm install) ─────────────────────────────────────
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        libxkbfile-dev libsecret-1-dev python3-dev python3-setuptools make g++ pkg-config \
-        liblzma-dev bzip2 \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-COPY configs/theia-package.json /opt/theia/package.json
-RUN cd /opt/theia \
-    && npm install \
-    && NODE_OPTIONS=--max-old-space-size=3072 npx theia build --mode production \
-    && npm prune --omit=dev \
-    && chown -R ubuntu:ubuntu /opt/theia
-
-# ─── 9. Supervisor ──────────────────────────────────────────────────
-RUN apt-get update && apt-get install -y --no-install-recommends supervisor \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# ─── 10. Config files ───────────────────────────────────────────────
-# Theia default settings (will be copied on first run if user hasn't customized)
-COPY configs/theia-settings.json /opt/theia-defaults/settings.json
-
-# Supervisor configs
-COPY configs/supervisord.conf /etc/supervisor/supervisord.conf
-COPY configs/supervisord-lite.conf /etc/supervisor/conf.d/supervisord-lite.conf
-COPY configs/supervisor-vibe-kanban.conf /etc/supervisor/conf.d/supervisor-vibe-kanban.conf
-COPY configs/supervisor-theia.conf /etc/supervisor/conf.d/supervisor-theia.conf
-
-# GNOME xsession
-COPY configs/xsession /opt/xsession
-RUN chmod +x /opt/xsession
-
-# Desktop shortcuts
-COPY configs/desktop-shortcuts/ /opt/desktop-shortcuts/
-
-# Startup script + helpers
-COPY scripts/startup.sh /opt/startup.sh
-COPY scripts/vnc-setpass.py /opt/vnc-setpass.py
-RUN chmod +x /opt/startup.sh
-
 # ─── 11. User setup & docker group ──────────────────────────────────
 RUN groupadd -f docker && usermod -aG docker ubuntu \
     && mkdir -p /home/ubuntu/projects /home/ubuntu/Desktop \
        /home/ubuntu/.local/share /home/ubuntu/.theia \
     && chown -R ubuntu:ubuntu /home/ubuntu
+
+# ─── 12. Config files (COPY last — most likely to change) ───────────
+COPY configs/theia-settings.json /opt/theia-defaults/settings.json
+
+COPY configs/supervisord.conf /etc/supervisor/supervisord.conf
+COPY configs/supervisord-lite.conf /etc/supervisor/conf.d/supervisord-lite.conf
+COPY configs/supervisor-vibe-kanban.conf /etc/supervisor/conf.d/supervisor-vibe-kanban.conf
+COPY configs/supervisor-theia.conf /etc/supervisor/conf.d/supervisor-theia.conf
+
+COPY configs/xsession /opt/xsession
+RUN chmod +x /opt/xsession
+
+COPY configs/desktop-shortcuts/ /opt/desktop-shortcuts/
+
+COPY scripts/startup.sh /opt/startup.sh
+COPY scripts/vnc-setpass.py /opt/vnc-setpass.py
+RUN chmod +x /opt/startup.sh
 
 # ─── Environment defaults ───────────────────────────────────────────
 ENV MODE=desktop
