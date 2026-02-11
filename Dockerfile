@@ -66,7 +66,8 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
 
 # ─── 8. Theia IDE (npm install) ─────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        libxkbfile-dev libsecret-1-dev python3-dev make g++ pkg-config \
+        libxkbfile-dev libsecret-1-dev python3-dev python3-setuptools make g++ pkg-config \
+        liblzma-dev bzip2 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY configs/theia-package.json /opt/theia/package.json
