@@ -5,10 +5,14 @@ ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 
-# ─── 1. Base system: locale, sudo, ubuntu user ──────────────────────
+# ─── 1. Base system: locale, sudo, ubuntu user, common CLI tools ─────
 RUN apt-get update && apt-get install -y --no-install-recommends \
         locales sudo ca-certificates curl wget git gnupg \
         openssl software-properties-common \
+        vim nano less file tree htop lsof procps \
+        zip unzip tar xz-utils \
+        net-tools iputils-ping iproute2 dnsutils openssh-client \
+        xdg-utils bash-completion \
     && locale-gen en_US.UTF-8 \
     && (id ubuntu &>/dev/null && usermod -s /bin/bash -aG sudo ubuntu || useradd -m -s /bin/bash -G sudo ubuntu) \
     && echo "ubuntu ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
@@ -19,7 +23,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         gnome-session-flashback gnome-terminal nautilus \
         metacity dbus-x11 gnome-panel gnome-settings-daemon \
         adwaita-icon-theme gnome-themes-extra \
-        xfonts-base \
+        xfonts-base fonts-dejavu-core fonts-liberation2 fontconfig \
+        eog evince gnome-screenshot gedit xdg-user-dirs \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # ─── 3. VNC + noVNC ─────────────────────────────────────────────────
