@@ -72,6 +72,77 @@ else
     chmod 600 /home/ubuntu/.vnc/passwd
     chown -R ubuntu:ubuntu /home/ubuntu/.vnc
 
+    # XDG_RUNTIME_DIR for ubuntu user (fcitx5, dbus, dconf need it)
+    mkdir -p /run/user/1000
+    chown ubuntu:ubuntu /run/user/1000
+    chmod 700 /run/user/1000
+
+    # fcitx configuration
+    FCITX_DIR=/home/ubuntu/.config/fcitx
+    mkdir -p "$FCITX_DIR"
+
+    # fcitx config - simple working config
+    cat > "$FCITX_DIR/config" <<'FCITX_EOF'
+[Hotkey]
+TriggerKey=CTRL_SPACE
+FCITX_EOF
+
+    # fcitx profile - set pinyin as default
+    if [ ! -f "$FCITX_DIR/profile" ]; then
+        cat > "$FCITX_DIR/profile" <<FCITX_PROFILE_EOF
+[Fcitx Profile]
+Name=Default
+Locale=
+Icon=
+Font=
+UseCustomFont=False
+
+[Program]
+DelayStart=0
+DefaultIM=fcitx-pinyin
+
+[Groups/0]
+Name=Default
+DefaultLayout=us
+DefaultIM=fcitx-pinyin
+
+[Groups/0/Items/0]
+Name=fcitx-pinyin
+LangCode=zh_CN
+Enabled=True
+
+[GroupOrder]
+0=Default
+FCITX_PROFILE_EOF
+    fi
+
+    chown -R ubuntu:ubuntu /home/ubuntu/.config
+
+    # Clear old gnome-panel layout cache (force re-read of layout file)
+    sudo -u ubuntu dbus-run-session -- dconf reset -f /org/gnome/gnome-panel/layout/ 2>/dev/null || true
+
+    # Verify notification-area applet is available (Ubuntu 24.04 uses multiarch path)
+    NOTIFICATION_AREA=""
+    for path in /usr/lib/gnome-panel/notification-area \
+                  /usr/lib/$(dpkg --print-architecture)-linux-gnu/gnome-panel/notification-area \
+                  /usr/lib/gnome-panel/modules/org.gnome.gnome-panel.status-notifier.so; do
+        if [ -f "$path" ] || [ -d "$path" ]; then
+            NOTIFICATION_AREA="$path"
+            break
+        fi
+    done
+
+    if [ -z "$NOTIFICATION_AREA" ]; then
+        echo "[startup] WARNING: notification-area not found"
+        echo "[startup] Searched paths:"
+        echo "  - /usr/lib/gnome-panel/notification-area"
+        ARCH=$(dpkg --print-architecture)
+        echo "  - /usr/lib/${ARCH}-linux-gnu/gnome-panel/notification-area"
+        ls -la /usr/lib/*gnome-panel*/ 2>&1 || true
+    else
+        echo "[startup] Found notification-area at: $NOTIFICATION_AREA"
+    fi
+
     # Clean stale X locks (previously in vnc-wrapper.sh)
     rm -f /tmp/.X1-lock /tmp/.X11-unix/X1
 

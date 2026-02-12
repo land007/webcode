@@ -1,9 +1,9 @@
 FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV LANG=en_US.UTF-8
-ENV LANGUAGE=en_US:en
-ENV LC_ALL=en_US.UTF-8
+ENV LANG=zh_CN.UTF-8
+ENV LANGUAGE=zh_CN:zh
+ENV LC_ALL=zh_CN.UTF-8
 
 # ─── 1. Base system: locale, sudo, ubuntu user, common CLI tools ─────
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -13,7 +13,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         zip unzip tar xz-utils \
         net-tools iputils-ping iproute2 dnsutils openssh-client \
         xdg-utils bash-completion \
-    && locale-gen en_US.UTF-8 \
+    && locale-gen en_US.UTF-8 zh_CN.UTF-8 \
+    && update-locale LANG=zh_CN.UTF-8 \
     && (id ubuntu &>/dev/null && usermod -s /bin/bash -aG sudo ubuntu || useradd -m -s /bin/bash -G sudo ubuntu) \
     && echo "ubuntu ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -52,25 +53,29 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         eog evince gnome-screenshot gedit xdg-user-dirs \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# ─── 6b. GNOME / Terminal font defaults (dconf system-db) ───────────
+# ─── 6b. GNOME / Terminal font defaults + panel layout fix ────────────
 RUN mkdir -p /etc/dconf/profile /etc/dconf/db/local.d \
     && printf 'user-db:user\nsystem-db:local\n' > /etc/dconf/profile/user \
     && printf '[org/gnome/desktop/interface]\nmonospace-font-name='"'"'Hack 11'"'"'\n' \
        > /etc/dconf/db/local.d/00-terminal-font \
-    && dconf update
+    && dconf update \
+    && cp /usr/share/gnome-panel/layouts/default.layout \
+       /usr/share/gnome-panel/layouts/gnome-flashback.layout
 
 # ─── 7. VNC + noVNC ─────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y \
         tigervnc-standalone-server tigervnc-common tigervnc-tools \
+        x11-xserver-utils \
         python3 python3-numpy \
     && git clone --depth 1 https://github.com/novnc/noVNC.git /opt/noVNC \
     && git clone --depth 1 https://github.com/novnc/websockify.git /opt/noVNC/utils/websockify \
     && ln -s /opt/noVNC/vnc.html /opt/noVNC/index.html \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# ─── 8. Chinese input (fcitx + googlepinyin) ────────────────────────
+# ─── 8. Chinese input (fcitx + pinyin) ──────────────────────────────
+# Note: fcitx (not fcitx5) includes built-in frontends
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        fcitx fcitx-googlepinyin \
+        fcitx fcitx-pinyin fcitx-config-gtk \
         fonts-noto-cjk fonts-noto-cjk-extra \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 

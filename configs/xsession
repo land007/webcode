@@ -3,12 +3,54 @@ export XDG_SESSION_TYPE=x11
 export XDG_CURRENT_DESKTOP=GNOME-Flashback:GNOME
 export DESKTOP_SESSION=gnome-flashback-metacity
 
-# Start GNOME session in flashback mode
-gnome-session --session=gnome-flashback-metacity &
+# ─── Locale for fcitx GTK module ───────────────────────────────────
+# fcitx GTK_IM_MODULE only works for CJK locales (ja:ko:zh:*)
+# Set LANG for Chinese input method
+export LANG=zh_CN.UTF-8
+export LC_ALL=zh_CN.UTF-8
 
-# Start panel and settings daemon
-gnome-panel &
+# ─── XDG runtime dir (required by fcitx, dbus, etc.) ───────────────
+export XDG_RUNTIME_DIR=/run/user/$(id -u)
+mkdir -p "$XDG_RUNTIME_DIR"
+
+# ─── Cursor theme (visible on any background) ───────────────────────
+export XCURSOR_THEME=Adwaita
+export XCURSOR_SIZE=24
+
+# ─── Input method (fcitx) ───────────────────────────────────
+# CRITICAL: These MUST be set for fcitx to work
+export GTK_IM_MODULE=fcitx
+export QT_IM_MODULE=fcitx
+export XMODIFIERS=@im=fcitx
+
+# ─── D-Bus session bus (gnome-panel, system tray need it) ───────────────
+eval $(dbus-launch --sh-syntax)
+export DBUS_SESSION_BUS_ADDRESS
+
+# ─── Wait for X server to be ready ──────────────────────────────────
+for i in $(seq 1 20); do
+    xdpyinfo -display "$DISPLAY" >/dev/null 2>&1 && break
+    sleep 0.5
+done
+
+# ─── Root window: gray background + normal arrow cursor ─────────────
+xsetroot -solid '#2c2c2c' -cursor_name left_ptr
+
+# ─── Window manager ─────────────────────────────────────────────────
+metacity &
+sleep 1
+
+# ─── Desktop panel (taskbar, system tray, clock) ────────────────────
+# Ensure gnome-panel finds correct layout
+export XDG_MENU_PREFIX=gnome-flashback-
+gnome-panel --replace &
+
+# ─── Settings daemon (GTK themes, fonts, icons) ─────────────────────
 /usr/libexec/gnome-settings-daemon-localeexec 2>/dev/null &
 
-# Wait for session manager
+# ─── fcitx input method ─────────────────────────────────────
+# fcitx -r will restart if already running, and show icon in system tray
+fcitx -r &
+
+# Keep session alive
 wait
