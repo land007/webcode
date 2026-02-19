@@ -50,6 +50,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         xfonts-base fonts-dejavu-core fonts-liberation2 fontconfig \
         fonts-hack \
         dconf-cli \
+        at-spi2-core \
         eog evince gnome-screenshot gedit xdg-user-dirs \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -72,10 +73,11 @@ RUN apt-get update && apt-get install -y \
     && ln -s /opt/noVNC/vnc.html /opt/noVNC/index.html \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# ─── 8. Chinese input (fcitx + pinyin) ──────────────────────────────
-# Note: fcitx (not fcitx5) includes built-in frontends
+# ─── 8. Chinese input (fcitx 4 + pinyin engines) ───────────────────
+# fcitx-googlepinyin: higher-quality pinyin (primary)
+# fcitx-pinyin: built-in fallback pinyin
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        fcitx fcitx-pinyin fcitx-config-gtk \
+        fcitx fcitx-googlepinyin fcitx-pinyin fcitx-config-gtk \
         fonts-noto-cjk fonts-noto-cjk-extra \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 

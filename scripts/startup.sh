@@ -77,42 +77,32 @@ else
     chown ubuntu:ubuntu /run/user/1000
     chmod 700 /run/user/1000
 
-    # fcitx configuration
+    # fcitx 4 configuration
     FCITX_DIR=/home/ubuntu/.config/fcitx
     mkdir -p "$FCITX_DIR"
 
-    # fcitx config - simple working config
+    # fcitx 4 global config - hotkey to toggle Chinese input
     cat > "$FCITX_DIR/config" <<'FCITX_EOF'
 [Hotkey]
 TriggerKey=CTRL_SPACE
+AltTriggerKey=SHIFT_SHIFT
+IMSwitchKey=False
 FCITX_EOF
 
-    # fcitx profile - set pinyin as default
+    # fcitx 4 profile - pinyin as active IM (fcitx 4 format, NOT fcitx5)
+    # IMName: the IM to activate on trigger; EnabledIM/IMOrder: IM list
     if [ ! -f "$FCITX_DIR/profile" ]; then
+        # Prefer googlepinyin if installed, fall back to pinyin
+        if dpkg -l fcitx-googlepinyin 2>/dev/null | grep -q '^ii'; then
+            PINYIN_IM=googlepinyin
+        else
+            PINYIN_IM=pinyin
+        fi
         cat > "$FCITX_DIR/profile" <<FCITX_PROFILE_EOF
-[Fcitx Profile]
-Name=Default
-Locale=
-Icon=
-Font=
-UseCustomFont=False
-
-[Program]
-DelayStart=0
-DefaultIM=fcitx-pinyin
-
-[Groups/0]
-Name=Default
-DefaultLayout=us
-DefaultIM=fcitx-pinyin
-
-[Groups/0/Items/0]
-Name=fcitx-pinyin
-LangCode=zh_CN
-Enabled=True
-
-[GroupOrder]
-0=Default
+[Profile]
+IMName=${PINYIN_IM}
+EnabledIM=${PINYIN_IM},keyboard-us:1
+IMOrder=${PINYIN_IM},keyboard-us:1
 FCITX_PROFILE_EOF
     fi
 

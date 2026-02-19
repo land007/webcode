@@ -4,53 +4,54 @@ export XDG_CURRENT_DESKTOP=GNOME-Flashback:GNOME
 export DESKTOP_SESSION=gnome-flashback-metacity
 
 # ─── Locale for fcitx GTK module ───────────────────────────────────
-# fcitx GTK_IM_MODULE only works for CJK locales (ja:ko:zh:*)
-# Set LANG for Chinese input method
 export LANG=zh_CN.UTF-8
 export LC_ALL=zh_CN.UTF-8
 
 # ─── XDG runtime dir (required by fcitx, dbus, etc.) ───────────────
 export XDG_RUNTIME_DIR=/run/user/$(id -u)
 mkdir -p "$XDG_RUNTIME_DIR"
+chmod 700 "$XDG_RUNTIME_DIR"
 
-# ─── Cursor theme (visible on any background) ───────────────────────
+# ─── Cursor theme ───────────────────────────────────────────────────
 export XCURSOR_THEME=Adwaita
 export XCURSOR_SIZE=24
 
-# ─── Input method (fcitx) ───────────────────────────────────
-# CRITICAL: These MUST be set for fcitx to work
+# ─── Input method (fcitx) ───────────────────────────────────────────
 export GTK_IM_MODULE=fcitx
 export QT_IM_MODULE=fcitx
 export XMODIFIERS=@im=fcitx
 
-# ─── D-Bus session bus (gnome-panel, system tray need it) ───────────────
+# ─── D-Bus session bus ──────────────────────────────────────────────
 eval $(dbus-launch --sh-syntax)
 export DBUS_SESSION_BUS_ADDRESS
 
-# ─── Wait for X server to be ready ──────────────────────────────────
+# ─── AT-SPI accessibility bus (required by many GNOME apps) ────────
+/usr/lib/at-spi2-core/at-spi-bus-launcher --launch-immediately 2>/dev/null &
+
+# ─── Wait for X server ──────────────────────────────────────────────
 for i in $(seq 1 20); do
     xdpyinfo -display "$DISPLAY" >/dev/null 2>&1 && break
     sleep 0.5
 done
 
-# ─── Root window: gray background + normal arrow cursor ─────────────
+# ─── Root window ────────────────────────────────────────────────────
 xsetroot -solid '#2c2c2c' -cursor_name left_ptr
 
 # ─── Window manager ─────────────────────────────────────────────────
-metacity &
-sleep 1
+metacity --replace &
+sleep 0.5
+
+# ─── Settings daemon (GTK themes, fonts, icons, keyboard) ───────────
+gnome-settings-daemon 2>/dev/null &
+sleep 0.5
 
 # ─── Desktop panel (taskbar, system tray, clock) ────────────────────
-# Ensure gnome-panel finds correct layout
 export XDG_MENU_PREFIX=gnome-flashback-
 gnome-panel --replace &
+sleep 0.5
 
-# ─── Settings daemon (GTK themes, fonts, icons) ─────────────────────
-/usr/libexec/gnome-settings-daemon-localeexec 2>/dev/null &
-
-# ─── fcitx input method ─────────────────────────────────────
-# fcitx -r will restart if already running, and show icon in system tray
-fcitx -r &
+# ─── fcitx input method (start after panel so tray icon appears) ────
+fcitx -r 2>/dev/null &
 
 # Keep session alive
 wait
