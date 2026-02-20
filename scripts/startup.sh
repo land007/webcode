@@ -108,30 +108,9 @@ FCITX_PROFILE_EOF
 
     chown -R ubuntu:ubuntu /home/ubuntu/.config
 
-    # Clear old gnome-panel layout cache (force re-read of layout file)
-    sudo -u ubuntu dbus-run-session -- dconf reset -f /org/gnome/gnome-panel/layout/ 2>/dev/null || true
-
-    # Verify notification-area applet is available (Ubuntu 24.04 uses multiarch path)
-    NOTIFICATION_AREA=""
-    for path in /usr/lib/gnome-panel/notification-area \
-                  /usr/lib/$(dpkg --print-architecture)-linux-gnu/gnome-panel/notification-area \
-                  /usr/lib/gnome-panel/modules/org.gnome.gnome-panel.status-notifier.so; do
-        if [ -f "$path" ] || [ -d "$path" ]; then
-            NOTIFICATION_AREA="$path"
-            break
-        fi
-    done
-
-    if [ -z "$NOTIFICATION_AREA" ]; then
-        echo "[startup] WARNING: notification-area not found"
-        echo "[startup] Searched paths:"
-        echo "  - /usr/lib/gnome-panel/notification-area"
-        ARCH=$(dpkg --print-architecture)
-        echo "  - /usr/lib/${ARCH}-linux-gnu/gnome-panel/notification-area"
-        ls -la /usr/lib/*gnome-panel*/ 2>&1 || true
-    else
-        echo "[startup] Found notification-area at: $NOTIFICATION_AREA"
-    fi
+    # Reset gnome-panel layout in user dconf so it reads from layout file.
+    # This handles stale layout data persisted in Docker volumes.
+    sudo -u ubuntu dbus-run-session -- dconf reset -f /org/gnome/gnome-panel/ 2>/dev/null || true
 
     # Clean stale X locks (previously in vnc-wrapper.sh)
     rm -f /tmp/.X1-lock /tmp/.X11-unix/X1

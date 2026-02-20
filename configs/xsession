@@ -41,8 +41,11 @@ xsetroot -solid '#2c2c2c' -cursor_name left_ptr
 metacity --replace &
 sleep 0.5
 
-# ─── Settings daemon (GTK themes, fonts, icons, keyboard) ───────────
-gnome-settings-daemon 2>/dev/null &
+# ─── Settings daemon plugins (Ubuntu 24.04: no monolithic binary) ────
+# gsd-xsettings: GTK themes, fonts, icons; gsd-keyboard: keyboard layout
+export XDG_RUNTIME_DIR=/run/user/$(id -u)
+/usr/libexec/gsd-xsettings 2>/dev/null &
+/usr/libexec/gsd-keyboard 2>/dev/null &
 sleep 0.5
 
 # ─── Desktop panel (taskbar, system tray, clock) ────────────────────

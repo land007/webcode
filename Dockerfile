@@ -43,14 +43,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends supervisor \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # ─── 6. GNOME Flashback desktop (VNC-compatible, no GL needed) ──────
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Note: intentionally NO --no-install-recommends here so gnome desktop
+# components pull in all recommended packages for a complete desktop.
+RUN apt-get update && apt-get install -y \
         gnome-session-flashback gnome-terminal nautilus \
         metacity dbus-x11 gnome-panel gnome-settings-daemon \
         adwaita-icon-theme gnome-themes-extra \
         xfonts-base fonts-dejavu-core fonts-liberation2 fontconfig \
         fonts-hack \
-        dconf-cli \
-        at-spi2-core \
+        dconf-cli at-spi2-core \
         eog evince gnome-screenshot gedit xdg-user-dirs \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -61,7 +62,9 @@ RUN mkdir -p /etc/dconf/profile /etc/dconf/db/local.d \
        > /etc/dconf/db/local.d/00-terminal-font \
     && dconf update \
     && cp /usr/share/gnome-panel/layouts/default.layout \
-       /usr/share/gnome-panel/layouts/gnome-flashback.layout
+       /usr/share/gnome-panel/layouts/gnome-flashback.layout \
+    && cp /usr/share/gnome-panel/layouts/default.layout \
+       /usr/share/gnome-panel/layouts/ubuntu.layout
 
 # ─── 7. VNC + noVNC ─────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y \
@@ -74,9 +77,9 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # ─── 8. Chinese input (fcitx 4 + pinyin engines) ───────────────────
-# fcitx-googlepinyin: higher-quality pinyin (primary)
-# fcitx-pinyin: built-in fallback pinyin
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Note: intentionally NO --no-install-recommends here so fcitx pulls
+# in all frontends (gtk2/gtk3/xim), UI (classic), and IM modules.
+RUN apt-get update && apt-get install -y \
         fcitx fcitx-googlepinyin fcitx-pinyin fcitx-config-gtk \
         fonts-noto-cjk fonts-noto-cjk-extra \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
