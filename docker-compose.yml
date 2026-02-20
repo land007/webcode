@@ -7,6 +7,7 @@ services:
       - "25173:5173"
       - "25901:5901"
       - "26080:6080"
+      - "28789:18789"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - projects:/home/ubuntu/projects
@@ -14,6 +15,7 @@ services:
       - theia-data:/home/ubuntu/.theia
       - user-data:/home/ubuntu/.local/share
       - gitconfig:/home/ubuntu/.gitconfig-vol
+      - openclaw-data:/home/ubuntu/.openclaw
     environment:
       - MODE=${MODE:-desktop}
       - PASSWORD=${VNC_PASSWORD:-Msa@1234567}
@@ -26,4 +28,5 @@ volumes:
   vibe-kanban-data:
   theia-data:
   user-data:
+  openclaw-data:
   gitconfig:

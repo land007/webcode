@@ -39,6 +39,10 @@ if [ ! -f /home/ubuntu/.theia/settings.json ]; then
 fi
 chown -R ubuntu:ubuntu /home/ubuntu/.theia
 
+# ─── OpenClaw data directory ───────────────────────────────────────
+mkdir -p /home/ubuntu/.openclaw
+chown -R ubuntu:ubuntu /home/ubuntu/.openclaw
+
 # ─── Mode selection ─────────────────────────────────────────────────
 if [ "$MODE" = "lite" ]; then
     echo "[startup] Lite mode: starting Theia + Vibe Kanban only (no VNC desktop)"

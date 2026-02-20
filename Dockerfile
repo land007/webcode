@@ -119,6 +119,7 @@ COPY configs/supervisord.conf /etc/supervisor/supervisord.conf
 COPY configs/supervisord-lite.conf /etc/supervisor/conf.d/supervisord-lite.conf
 COPY configs/supervisor-vibe-kanban.conf /etc/supervisor/conf.d/supervisor-vibe-kanban.conf
 COPY configs/supervisor-theia.conf /etc/supervisor/conf.d/supervisor-theia.conf
+COPY configs/supervisor-openclaw.conf /etc/supervisor/conf.d/supervisor-openclaw.conf
 
 COPY configs/xsession /opt/xsession
 RUN chmod +x /opt/xsession
