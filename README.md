@@ -1,10 +1,14 @@
 # webcode
 
+![Docker Pulls](https://img.shields.io/docker/pulls/land007/webcode)
+![Platforms](https://img.shields.io/badge/platform-amd64%20%7C%20arm64-blue)
+![Image Size](https://img.shields.io/docker/image-size/land007/webcode/latest)
+
 基于 Docker 的浏览器可访问开发环境，内置 Theia IDE、可视化任务板、VNC 桌面和 AI 助手网关。
 
 ## 快速开始
 
-镜像已发布至 Docker Hub：[`land007/webcode:latest`](https://hub.docker.com/r/land007/webcode)
+镜像已发布至 Docker Hub：[`land007/webcode:latest`](https://hub.docker.com/r/land007/webcode)，支持 `linux/amd64` 和 `linux/arm64`。
 
 ```bash
 # 复制配置文件
