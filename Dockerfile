@@ -101,8 +101,9 @@ RUN if [ "$(dpkg --print-architecture)" = "amd64" ]; then \
         && rm -f google-chrome-stable_current_amd64.deb \
         && ln -sf /usr/bin/google-chrome-stable /usr/local/bin/browser; \
     else \
-        apt-get update && apt-get install -y --no-install-recommends chromium-browser \
-        && ln -sf /usr/bin/chromium-browser /usr/local/bin/browser; \
+        add-apt-repository -y ppa:xtradeb/apps \
+        && apt-get update && apt-get install -y chromium \
+        && ln -sf /usr/bin/chromium /usr/local/bin/browser; \
     fi \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
