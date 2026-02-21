@@ -98,6 +98,11 @@ RUN install -m 0755 -d /etc/apt/keyrings \
         docker-ce-cli docker-compose-plugin \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# ─── 9b. Cloudflare Tunnel client ─────────────────────────────────
+RUN curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-$(dpkg --print-architecture).deb -o /tmp/cloudflared.deb \
+    && dpkg -i /tmp/cloudflared.deb \
+    && rm /tmp/cloudflared.deb
+
 # ─── 10. Browser: amd64=Google Chrome, arm64=Chromium ────────────────
 RUN if [ "$(dpkg --print-architecture)" = "amd64" ]; then \
         curl -LO https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
@@ -127,6 +132,7 @@ COPY configs/supervisor-theia.conf /etc/supervisor/conf.d/supervisor-theia.conf
 COPY configs/supervisor-openclaw.conf /etc/supervisor/conf.d/supervisor-openclaw.conf
 COPY configs/Caddyfile /etc/caddy/Caddyfile
 COPY configs/supervisor-caddy.conf /etc/supervisor/conf.d/supervisor-caddy.conf
+COPY configs/supervisor-cloudflared.conf /etc/supervisor/conf.d/supervisor-cloudflared.conf
 
 COPY configs/xsession /opt/xsession
 RUN chmod +x /opt/xsession

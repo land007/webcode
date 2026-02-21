@@ -53,6 +53,15 @@ fi
 export AUTH_PASS_HASH=$(caddy hash-password --plaintext "$AUTH_PASSWORD")
 echo "[startup] Basic Auth enabled — user: $AUTH_USER"
 
+# ─── Cloudflare Tunnel (optional) ─────────────────────────────────
+if [ -n "$CF_TUNNEL_TOKEN" ]; then
+    echo "[startup] Cloudflare Tunnel enabled"
+    export CF_TUNNEL_TOKEN
+else
+    echo "[startup] Cloudflare Tunnel disabled (CF_TUNNEL_TOKEN not set)"
+    sed -i 's/autostart=true/autostart=false/' /etc/supervisor/conf.d/supervisor-cloudflared.conf
+fi
+
 # ─── Mode selection ─────────────────────────────────────────────────
 if [ "$MODE" = "lite" ]; then
     echo "[startup] Lite mode: starting Theia + Vibe Kanban only (no VNC desktop)"

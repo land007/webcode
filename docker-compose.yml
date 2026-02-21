@@ -22,7 +22,10 @@ services:
       - AUTH_PASSWORD=${AUTH_PASSWORD:-changeme}
       - PASSWORD=${VNC_PASSWORD:-changeme}
       - VNC_RESOLUTION=${VNC_RESOLUTION:-1920x1080}
+      - CF_TUNNEL_TOKEN=${CF_TUNNEL_TOKEN:-}
     shm_size: "512m"
+    security_opt:
+      - seccomp=unconfined
     restart: unless-stopped
 
 volumes:
