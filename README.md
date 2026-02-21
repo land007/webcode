@@ -4,13 +4,15 @@
 
 ## 快速开始
 
+镜像已发布至 Docker Hub：[`land007/webcode:latest`](https://hub.docker.com/r/land007/webcode)
+
 ```bash
 # 复制配置文件
 cp .env.example .env
 
 # 按需编辑 .env（可直接使用默认值）
 
-# 启动
+# 拉取镜像并启动
 docker compose up -d
 ```
 
