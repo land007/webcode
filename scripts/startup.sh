@@ -59,6 +59,7 @@ if [ -n "$CF_TUNNEL_TOKEN" ]; then
     export CF_TUNNEL_TOKEN
 else
     echo "[startup] Cloudflare Tunnel disabled (CF_TUNNEL_TOKEN not set)"
+    export CF_TUNNEL_TOKEN="unused"
     sed -i 's/autostart=true/autostart=false/' /etc/supervisor/conf.d/supervisor-cloudflared.conf
 fi
 
