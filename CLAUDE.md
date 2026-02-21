@@ -24,14 +24,19 @@ MODE=lite docker compose up -d
 
 # Custom VNC password and resolution
 VNC_PASSWORD=mypassword VNC_RESOLUTION=1280x720 docker compose up -d
+
+# Custom Basic Auth credentials
+AUTH_USER=myuser AUTH_PASSWORD=mypassword docker compose up -d
 ```
 
 **Access points (as configured in docker-compose.yml):**
-- Theia IDE: http://localhost:23000
-- Vibe Kanban: http://localhost:25173
-- noVNC browser client: http://localhost:26080
-- VNC client: localhost:25901 (default password: `Msa@1234567`)
-- OpenClaw gateway: http://localhost:28789
+- Theia IDE: http://localhost:23000 (Basic Auth)
+- Vibe Kanban: http://localhost:25173 (Basic Auth)
+- noVNC browser client: http://localhost:26080 (VNC password)
+- VNC client: localhost:25901 (VNC password: `changeme`)
+- OpenClaw gateway: http://localhost:28789 (Basic Auth)
+
+Default Basic Auth credentials: `admin` / `changeme` (configurable via `AUTH_USER` / `AUTH_PASSWORD`)
 
 ## Building the Docker Image
 
@@ -60,8 +65,11 @@ docker buildx build --platform linux/amd64,linux/arm64 -t webcode .
 12. **Config files** — copied last so most changes don't bust Theia cache
 
 ### Startup Modes (`scripts/startup.sh`)
-- **desktop mode**: Runs full GNOME session via `supervisord.conf` (includes xvnc, desktop, novnc, theia, vibe-kanban, openclaw)
-- **lite mode**: Runs only Theia + Vibe Kanban + OpenClaw via `supervisord-lite.conf` (no VNC/desktop overhead)
+- **desktop mode**: Runs full GNOME session via `supervisord.conf` (includes xvnc, desktop, novnc, theia, vibe-kanban, openclaw, caddy)
+- **lite mode**: Runs only Theia + Vibe Kanban + OpenClaw + Caddy via `supervisord-lite.conf` (no VNC/desktop overhead)
+
+### Authentication Architecture
+Caddy serves as a unified Basic Auth gateway in front of Theia, Vibe Kanban, and OpenClaw. Internal services bind to `127.0.0.1` only; Caddy listens on `0.0.0.0` and proxies authenticated requests. noVNC/VNC retain their own VNC password authentication.
 
 ### Key Config Files
 | File | Purpose |
@@ -72,6 +80,8 @@ docker buildx build --platform linux/amd64,linux/arm64 -t webcode .
 | `configs/supervisor-theia.conf` | Theia process (port 3000, serves `/home/ubuntu/projects`) |
 | `configs/supervisor-vibe-kanban.conf` | Vibe Kanban process (port 5173) |
 | `configs/supervisor-openclaw.conf` | OpenClaw gateway process (port 18789, launched via npx) |
+| `configs/Caddyfile` | Caddy reverse proxy config with Basic Auth |
+| `configs/supervisor-caddy.conf` | Caddy process (ports 3080, 5180, 18800) |
 | `configs/xsession` | GNOME Flashback session startup script |
 | `configs/desktop-shortcuts/` | `.desktop` files for Chrome, Theia, Vibe Kanban on desktop |
 

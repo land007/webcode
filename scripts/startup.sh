@@ -43,6 +43,16 @@ chown -R ubuntu:ubuntu /home/ubuntu/.theia
 mkdir -p /home/ubuntu/.openclaw
 chown -R ubuntu:ubuntu /home/ubuntu/.openclaw
 
+# ─── Caddy auth setup (Basic Auth for all web services) ──────────
+export AUTH_USER="${AUTH_USER:-admin}"
+if [ -z "$AUTH_PASSWORD" ]; then
+    echo "[startup] WARNING: AUTH_PASSWORD not set, generating random password"
+    AUTH_PASSWORD=$(openssl rand -base64 12)
+    echo "[startup] Generated AUTH_PASSWORD: $AUTH_PASSWORD"
+fi
+export AUTH_PASS_HASH=$(caddy hash-password --plaintext "$AUTH_PASSWORD")
+echo "[startup] Basic Auth enabled — user: $AUTH_USER"
+
 # ─── Mode selection ─────────────────────────────────────────────────
 if [ "$MODE" = "lite" ]; then
     echo "[startup] Lite mode: starting Theia + Vibe Kanban only (no VNC desktop)"

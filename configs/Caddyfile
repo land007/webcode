@@ -1,0 +1,24 @@
+{
+	admin off
+}
+
+:3080 {
+	basicauth {
+		{$AUTH_USER} {$AUTH_PASS_HASH}
+	}
+	reverse_proxy 127.0.0.1:3000
+}
+
+:5180 {
+	basicauth {
+		{$AUTH_USER} {$AUTH_PASS_HASH}
+	}
+	reverse_proxy 127.0.0.1:5173
+}
+
+:18800 {
+	basicauth {
+		{$AUTH_USER} {$AUTH_PASS_HASH}
+	}
+	reverse_proxy 127.0.0.1:18789
+}

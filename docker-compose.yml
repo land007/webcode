@@ -3,11 +3,11 @@ services:
     build: .
     container_name: webcode
     ports:
-      - "23000:3000"
-      - "25173:5173"
+      - "23000:3080"
+      - "25173:5180"
       - "25901:5901"
       - "26080:6080"
-      - "28789:18789"
+      - "28789:18800"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - projects:/home/ubuntu/projects
@@ -18,7 +18,9 @@ services:
       - openclaw-data:/home/ubuntu/.openclaw
     environment:
       - MODE=${MODE:-desktop}
-      - PASSWORD=${VNC_PASSWORD:-Msa@1234567}
+      - AUTH_USER=${AUTH_USER:-admin}
+      - AUTH_PASSWORD=${AUTH_PASSWORD:-changeme}
+      - PASSWORD=${VNC_PASSWORD:-changeme}
       - VNC_RESOLUTION=${VNC_RESOLUTION:-1920x1080}
     shm_size: "512m"
     restart: unless-stopped
