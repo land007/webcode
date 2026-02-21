@@ -31,6 +31,13 @@ chown -R ubuntu:ubuntu "$HIST_DIR"
 if [ -f /home/ubuntu/.gitconfig-vol ]; then
     ln -sf /home/ubuntu/.gitconfig-vol /home/ubuntu/.gitconfig
 fi
+# Set git user from environment variables (if provided)
+if [ -n "$GIT_USER_NAME" ]; then
+    sudo -u ubuntu git config --global user.name "$GIT_USER_NAME"
+fi
+if [ -n "$GIT_USER_EMAIL" ]; then
+    sudo -u ubuntu git config --global user.email "$GIT_USER_EMAIL"
+fi
 
 # ─── Theia settings ─────────────────────────────────────────────────
 mkdir -p /home/ubuntu/.theia
