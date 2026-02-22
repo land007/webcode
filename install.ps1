@@ -113,75 +113,57 @@ function Test-NodeInstalled {
 function Install-NodeJS {
     Print-Header "Installing Node.js..."
 
-    # Try winget first (Windows 10 1809+)
-    $wingetAvailable = $false
+    $tempDir = "$env:TEMP\nodejs-install"
+    New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+
     try {
-        $null = Get-Command winget -ErrorAction Stop
-        $wingetAvailable = $true
-    } catch {}
+        # Download Node.js installer
+        Write-Host "Downloading Node.js LTS installer..."
+        $installerUrl = "https://nodejs.org/dist/v22.14.0/node-v22.14.0-x64.msi"
+        $installerPath = "$tempDir\nodejs-installer.msi"
 
-    if ($wingetAvailable) {
-        try {
-            Write-Host "Installing Node.js via winget..."
-            $result = winget install --id OpenJS.NodeJS.LTS --accept-source-agreements --accept-package-agreements -h 2>&1
-            if ($LASTEXITCODE -eq 0) {
-                Print-Success "Node.js installed via winget"
-                # Refresh PATH
-                $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-                return $true
-            } else {
-                Print-Warning "winget installation failed (exit code: $LASTEXITCODE)"
+        Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath -UseBasicParsing -TimeoutSec 120
+        Print-Success "Downloaded Node.js installer"
+
+        # Install silently
+        Write-Host "Installing Node.js (this may take a minute)..."
+        $installArgs = @(
+            "/i"
+            $installerPath
+            "/quiet"
+            "/norestart"
+        )
+
+        $process = Start-Process "msiexec.exe" -ArgumentList $installArgs -Wait -PassThru -NoNewWindow
+
+        if ($process.ExitCode -eq 0) {
+            Print-Success "Node.js installed successfully"
+
+            # Refresh PATH for current session
+            $nodePath = "$env:ProgramFiles\nodejs"
+            if ($env:PATH -notlike "*$nodePath*") {
+                $env:PATH = "$nodePath;$env:PATH"
             }
-        } catch {
-            Print-Warning "winget installation failed: $_"
+
+            # Clean up
+            Remove-Item -Recurse -Force $tempDir -ErrorAction SilentlyContinue
+            return $true
+        } else {
+            Print-Error "Installation failed (exit code: $($process.ExitCode))"
+            Remove-Item -Recurse -Force $tempDir -ErrorAction SilentlyContinue
+            return $false
         }
-    } else {
-        Write-Host "winget not found, skipping..."
+    } catch {
+        Print-Error "Failed to download/install Node.js: $_"
+        Remove-Item -Recurse -Force $tempDir -ErrorAction SilentlyContinue
+
+        Write-Host ""
+        Print-Header "Install Node.js manually:"
+        Print-Info "Visit: https://nodejs.org/"
+        Print-Info "Download and install the LTS version, then run this script again."
+        Write-Host ""
+        return $false
     }
-
-    # Try chocolatey
-    $chocoAvailable = $false
-    try {
-        $null = Get-Command choco -ErrorAction Stop
-        $chocoAvailable = $true
-    } catch {}
-
-    if ($chocoAvailable) {
-        try {
-            Write-Host "Installing Node.js via chocolatey..."
-            choco install nodejs-lts -y 2>&1 | Out-Null
-            if ($LASTEXITCODE -eq 0) {
-                Print-Success "Node.js installed via chocolatey"
-                # Refresh PATH
-                $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-                return $true
-            } else {
-                Print-Warning "chocolatey installation failed"
-            }
-        } catch {
-            Print-Warning "chocolatey installation failed: $_"
-        }
-    } else {
-        Write-Host "chocolatey not found, skipping..."
-    }
-
-    # Both failed, show manual instructions
-    Write-Host ""
-    Print-Error "Failed to install Node.js automatically"
-    Write-Host ""
-    Print-Header "Install Node.js manually:"
-    Print-Info "Option 1 - Download from website:"
-    Print-Info "  1. Visit: https://nodejs.org/"
-    Print-Info "  2. Download and install LTS version"
-    Print-Info "  3. Restart PowerShell and run this script again"
-    Write-Host ""
-    Print-Info "Option 2 - Use winget (if available):"
-    Print-Info "  winget install OpenJS.NodeJS.LTS"
-    Write-Host ""
-    Print-Info "Option 3 - Use chocolatey (if available):"
-    Print-Info "  choco install nodejs-lts"
-    Write-Host ""
-    return $false
 }
 
 function Install-DockerMode {
