@@ -34,27 +34,27 @@ print_logo() {
 
 One-command browser-based dev environment installer
 EOF
-    echo ""
+    printf "\n"
 }
 
 print_header() {
-    echo -e "${CYAN}▸ $1${NC}"
+    printf "${CYAN}▸ $1${NC}\n"
 }
 
 print_success() {
-    echo -e "${GREEN}✓ $1${NC}"
+    printf "${GREEN}✓ $1${NC}\n"
 }
 
 print_error() {
-    echo -e "${RED}✗ $1${NC}"
+    printf "${RED}✗ $1${NC}\n"
 }
 
 print_warning() {
-    echo -e "${YELLOW}⚠ $1${NC}"
+    printf "${YELLOW}⚠ $1${NC}\n"
 }
 
 print_info() {
-    echo -e "${BLUE}  → $1${NC}"
+    printf "${BLUE}  → $1${NC}\n"
 }
 
 detect_os() {
@@ -204,18 +204,18 @@ install_docker_mode() {
     fi
 
     # Ask for custom passwords (optional)
-    echo ""
-    read -p "$(echo -e ${YELLOW}Customize credentials? [y/N]: ${NC})" customize
+    printf "\n"
+    read -rp "$(printf "${YELLOW}Customize credentials? [y/N]: ${NC}")" customize
     if [ "$customize" = "y" ] || [ "$customize" = "Y" ]; then
-        read -p "Basic Auth username [admin]: " auth_user
+        read -rp "Basic Auth username [admin]: " auth_user
         auth_user=${auth_user:-admin}
 
-        read -sp "Basic Auth password [changeme]: " auth_password
-        echo
+        read -rsp "Basic Auth password [changeme]: " auth_password
+        printf "\n"
         auth_password=${auth_password:-changeme}
 
-        read -sp "VNC password [changeme]: " vnc_password
-        echo
+        read -rsp "VNC password [changeme]: " vnc_password
+        printf "\n"
         vnc_password=${vnc_password:-changeme}
 
         # Create .env file
@@ -260,7 +260,7 @@ install_launcher_mode() {
     print_info "Cloning repository..."
     if [ -d "$INSTALL_DIR" ]; then
         print_warning "Directory already exists: $INSTALL_DIR"
-        read -p "Remove and re-clone? [y/N]: " remove_clone
+        read -rp "Remove and re-clone? [y/N]: " remove_clone
         if [ "$remove_clone" = "y" ] || [ "$remove_clone" = "Y" ]; then
             rm -rf "$INSTALL_DIR"
         else
@@ -372,7 +372,7 @@ main() {
         echo -e "  ${GREEN}[2]${NC} Docker Only"
         echo -e "      Command-line installation - works everywhere"
         echo ""
-        read -p "$(echo -e ${CYAN}Enter choice [1-2]: ${NC})" choice
+        read -rp "$(printf "${CYAN}Enter choice [1-2]: ${NC}")" choice
 
         case $choice in
             1)
@@ -386,7 +386,7 @@ main() {
                     echo -e "  ${GREEN}[1]${NC} Exit to install Node.js"
                     echo -e "  ${GREEN}[2]${NC} Use Docker-only mode instead"
                     echo ""
-                    read -p "$(echo -e ${CYAN}Enter choice [1-2]: ${NC})" node_choice
+                    read -rp "$(printf "${CYAN}Enter choice [1-2]: ${NC}")" node_choice
                     case $node_choice in
                         1)
                             print_info "Install Node.js from: https://nodejs.org/"
