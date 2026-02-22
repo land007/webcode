@@ -113,6 +113,18 @@ function Test-NodeInstalled {
 function Install-NodeJS {
     Print-Header "Installing Node.js..."
 
+    # Check if running as administrator
+    $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+    if (-not $isAdmin) {
+        Print-Error "Administrator privileges required for installation"
+        Write-Host ""
+        Print-Info "Please restart PowerShell as Administrator and run:"
+        Write-Host "  irm https://raw.githubusercontent.com/land007/webcode/main/install.ps1 | iex" -ForegroundColor Cyan
+        Write-Host ""
+        return $false
+    }
+
     $tempDir = "$env:TEMP\nodejs-install"
     New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
 
@@ -150,6 +162,15 @@ function Install-NodeJS {
             return $true
         } else {
             Print-Error "Installation failed (exit code: $($process.ExitCode))"
+            if ($process.ExitCode -eq 1603) {
+                Print-Info "Error 1603: Possible causes:"
+                Print-Info "  - Another installation is in progress"
+                Print-Info "  - Conflicting version of Node.js already installed"
+                Print-Info "  - Insufficient disk space"
+                Write-Host ""
+                Print-Info "Try uninstalling existing Node.js first:"
+                Print-Info "  Settings > Apps > Apps & features > Node.js > Uninstall"
+            }
             Remove-Item -Recurse -Force $tempDir -ErrorAction SilentlyContinue
             return $false
         }
