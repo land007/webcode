@@ -16,11 +16,12 @@ const {
 
 const proxyServers = [];
 
-function startProxy(listenPort, targetPort, authBase64) {
+// authHeader: full Authorization header value, e.g. 'Basic <b64>' or 'Bearer <token>'
+function startProxy(listenPort, targetPort, authHeader) {
   const proxy = httpProxy.createProxyServer({ ws: true, changeOrigin: true });
 
   proxy.on('proxyReq', (proxyReq) => {
-    proxyReq.setHeader('Authorization', 'Basic ' + authBase64);
+    proxyReq.setHeader('Authorization', authHeader);
   });
 
   proxy.on('proxyRes', (proxyRes) => {
@@ -39,7 +40,7 @@ function startProxy(listenPort, targetPort, authBase64) {
 
   proxy.on('proxyReqWs', (proxyReq, req, socket, options, head) => {
     console.log(`Proxying WebSocket on port ${listenPort}: ${req.url}`);
-    proxyReq.setHeader('Authorization', 'Basic ' + authBase64);
+    proxyReq.setHeader('Authorization', authHeader);
     // Rewrite Origin to match the target so servers that validate Origin (e.g. Vibe Kanban) accept the connection.
     // changeOrigin:true only rewrites Host, not Origin.
     proxyReq.setHeader('Origin', `http://localhost:${targetPort}`);
@@ -71,12 +72,12 @@ function stopProxies() {
 
 function startProxies(cfg) {
   stopProxies();
-  const auth = Buffer.from(`${cfg.AUTH_USER}:${cfg.AUTH_PASSWORD}`).toString('base64');
+  const basicAuth = 'Basic ' + Buffer.from(`${cfg.AUTH_USER}:${cfg.AUTH_PASSWORD}`).toString('base64');
   const ports = getPortsFromConfig(cfg);
-  startProxy(11001, ports.theia, auth);    // Theia
-  startProxy(11002, ports.kanban, auth);   // Vibe Kanban
-  startProxy(11003, ports.openclaw, auth); // OpenClaw
-  startProxy(11004, ports.novnc, auth);    // noVNC
+  startProxy(11001, ports.theia, basicAuth);                        // Theia
+  startProxy(11002, ports.kanban, basicAuth);                       // Vibe Kanban
+  startProxy(11003, ports.openclaw, 'Bearer ' + cfg.OPENCLAW_TOKEN); // OpenClaw (own token auth, no Caddy basicauth)
+  startProxy(11004, ports.novnc, basicAuth);                        // noVNC
 }
 
 // ─── Docker helpers ──────────────────────────────────────────────────────────

@@ -555,7 +555,7 @@ function iframeUrl(tab) {
     case 'ide':    return 'http://localhost:11001';
     case 'kanban': return 'http://localhost:11002';
     case 'vnc':    return `http://localhost:11004/?autoconnect=true&resize=remote&password=${encodeURIComponent(cfg.VNC_PASSWORD)}`;
-    case 'ai':     return `http://localhost:11003/?token=${encodeURIComponent(cfg.OPENCLAW_TOKEN)}`;
+    case 'ai':     return 'http://localhost:11003/';
   }
 }
 

@@ -18,11 +18,8 @@
 	reverse_proxy 127.0.0.1:10002
 }
 
-# OpenClaw
+# OpenClaw (has its own --auth token, no Caddy basicauth needed)
 :20003 {
-	basicauth {
-		{$AUTH_USER} {$AUTH_PASS_HASH}
-	}
 	reverse_proxy 127.0.0.1:10003
 }
 
