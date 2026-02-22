@@ -90,6 +90,26 @@ function Test-DockerCompose {
     }
 }
 
+function Test-GitInstalled {
+    try {
+        $null = Get-Command git -ErrorAction Stop
+        return $true
+    } catch {
+        return $false
+    }
+}
+
+function Test-NodeInstalled {
+    try {
+        $null = Get-Command node -ErrorAction Stop
+        $version = node -v
+        $majorVersion = $version.Substring(1, 1) -as [int]
+        return $majorVersion -ge 18
+    } catch {
+        return $false
+    }
+}
+
 function Install-DockerMode {
     Print-Header "Installing webcode (Docker mode)..."
 
@@ -151,6 +171,76 @@ VNC_PASSWORD=$vncPassword
     Start-Sleep -Seconds 5
 
     Print-Success "Installation complete!"
+}
+
+function Install-LauncherMode {
+    Print-Header "Installing webcode (Launcher mode)..."
+
+    # Check for git
+    if (-not (Test-GitInstalled)) {
+        Print-Error "Git is not installed"
+        Print-Info "Please install Git: https://git-scm.com/download/win"
+        exit 1
+    }
+
+    # Clone repository
+    Print-Info "Cloning repository..."
+    if (Test-Path $InstallDir) {
+        Print-Warning "Directory already exists: $InstallDir"
+        Write-Host "Remove and re-clone? [y/N]: " -NoNewline -ForegroundColor Yellow
+        $removeClone = Read-Host
+        if ($removeClone -eq 'y' -or $removeClone -eq 'Y') {
+            Remove-Item -Recurse -Force $InstallDir
+        } else {
+            Print-Info "Using existing installation"
+            Set-Location "$InstallDir\launcher"
+        }
+    }
+
+    if (-not (Test-Path $InstallDir)) {
+        try {
+            git clone $RepoUrl $InstallDir
+            Print-Success "Repository cloned"
+            Set-Location "$InstallDir\launcher"
+        } catch {
+            Print-Error "Failed to clone repository"
+            exit 1
+        }
+    }
+
+    # Install dependencies
+    Print-Info "Installing dependencies..."
+    Set-Location "$InstallDir\launcher"
+    try {
+        npm install
+        Print-Success "Dependencies installed"
+    } catch {
+        Print-Error "Failed to install dependencies"
+        exit 1
+    }
+
+    # Ensure nw is installed
+    if (-not (Test-Path "node_modules\.bin\nw")) {
+        Print-Info "Installing NW.js..."
+        try {
+            npm install --save-dev nw
+            Print-Success "NW.js installed"
+        } catch {
+            Print-Error "Failed to install NW.js"
+            exit 1
+        }
+    }
+
+    # Start Launcher
+    Write-Host ""
+    Print-Success "Installation complete!"
+    Print-Header "Starting Launcher..."
+    Print-Info "A GUI window will appear where you can configure and start webcode."
+    Write-Host ""
+    Print-Info "To restart later: cd $InstallDir\launcher; npm start"
+    Write-Host ""
+
+    npx nw .
 }
 
 function Print-CompletionInfo {
@@ -225,26 +315,66 @@ function Main {
     }
     Print-Success "Docker Compose is available"
 
+    # Check Git (for Launcher)
+    $gitInstalled = Test-GitInstalled
+    if ($gitInstalled) {
+        Print-Success "Git is installed"
+    }
+
+    # Check Node.js (for Launcher)
+    $nodeInstalled = Test-NodeInstalled
+    if ($nodeInstalled) {
+        $nodeVersion = node -v
+        Print-Success "Node.js $nodeVersion found"
+    } else {
+        try {
+            $null = Get-Command node -ErrorAction Stop
+            Print-Warning "Node.js found, but 18+ is required for Launcher"
+        } catch {
+            Print-Warning "Node.js not found (required for Launcher mode)"
+        }
+    }
+
     Write-Host ""
     Print-Info "Choose installation method:"
     Write-Host ""
-    Write-Host "  [1] Docker Only (Recommended for Windows)"
-    Write-Host "      Command-line installation - works everywhere"
-    Write-Host ""
 
-    Write-Host "Enter choice [1]: " -NoNewline -ForegroundColor Cyan
-    $choice = Read-Host
+    $launcherAvailable = $gitInstalled -and $nodeInstalled
+    if ($launcherAvailable) {
+        Write-Host "  [1] Launcher (Recommended)"
+        Write-Host "      GUI for easy configuration"
+        Write-Host ""
+        Write-Host "  [2] Docker Only"
+        Write-Host "      Command-line installation"
+        Write-Host ""
 
-    switch ($choice) {
-        "1" {
-            Install-DockerMode
-            Print-CompletionInfo
+        Write-Host "Enter choice [1-2]: " -NoNewline -ForegroundColor Cyan
+        $choice = Read-Host
+
+        switch ($choice) {
+            "1" {
+                Install-LauncherMode
+            }
+            "2" {
+                Install-DockerMode
+                Print-CompletionInfo
+            }
+            default {
+                Print-Info "Using Docker-only mode..."
+                Install-DockerMode
+                Print-CompletionInfo
+            }
         }
-        default {
-            Print-Info "Using Docker-only mode..."
-            Install-DockerMode
-            Print-CompletionInfo
-        }
+    } else {
+        Write-Host "  [1] Docker Only"
+        Write-Host "      Command-line installation (recommended for this system)"
+        Write-Host ""
+        Print-Warning "Launcher is not available (requires Git and Node.js 18+)"
+        Write-Host "Press Enter to continue with Docker installation..."
+        $null = Read-Host
+
+        Install-DockerMode
+        Print-CompletionInfo
     }
 }
 
