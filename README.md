@@ -137,6 +137,18 @@ Default VNC password: `changeme`
 
 > 💡 **Tip**: This makes webcode perfect for learning, testing AI tools, or trying out new workflows without risk.
 
+**⚠️ Docker socket mounting (optional)**:
+
+By default, `docker-compose.yml` mounts `/var/run/docker.sock` to enable Docker-in-Docker functionality. This gives the container ability to control your host Docker daemon.
+
+**Risks if enabled**:
+- The container can start/stop/manage any container on your host
+- Malicious code inside could potentially access host resources through Docker
+
+**Recommendation**:
+- For **production** or untrusted workloads: Comment out the `/var/run/docker.sock` line in `docker-compose.yml`
+- For **development/personal use**: Keep it enabled for full functionality
+
 ---
 
 ## Configuration (.env)
@@ -402,6 +414,18 @@ docker compose up -d
 - **无逃逸风险**：容器没有特殊权限，无法访问宿主机文件（除非你显式配置挂载卷）。
 
 > 💡 **小贴士**：这让 webcode 非常适合学习、测试 AI 工具或尝试新工作流，无需担心弄坏电脑。
+
+**⚠️ Docker socket 挂载（可选）**：
+
+默认情况下，`docker-compose.yml` 挂载了 `/var/run/docker.sock` 以支持 Docker-in-Docker 功能。这会让容器获得控制宿主机 Docker 守护进程的能力。
+
+**启用时的风险**：
+- 容器内可以启动/停止/管理宿主机上的任何容器
+- 恶意代码可能通过 Docker 访问宿主机资源
+
+**建议**：
+- **生产环境**或不可信场景：在 `docker-compose.yml` 中注释掉 `/var/run/docker.sock` 这一行
+- **个人开发/学习**：保持启用以获得完整功能
 
 ---
 
