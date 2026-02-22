@@ -94,9 +94,15 @@ check_docker() {
 
     # Check if Docker is running
     if ! docker info >/dev/null 2>&1; then
-        print_error "Docker is not running"
+        print_error "Docker is not running or not accessible"
         if [ -f /.dockerenv ]; then
-            print_info "This script should be run on your host machine, not inside a Docker container."
+            print_info "Running inside Docker container. Checking for Docker socket..."
+            if [ -S /var/run/docker.sock ]; then
+                print_info "Docker socket found, but may not have sufficient permissions."
+                print_info "Try running with: docker run -v /var/run/docker.sock:/var/run/docker.sock ..."
+            else
+                print_info "Docker socket not mapped. This script should be run on the host machine."
+            fi
         else
             print_info "Please start Docker and try again."
         fi
