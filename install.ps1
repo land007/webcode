@@ -306,9 +306,9 @@ function Install-LauncherMode {
 
     if (-not (Test-Path $InstallDir)) {
         $cloned = $false
-        # Try GitHub first
+        # Try GitHub first (2>$null suppresses stderr to avoid NativeCommandError)
         Print-Info "Cloning from GitHub..."
-        $output = git clone $RepoUrl $InstallDir 2>&1
+        git clone --quiet $RepoUrl $InstallDir 2>$null
         if ($LASTEXITCODE -eq 0) {
             Print-Success "Repository cloned"
             Set-Location "$InstallDir\launcher"
@@ -317,7 +317,7 @@ function Install-LauncherMode {
         # Fallback to mirror
         if (-not $cloned) {
             Print-Warning "GitHub unreachable, trying mirror..."
-            $output = git clone $RepoUrlMirror $InstallDir 2>&1
+            git clone $RepoUrlMirror $InstallDir
             if ($LASTEXITCODE -eq 0) {
                 Print-Success "Repository cloned (via mirror)"
                 Set-Location "$InstallDir\launcher"
