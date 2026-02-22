@@ -110,6 +110,47 @@ function Test-NodeInstalled {
     }
 }
 
+function Install-NodeJS {
+    Print-Header "Installing Node.js..."
+
+    # Try winget first (Windows 10 1809+)
+    try {
+        Write-Host "Installing Node.js via winget..."
+        winget install --id OpenJS.NodeJS.LTS --accept-source-agreements --accept-package-agreements -e | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            Print-Success "Node.js installed via winget"
+            # Refresh PATH
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+            return $true
+        }
+    } catch {
+        # winget failed, try chocolatey
+    }
+
+    # Try chocolatey
+    try {
+        Write-Host "Installing Node.js via chocolatey..."
+        choco install nodejs-lts -y | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            Print-Success "Node.js installed via chocolatey"
+            # Refresh PATH
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+            return $true
+        }
+    } catch {
+        # chocolatey failed
+    }
+
+    # Both failed, show manual instructions
+    Print-Error "Failed to install Node.js automatically"
+    Write-Host ""
+    Print-Header "Install Node.js manually:"
+    Print-Info "1. Visit: https://nodejs.org/"
+    Print-Info "2. Download and install LTS version"
+    Print-Info "3. Then run this script again"
+    return $false
+}
+
 function Install-DockerMode {
     Print-Header "Installing webcode (Docker mode)..."
 
@@ -327,21 +368,44 @@ function Main {
         $nodeVersion = node -v
         Print-Success "Node.js $nodeVersion found"
     } else {
+        $nodeExists = $false
         try {
             $null = Get-Command node -ErrorAction Stop
+            $nodeExists = $true
+        } catch {}
+
+        if ($nodeExists) {
             $nodeVersion = node -v
             Print-Warning "Node.js $nodeVersion found, but 18+ is required for Launcher"
-            Write-Host ""
-            Print-Header "Upgrade Node.js:"
-            Print-Info "Visit: https://nodejs.org/"
-            Write-Host ""
-        } catch {
+        } else {
             Print-Warning "Node.js not found (required for Launcher mode)"
+        }
+
+        Write-Host ""
+        Write-Host "Install Node.js now? [y/N]: " -NoNewline -ForegroundColor Yellow
+        $installNode = Read-Host
+
+        if ($installNode -eq 'y' -or $installNode -eq 'Y') {
             Write-Host ""
-            Print-Header "Install Node.js:"
-            Print-Info "Visit: https://nodejs.org/"
-            Print-Info "Or use: winget install OpenJS.NodeJS.LTS"
-            Write-Host ""
+            if (Install-NodeJS) {
+                # Verify installation
+                $nodeInstalled = Test-NodeInstalled
+                if ($nodeInstalled) {
+                    Print-Success "Node.js $(node -v) is now available"
+                } else {
+                    Print-Error "Node.js installation verification failed"
+                    Write-Host "Please restart your terminal and run this script again."
+                    exit 1
+                }
+            } else {
+                # Auto-install failed, ask user what to do
+                Write-Host ""
+                Write-Host "Continue with Docker-only mode? [Y/n]: " -NoNewline -ForegroundColor Cyan
+                $continueDocker = Read-Host
+                if ($continueDocker -eq 'n' -or $continueDocker -eq 'N') {
+                    exit 0
+                }
+            }
         }
     }
 
