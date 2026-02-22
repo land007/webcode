@@ -39,8 +39,10 @@ function startProxy(listenPort, targetPort, authBase64) {
 
   proxy.on('proxyReqWs', (proxyReq, req, socket, options, head) => {
     console.log(`Proxying WebSocket on port ${listenPort}: ${req.url}`);
-    // Add Authorization header to WebSocket connections
     proxyReq.setHeader('Authorization', 'Basic ' + authBase64);
+    // Rewrite Origin to match the target so servers that validate Origin (e.g. Vibe Kanban) accept the connection.
+    // changeOrigin:true only rewrites Host, not Origin.
+    proxyReq.setHeader('Origin', `http://localhost:${targetPort}`);
   });
 
   const server = http.createServer((req, res) => {
