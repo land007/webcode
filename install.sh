@@ -1,4 +1,16 @@
-#!/bin/bash
+#!/bin/sh
+# This script aims to be POSIX compliant
+# If running with sh, ensure we have bash features
+if [ -z "$BASH_VERSION" ]; then
+    # Try to re-exec with bash
+    if command -v bash >/dev/null 2>&1; then
+        exec bash "$0" "$@"
+    else
+        echo "Error: This script requires bash. Please install bash."
+        exit 1
+    fi
+fi
+
 set -e
 
 #############################################
