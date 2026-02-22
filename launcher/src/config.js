@@ -64,10 +64,9 @@ function ensureComposeFile() {
     fs.mkdirSync(workDir, { recursive: true });
   }
   const dest = path.join(workDir, 'docker-compose.yml');
-  if (!fs.existsSync(dest)) {
-    const src = path.join(__dirname, '..', 'assets', 'docker-compose.yml');
-    fs.copyFileSync(src, dest);
-  }
+  const src = path.join(__dirname, '..', 'assets', 'docker-compose.yml');
+  // 始终用 assets 里的最新模板覆盖，避免使用旧版本
+  fs.copyFileSync(src, dest);
 }
 
 module.exports = {

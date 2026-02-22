@@ -109,10 +109,11 @@ function dockerSpawn(args, cfg, onData, onClose) {
 }
 
 async function dockerUp(cfg, onData, onClose) {
+  // 始终用最新模板覆盖 docker-compose.yml
   ensureComposeFile();
 
   // 检查端口冲突并自动修复
-  const ports = getPortsFromConfig(cfg);
+  let ports = getPortsFromConfig(cfg);
   const checkResults = await checkPorts(ports);
 
   const hasConflicts = Object.values(checkResults).some(r => !r.available);
@@ -128,9 +129,7 @@ async function dockerUp(cfg, onData, onClose) {
     cfg.PORT_OPENCLAW = fixedPorts.openclaw;
     cfg.PORT_NOVNC = fixedPorts.novnc;
     cfg.PORT_VNC = fixedPorts.vnc;
-
-    // 更新 docker-compose.yml
-    updateComposePorts(getWorkDir(), fixedPorts);
+    ports = fixedPorts;
 
     // 保存配置
     writeConfig(cfg);
@@ -143,6 +142,9 @@ async function dockerUp(cfg, onData, onClose) {
     }
     onData && onData('\n');
   }
+
+  // 无论是否有冲突，始终将当前端口配置写入 docker-compose.yml
+  updateComposePorts(getWorkDir(), ports);
 
   return dockerSpawn(['compose', 'up', '-d'], cfg, onData, onClose);
 }

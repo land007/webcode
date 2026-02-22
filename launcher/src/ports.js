@@ -95,12 +95,25 @@ async function findAvailablePort(startPort, maxAttempts = 100) {
 async function autoFixPorts(ports) {
   const results = await checkPorts(ports);
   const fixedPorts = { ...ports };
+  // 记录已分配的端口（含原本已占用的），防止多个服务被分配到同一端口
+  const usedPorts = new Set(Object.values(fixedPorts));
 
   for (const key of Object.keys(results)) {
     const result = results[key];
     if (!result.available) {
-      const newPort = await findAvailablePort(result.port + 100); // 从 +100 开始寻找
+      // 从 +100 开始找一个未被任何服务占用的可用端口
+      let candidate = result.port + 100;
+      let newPort = -1;
+      for (let i = 0; i < 200; i++) {
+        const port = candidate + i;
+        if (!usedPorts.has(port) && await isPortAvailable(port)) {
+          newPort = port;
+          break;
+        }
+      }
       if (newPort > 0) {
+        usedPorts.delete(fixedPorts[key]); // 移除旧端口占位
+        usedPorts.add(newPort);
         fixedPorts[key] = newPort;
         console.log(`Port ${result.port} (${result.name}) is in use, changed to ${newPort}`);
       }
