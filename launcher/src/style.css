@@ -248,6 +248,35 @@ details[open] > summary { margin-bottom: 10px; }
 .tab-btn:hover  { background: var(--surface2); color: var(--text); }
 .tab-btn.active { background: var(--surface2); color: var(--text); }
 
+/* Tab action buttons (refresh, open in browser) */
+.tab-actions {
+  display: flex;
+  gap: 4px;
+  margin-right: 8px;
+}
+
+.btn-icon {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 6px;
+  background: var(--surface2);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: opacity .15s, transform .1s;
+}
+
+.btn-icon:active { transform: scale(.97); }
+.btn-icon:hover {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
 .topbar-spacer { flex: 1; }
 
 .status-pill {

@@ -124,6 +124,10 @@
     <button class="tab-btn" id="tab-vnc"    data-tab="vnc">🖥 桌面</button>
     <button class="tab-btn" id="tab-ai"     data-tab="ai">🤖 AI</button>
     <span class="topbar-spacer"></span>
+    <div class="tab-actions" id="tab-actions" style="display:none">
+      <button class="btn-icon" id="btn-refresh" title="刷新">🔄</button>
+      <button class="btn-icon" id="btn-open-browser" title="在浏览器中打开">🌐</button>
+    </div>
     <div class="status-pill">
       <span class="dot dot-gray" id="status-dot"></span>
       <span id="status-text">检测中…</span>
@@ -455,6 +459,10 @@ function activateTab(tab) {
     btn.classList.toggle('active', btn.dataset.tab === tab);
   });
 
+  // Show/hide tab action buttons
+  const tabActions = document.getElementById('tab-actions');
+  tabActions.style.display = (tab === 'status') ? 'none' : 'flex';
+
   // Show/hide status panel vs iframes
   const panel = document.getElementById('panel-status');
   panel.classList.toggle('visible', tab === 'status');
@@ -471,6 +479,21 @@ function activateTab(tab) {
 
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => activateTab(btn.dataset.tab));
+});
+
+// Refresh button
+document.getElementById('btn-refresh').addEventListener('click', () => {
+  if (currentTab === 'status') return;
+  const iframe = document.getElementById(IFRAME_IDS[currentTab]);
+  iframeLoaded[currentTab] = false;
+  iframe.src = iframeUrl(currentTab);
+});
+
+// Open in browser button
+document.getElementById('btn-open-browser').addEventListener('click', () => {
+  if (currentTab === 'status') return;
+  const url = iframeUrl(currentTab);
+  nw.Shell.openExternal(url);
 });
 
 // ─── Workspace: status polling ────────────────────────────────────────────────

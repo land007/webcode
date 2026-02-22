@@ -33,11 +33,18 @@ function startProxy(listenPort, targetPort, authBase64) {
     }
   });
 
+  proxy.on('proxyReqWs', (proxyReq, req, socket, options, head) => {
+    console.log(`Proxying WebSocket on port ${listenPort}: ${req.url}`);
+    // Add Authorization header to WebSocket connections
+    proxyReq.setHeader('Authorization', 'Basic ' + authBase64);
+  });
+
   const server = http.createServer((req, res) => {
     proxy.web(req, res, { target: `http://localhost:${targetPort}` });
   });
 
   server.on('upgrade', (req, socket, head) => {
+    console.log(`WebSocket upgrade on port ${listenPort}: ${req.url}`);
     proxy.ws(req, socket, head, { target: `http://localhost:${targetPort}` });
   });
 
