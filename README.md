@@ -13,7 +13,42 @@ A Docker-based browser-accessible development environment with Theia IDE, visual
 
 ## 🚀 Quick Start
 
-### Method 1: Docker Only (Recommended for Servers)
+### Method 1: Visual Launcher (Recommended for Desktop Users)
+
+![Launcher Setup](https://raw.githubusercontent.com/land007/webcode/main/images/screenshot-launcher-setup.png)
+
+**Prerequisites**:
+- Docker Desktop (macOS / Windows) or Docker Engine (Linux)
+- [Git](https://git-scm.com/)
+- [Node.js 18+](https://nodejs.org/)
+
+**macOS / Linux**:
+
+```bash
+git clone https://github.com/land007/webcode.git ~/webcode
+cd ~/webcode/launcher
+npm install
+npx nw .
+```
+
+> Linux requires a desktop environment (`$DISPLAY` or Wayland) to display the window.
+
+**Windows** (PowerShell or cmd):
+
+```bat
+git clone https://github.com/land007/webcode.git %USERPROFILE%\webcode
+cd %USERPROFILE%\webcode\launcher
+npm install
+npx nw .
+```
+
+A GUI window will appear where you can configure credentials, ports, and startup mode, then click **Start** to launch the container.
+
+![Launcher Status](https://raw.githubusercontent.com/land007/webcode/main/images/screenshot-launcher-status.png)
+
+---
+
+### Method 2: Docker Only (For Servers)
 
 **Prerequisites**: Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) (macOS / Windows) or [Docker Engine](https://docs.docker.com/engine/install/) (Linux)
 
@@ -58,41 +93,6 @@ Default credentials: `admin` / `changeme`, VNC password: `changeme`
 cp .env.example .env   # edit .env to change passwords
 docker compose up -d
 ```
-
----
-
-### Method 2: Visual Launcher (Recommended for Desktop Users)
-
-![Launcher Setup](https://raw.githubusercontent.com/land007/webcode/main/images/screenshot-launcher-setup.png)
-
-**Prerequisites**:
-- Docker Desktop (macOS / Windows) or Docker Engine (Linux)
-- [Git](https://git-scm.com/)
-- [Node.js 18+](https://nodejs.org/)
-
-**macOS / Linux**:
-
-```bash
-git clone https://github.com/land007/webcode.git ~/webcode
-cd ~/webcode/launcher
-npm install
-npx nw .
-```
-
-> Linux requires a desktop environment (`$DISPLAY` or Wayland) to display the window.
-
-**Windows** (PowerShell or cmd):
-
-```bat
-git clone https://github.com/land007/webcode.git %USERPROFILE%\webcode
-cd %USERPROFILE%\webcode\launcher
-npm install
-npx nw .
-```
-
-A GUI window will appear where you can configure credentials, ports, and startup mode, then click **Start** to launch the container.
-
-![Launcher Status](https://raw.githubusercontent.com/land007/webcode/main/images/screenshot-launcher-status.png)
 
 ---
 
@@ -286,7 +286,42 @@ The following data is stored in Docker volumes and survives container rebuilds:
 
 ## 🚀 快速开始
 
-### 方法一：仅 Docker（推荐用于服务器）
+### 方法一：Launcher 图形界面（桌面用户推荐）
+
+![Launcher 设置向导](https://raw.githubusercontent.com/land007/webcode/main/images/screenshot-launcher-setup.png)
+
+**先决条件**：
+- Docker Desktop（macOS / Windows）或 Docker Engine（Linux）
+- [Git](https://git-scm.com/)
+- [Node.js 18+](https://nodejs.org/)
+
+**macOS / Linux**：
+
+```bash
+git clone https://github.com/land007/webcode.git ~/webcode
+cd ~/webcode/launcher
+npm install
+npx nw .
+```
+
+> Linux 需要桌面环境（`$DISPLAY` 或 Wayland）才能显示窗口。
+
+**Windows**（PowerShell 或 cmd）：
+
+```bat
+git clone https://github.com/land007/webcode.git %USERPROFILE%\webcode
+cd %USERPROFILE%\webcode\launcher
+npm install
+npx nw .
+```
+
+弹出图形界面后，可配置账号密码、端口、启动模式，点击 **Start** 即可启动容器。
+
+![Launcher 状态页](https://raw.githubusercontent.com/land007/webcode/main/images/screenshot-launcher-status.png)
+
+---
+
+### 方法二：仅 Docker（服务器场景）
 
 **先决条件**：安装 [Docker Desktop](https://www.docker.com/products/docker-desktop/)（macOS / Windows）或 [Docker Engine](https://docs.docker.com/engine/install/)（Linux）
 
@@ -331,41 +366,6 @@ docker compose up -d
 cp .env.example .env   # 编辑 .env 修改密码
 docker compose up -d
 ```
-
----
-
-### 方法二：Launcher 图形界面（桌面用户推荐）
-
-![Launcher 设置向导](https://raw.githubusercontent.com/land007/webcode/main/images/screenshot-launcher-setup.png)
-
-**先决条件**：
-- Docker Desktop（macOS / Windows）或 Docker Engine（Linux）
-- [Git](https://git-scm.com/)
-- [Node.js 18+](https://nodejs.org/)
-
-**macOS / Linux**：
-
-```bash
-git clone https://github.com/land007/webcode.git ~/webcode
-cd ~/webcode/launcher
-npm install
-npx nw .
-```
-
-> Linux 需要桌面环境（`$DISPLAY` 或 Wayland）才能显示窗口。
-
-**Windows**（PowerShell 或 cmd）：
-
-```bat
-git clone https://github.com/land007/webcode.git %USERPROFILE%\webcode
-cd %USERPROFILE%\webcode\launcher
-npm install
-npx nw .
-```
-
-弹出图形界面后，可配置账号密码、端口、启动模式，点击 **Start** 即可启动容器。
-
-![Launcher 状态页](https://raw.githubusercontent.com/land007/webcode/main/images/screenshot-launcher-status.png)
 
 ---
 
