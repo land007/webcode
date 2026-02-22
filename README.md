@@ -1,12 +1,17 @@
 # webcode
 
+![GitHub Stars](https://img.shields.io/github/stars/land007/webcode?style=social)
 ![Docker Pulls](https://img.shields.io/docker/pulls/land007/webcode)
 ![Platforms](https://img.shields.io/badge/platform-amd64%20%7C%20arm64-blue)
 ![Image Size](https://img.shields.io/docker/image-size/land007/webcode/latest)
 
+[📦 Repository](https://github.com/land007/webcode) | [🐛 Issues](https://github.com/land007/webcode/issues) | [📖 Changelog](https://github.com/land007/webcode/releases)
+
 A Docker-based browser-accessible development environment with Theia IDE, visual task board, VNC desktop, and AI assistant gateway.
 
 ---
+
+> **📦 View on GitHub**: [land007/webcode](https://github.com/land007/webcode) | **🐛 Report Issues**: [GitHub Issues](https://github.com/land007/webcode/issues)
 
 ## 🚀 Quick Start
 
@@ -259,6 +264,8 @@ The following data is stored in Docker volumes and survives container rebuilds:
 基于 Docker 的浏览器可访问开发环境，内置 Theia IDE、可视化任务板、VNC 桌面和 AI 助手网关。
 
 ---
+
+> **📦 GitHub 仓库**: [land007/webcode](https://github.com/land007/webcode) | **🐛 提交问题**: [GitHub Issues](https://github.com/land007/webcode/issues)
 
 ## 🚀 快速开始
 
