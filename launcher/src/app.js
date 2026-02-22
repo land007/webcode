@@ -70,10 +70,11 @@ function stopProxies() {
 function startProxies(cfg) {
   stopProxies();
   const auth = Buffer.from(`${cfg.AUTH_USER}:${cfg.AUTH_PASSWORD}`).toString('base64');
-  startProxy(11001, 10001, auth);   // Theia
-  startProxy(11002, 10002, auth);   // Vibe Kanban
-  startProxy(11003, 10003, auth);   // OpenClaw
-  startProxy(11004, 10004, auth);   // noVNC
+  const ports = getPortsFromConfig(cfg);
+  startProxy(11001, ports.theia, auth);    // Theia
+  startProxy(11002, ports.kanban, auth);   // Vibe Kanban
+  startProxy(11003, ports.openclaw, auth); // OpenClaw
+  startProxy(11004, ports.novnc, auth);    // noVNC
 }
 
 // ─── Docker helpers ──────────────────────────────────────────────────────────
