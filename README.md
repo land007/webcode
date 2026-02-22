@@ -11,8 +11,6 @@ A Docker-based browser-accessible development environment with Theia IDE, visual
 
 ---
 
-> **📦 View on GitHub**: [land007/webcode](https://github.com/land007/webcode) | **🐳 View on Docker Hub**: [land007/webcode](https://hub.docker.com/r/land007/webcode) | **🐛 Report Issues**: [GitHub Issues](https://github.com/land007/webcode/issues)
-
 ## 🚀 Quick Start
 
 ### Method 1: Docker Only (Recommended for Servers)
@@ -285,8 +283,6 @@ The following data is stored in Docker volumes and survives container rebuilds:
 基于 Docker 的浏览器可访问开发环境，内置 Theia IDE、可视化任务板、VNC 桌面和 AI 助手网关。
 
 ---
-
-> **📦 GitHub 仓库**: [land007/webcode](https://github.com/land007/webcode) | **🐳 Docker Hub**: [land007/webcode](https://hub.docker.com/r/land007/webcode) | **🐛 提交问题**: [GitHub Issues](https://github.com/land007/webcode/issues)
 
 ## 🚀 快速开始
 
