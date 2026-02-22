@@ -103,7 +103,9 @@ function Test-NodeInstalled {
     try {
         $null = Get-Command node -ErrorAction Stop
         $version = node -v
-        $majorVersion = $version.Substring(1, 1) -as [int]
+        # Remove 'v' prefix and get major version
+        $versionNumber = $version.Substring(1)
+        $majorVersion = [int]($versionNumber.Split('.')[0])
         return $majorVersion -ge 18
     } catch {
         return $false
