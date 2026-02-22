@@ -12,7 +12,13 @@ const DEFAULT_CONFIG = {
   MODE: 'desktop',
   GIT_USER_NAME: '',
   GIT_USER_EMAIL: '',
-  CF_TUNNEL_TOKEN: ''
+  CF_TUNNEL_TOKEN: '',
+  // 端口配置（宿主机端口）
+  PORT_THEIA: 20001,
+  PORT_KANBAN: 20002,
+  PORT_OPENCLAW: 20003,
+  PORT_NOVNC: 20004,
+  PORT_VNC: 20005
 };
 
 function getConfigPath() {

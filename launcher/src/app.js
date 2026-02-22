@@ -7,6 +7,10 @@ const {
   configExists, readConfig, writeConfig,
   getWorkDir, ensureComposeFile
 } = require('./config.js');
+const {
+  checkPorts, autoFixPorts, getPortsFromConfig,
+  updateComposePorts, getPortSummary
+} = require('./ports.js');
 
 // ─── Proxy servers ───────────────────────────────────────────────────────────
 
@@ -99,8 +103,42 @@ function dockerSpawn(args, cfg, onData, onClose) {
   return proc;
 }
 
-function dockerUp(cfg, onData, onClose) {
+async function dockerUp(cfg, onData, onClose) {
   ensureComposeFile();
+
+  // 检查端口冲突并自动修复
+  const ports = getPortsFromConfig(cfg);
+  const checkResults = await checkPorts(ports);
+
+  const hasConflicts = Object.values(checkResults).some(r => !r.available);
+
+  if (hasConflicts) {
+    onData && onData('检测到端口冲突，正在自动修复...\n');
+
+    const fixedPorts = await autoFixPorts(ports);
+
+    // 更新配置
+    cfg.PORT_THEIA = fixedPorts.theia;
+    cfg.PORT_KANBAN = fixedPorts.kanban;
+    cfg.PORT_OPENCLAW = fixedPorts.openclaw;
+    cfg.PORT_NOVNC = fixedPorts.novnc;
+    cfg.PORT_VNC = fixedPorts.vnc;
+
+    // 更新 docker-compose.yml
+    updateComposePorts(getWorkDir(), fixedPorts);
+
+    // 保存配置
+    writeConfig(cfg);
+
+    onData && onData('端口已自动调整：\n');
+    for (const [key, result] of Object.entries(checkResults)) {
+      if (!result.available) {
+        onData && onData(`  ${result.name}: ${result.port} → ${fixedPorts[key]}\n`);
+      }
+    }
+    onData && onData('\n');
+  }
+
   return dockerSpawn(['compose', 'up', '-d'], cfg, onData, onClose);
 }
 
@@ -190,5 +228,9 @@ module.exports = {
   stopPolling,
   readConfig,
   writeConfig,
-  configExists
+  configExists,
+  checkPorts,
+  autoFixPorts,
+  getPortsFromConfig,
+  getPortSummary
 };

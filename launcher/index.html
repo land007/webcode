@@ -84,6 +84,37 @@
           <label>Cloudflare Tunnel Token（可选）</label>
           <input type="text" id="cfg-cf-token" placeholder="">
         </div>
+        <div class="form-group">
+          <label>端口配置（自动检测冲突）</label>
+          <div class="port-grid" id="port-grid">
+            <div class="port-item">
+              <span class="port-label">Theia IDE</span>
+              <input type="number" id="cfg-port-theia" class="port-input" placeholder="20001">
+              <span class="port-status" id="port-status-theia"></span>
+            </div>
+            <div class="port-item">
+              <span class="port-label">Vibe Kanban</span>
+              <input type="number" id="cfg-port-kanban" class="port-input" placeholder="20002">
+              <span class="port-status" id="port-status-kanban"></span>
+            </div>
+            <div class="port-item">
+              <span class="port-label">OpenClaw AI</span>
+              <input type="number" id="cfg-port-openclaw" class="port-input" placeholder="20003">
+              <span class="port-status" id="port-status-openclaw"></span>
+            </div>
+            <div class="port-item">
+              <span class="port-label">noVNC</span>
+              <input type="number" id="cfg-port-novnc" class="port-input" placeholder="20004">
+              <span class="port-status" id="port-status-novnc"></span>
+            </div>
+            <div class="port-item">
+              <span class="port-label">TigerVNC</span>
+              <input type="number" id="cfg-port-vnc" class="port-input" placeholder="20005">
+              <span class="port-status" id="port-status-vnc"></span>
+            </div>
+          </div>
+          <button class="btn-secondary btn-sm" id="btn-check-ports" style="margin-top:8px">🔍 检测端口冲突</button>
+        </div>
       </details>
       <div class="action-row">
         <button class="btn-secondary btn-sm" id="btn-step2-back">上一步</button>
@@ -195,6 +226,32 @@
         <div class="form-group">
           <label>Cloudflare Tunnel Token（可选）</label>
           <input type="text" id="ws-cf-token">
+        </div>
+        <div class="form-group">
+          <label>端口配置</label>
+          <div class="port-grid" id="ws-port-grid">
+            <div class="port-item">
+              <span class="port-label">Theia IDE</span>
+              <input type="number" id="ws-port-theia" class="port-input">
+            </div>
+            <div class="port-item">
+              <span class="port-label">Vibe Kanban</span>
+              <input type="number" id="ws-port-kanban" class="port-input">
+            </div>
+            <div class="port-item">
+              <span class="port-label">OpenClaw AI</span>
+              <input type="number" id="ws-port-openclaw" class="port-input">
+            </div>
+            <div class="port-item">
+              <span class="port-label">noVNC</span>
+              <input type="number" id="ws-port-novnc" class="port-input">
+            </div>
+            <div class="port-item">
+              <span class="port-label">TigerVNC</span>
+              <input type="number" id="ws-port-vnc" class="port-input">
+            </div>
+          </div>
+          <button class="btn-secondary btn-sm" id="ws-btn-check-ports" style="margin-top:8px">🔍 检测端口冲突</button>
         </div>
         <div class="action-row" style="margin-top:0">
           <button class="btn-secondary btn-sm" id="btn-save-config">保存配置</button>
@@ -343,6 +400,13 @@ function loadConfigIntoWizardForm() {
   document.getElementById('cfg-git-email').value      = cfg.GIT_USER_EMAIL || '';
   document.getElementById('cfg-cf-token').value       = cfg.CF_TUNNEL_TOKEN || '';
 
+  // 端口配置
+  document.getElementById('cfg-port-theia').value    = cfg.PORT_THEIA    || 20001;
+  document.getElementById('cfg-port-kanban').value   = cfg.PORT_KANBAN   || 20002;
+  document.getElementById('cfg-port-openclaw').value = cfg.PORT_OPENCLAW || 20003;
+  document.getElementById('cfg-port-novnc').value    = cfg.PORT_NOVNC    || 20004;
+  document.getElementById('cfg-port-vnc').value      = cfg.PORT_VNC      || 20005;
+
   selectedMode = cfg.MODE || 'desktop';
   document.getElementById('mode-desktop').classList.toggle('active', selectedMode === 'desktop');
   document.getElementById('mode-lite').classList.toggle('active', selectedMode === 'lite');
@@ -359,10 +423,54 @@ function collectWizardForm() {
   cfg.GIT_USER_EMAIL = document.getElementById('cfg-git-email').value || '';
   cfg.CF_TUNNEL_TOKEN= document.getElementById('cfg-cf-token').value  || '';
   cfg.MODE = selectedMode;
+
+  // 端口配置
+  cfg.PORT_THEIA    = parseInt(document.getElementById('cfg-port-theia').value)    || 20001;
+  cfg.PORT_KANBAN   = parseInt(document.getElementById('cfg-port-kanban').value)   || 20002;
+  cfg.PORT_OPENCLAW = parseInt(document.getElementById('cfg-port-openclaw').value) || 20003;
+  cfg.PORT_NOVNC    = parseInt(document.getElementById('cfg-port-novnc').value)    || 20004;
+  cfg.PORT_VNC      = parseInt(document.getElementById('cfg-port-vnc').value)      || 20005;
+
   writeConfig(cfg);
 }
 
 document.getElementById('btn-step2-back').addEventListener('click', () => setStep(1));
+
+// 端口检测按钮
+document.getElementById('btn-check-ports').addEventListener('click', async () => {
+  const ports = {
+    theia: parseInt(document.getElementById('cfg-port-theia').value) || 20001,
+    kanban: parseInt(document.getElementById('cfg-port-kanban').value) || 20002,
+    openclaw: parseInt(document.getElementById('cfg-port-openclaw').value) || 20003,
+    novnc: parseInt(document.getElementById('cfg-port-novnc').value) || 20004,
+    vnc: parseInt(document.getElementById('cfg-port-vnc').value) || 20005
+  };
+
+  // 显示检测中状态
+  for (const key of Object.keys(ports)) {
+    const statusEl = document.getElementById(`port-status-${key}`);
+    if (statusEl) {
+      statusEl.textContent = '⏳';
+      statusEl.className = 'port-status checking';
+    }
+  }
+
+  const results = await app.checkPorts(ports);
+
+  for (const [key, result] of Object.entries(results)) {
+    const statusEl = document.getElementById(`port-status-${key}`);
+    if (statusEl) {
+      if (result.available) {
+        statusEl.textContent = '✓';
+        statusEl.className = 'port-status ok';
+      } else {
+        statusEl.textContent = '✗';
+        statusEl.className = 'port-status error';
+      }
+    }
+  }
+});
+
 document.getElementById('btn-step2-next').addEventListener('click', () => {
   collectWizardForm();
   startLaunch();
@@ -595,6 +703,14 @@ function loadConfigIntoWorkspaceForm() {
   document.getElementById('ws-git-name').value       = cfg.GIT_USER_NAME || '';
   document.getElementById('ws-git-email').value      = cfg.GIT_USER_EMAIL || '';
   document.getElementById('ws-cf-token').value       = cfg.CF_TUNNEL_TOKEN || '';
+
+  // 端口配置
+  document.getElementById('ws-port-theia').value    = cfg.PORT_THEIA    || 20001;
+  document.getElementById('ws-port-kanban').value   = cfg.PORT_KANBAN   || 20002;
+  document.getElementById('ws-port-openclaw').value = cfg.PORT_OPENCLAW || 20003;
+  document.getElementById('ws-port-novnc').value    = cfg.PORT_NOVNC    || 20004;
+  document.getElementById('ws-port-vnc').value      = cfg.PORT_VNC      || 20005;
+
   wsMode = cfg.MODE || 'desktop';
   document.getElementById('ws-mode-desktop').classList.toggle('active', wsMode === 'desktop');
   document.getElementById('ws-mode-lite').classList.toggle('active', wsMode === 'lite');
@@ -610,8 +726,59 @@ function collectWorkspaceForm() {
   cfg.GIT_USER_EMAIL = document.getElementById('ws-git-email').value || '';
   cfg.CF_TUNNEL_TOKEN= document.getElementById('ws-cf-token').value  || '';
   cfg.MODE = wsMode;
+
+  // 端口配置
+  cfg.PORT_THEIA    = parseInt(document.getElementById('ws-port-theia').value)    || 20001;
+  cfg.PORT_KANBAN   = parseInt(document.getElementById('ws-port-kanban').value)   || 20002;
+  cfg.PORT_OPENCLAW = parseInt(document.getElementById('ws-port-openclaw').value) || 20003;
+  cfg.PORT_NOVNC    = parseInt(document.getElementById('ws-port-novnc').value)    || 20004;
+  cfg.PORT_VNC      = parseInt(document.getElementById('ws-port-novnc').value)      || 20005;
+
   writeConfig(cfg);
 }
+
+// 工作区端口检测按钮
+document.getElementById('ws-btn-check-ports').addEventListener('click', async () => {
+  const ports = {
+    theia: parseInt(document.getElementById('ws-port-theia').value) || 20001,
+    kanban: parseInt(document.getElementById('ws-port-kanban').value) || 20002,
+    openclaw: parseInt(document.getElementById('ws-port-openclaw').value) || 20003,
+    novnc: parseInt(document.getElementById('ws-port-novnc').value) || 20004,
+    vnc: parseInt(document.getElementById('ws-port-vnc').value) || 20005
+  };
+
+  const results = await app.checkPorts(ports);
+
+  let hasConflicts = false;
+  for (const [key, result] of Object.entries(results)) {
+    if (!result.available) {
+      hasConflicts = true;
+      break;
+    }
+  }
+
+  if (hasConflicts) {
+    if (confirm('检测到端口冲突！是否自动修复？\n' +
+      Object.entries(results)
+        .filter(([_, r]) => !r.available)
+        .map(([_, r]) => `  - ${r.name} 端口 ${r.port} 被占用`)
+        .join('\n'))) {
+
+      const fixedPorts = await app.autoFixPorts(ports);
+
+      // 更新表单
+      document.getElementById('ws-port-theia').value = fixedPorts.theia;
+      document.getElementById('ws-port-kanban').value = fixedPorts.kanban;
+      document.getElementById('ws-port-openclaw').value = fixedPorts.openclaw;
+      document.getElementById('ws-port-novnc').value = fixedPorts.novnc;
+      document.getElementById('ws-port-vnc').value = fixedPorts.vnc;
+
+      alert('端口已自动调整，请保存配置以生效。');
+    }
+  } else {
+    alert('所有端口均可用！');
+  }
+});
 
 document.getElementById('btn-save-config').addEventListener('click', () => {
   collectWorkspaceForm();

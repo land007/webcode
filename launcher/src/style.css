@@ -372,3 +372,47 @@ details[open] > summary { margin-bottom: 10px; }
   vertical-align: middle;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Port grid ─────────────────────────────────────────────────── */
+.port-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.port-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.port-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  min-width: 70px;
+}
+
+.port-input {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 12px;
+  padding: 4px 6px;
+  width: 70px;
+}
+
+.port-status {
+  font-size: 10px;
+  min-width: 16px;
+  text-align: center;
+}
+
+.port-status.ok { color: var(--success); }
+.port-status.error { color: var(--danger); }
+.port-status.checking { color: var(--accent); }
