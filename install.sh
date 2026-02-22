@@ -95,7 +95,11 @@ check_docker() {
     # Check if Docker is running
     if ! docker info >/dev/null 2>&1; then
         print_error "Docker is not running"
-        print_info "Please start Docker and try again."
+        if [ -f /.dockerenv ]; then
+            print_info "This script should be run on your host machine, not inside a Docker container."
+        else
+            print_info "Please start Docker and try again."
+        fi
         return 1
     fi
 
