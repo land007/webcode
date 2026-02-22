@@ -1,8 +1,8 @@
 #!/bin/bash
 
 ANALYTICS_INTERVAL=60
-MEASUREMENT_ID="G-B1R0HS6LYD"
-API_SECRET="ba2kRTbxRue0mkJC-Kjqgw"
+MEASUREMENT_ID="G-46ZP151Y4E"
+API_SECRET="x8d_heuwTayCt7SanLPZQw"
 GA4_ENDPOINT="https://www.google-analytics.com/mp/collect"
 
 image_name=$(cat /.image_name 2>/dev/null || echo "land007/webcode")
