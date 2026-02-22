@@ -34,12 +34,10 @@ NW.js 进程
 └── src/app.js        Docker 管理 + 本地代理服务器
 
 本地代理（http-proxy）
-├── :14001 → :23000   Theia（注入 Basic Auth）
-├── :14002 → :25173   Vibe Kanban（注入 Basic Auth）
-└── :14003 → :28789   OpenClaw（注入 Basic Auth）
-
-noVNC 直连（无需代理）
-└── :26080            ?autoconnect=true&password=VNC_PASS
+├── :11001 → :10001   Theia（注入 Basic Auth）
+├── :11002 → :10002   Vibe Kanban（注入 Basic Auth）
+├── :11003 → :10003   OpenClaw（注入 Basic Auth）
+└── :11004 → :10004   noVNC（注入 Basic Auth）
 ```
 
 ## 配置文件位置
@@ -56,7 +54,7 @@ noVNC 直连（无需代理）
 
 | 代理端口 | 目标端口 | 服务 |
 |----------|----------|------|
-| 14001 | 23000 | Theia IDE |
-| 14002 | 25173 | Vibe Kanban |
-| 14003 | 28789 | OpenClaw |
-| — | 26080 | noVNC（直连） |
+| 11001 | 10001 | Theia IDE |
+| 11002 | 10002 | Vibe Kanban |
+| 11003 | 10003 | OpenClaw |
+| 11004 | 10004 | noVNC |
