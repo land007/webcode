@@ -388,14 +388,19 @@ function Install-LauncherMode {
     Print-Info "Press Ctrl+C to stop the Launcher"
     Write-Host ""
 
+    $nwBin = "$InstallDir\launcher\node_modules\.bin\nw.cmd"
+    if (-not (Test-Path $nwBin)) {
+        $nwBin = "$InstallDir\launcher\node_modules\nw\nwjs\nw.exe"
+    }
     try {
-        npx nw .
+        & $nwBin "$InstallDir\launcher"
     } catch {
         Print-Error "Failed to start Launcher"
         Write-Host ""
         Print-Info "Try starting manually:"
         Print-Info "  cd $InstallDir\launcher"
-        Print-Info "  npx nw ."
+        Print-Info "  .\node_modules\.bin\nw.cmd ."
+        Read-Host "Press Enter to exit"
     }
 }
 
