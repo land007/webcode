@@ -18,7 +18,9 @@ function Get-Color {
 
 # Configuration
 $RepoUrl = "https://github.com/land007/webcode"
+$RepoUrlMirror = "https://ghproxy.com/https://github.com/land007/webcode"
 $DockerComposeUrl = "https://raw.githubusercontent.com/land007/webcode/main/launcher/assets/docker-compose.yml"
+$DockerComposeUrlMirror = "https://ghproxy.com/https://raw.githubusercontent.com/land007/webcode/main/launcher/assets/docker-compose.yml"
 $InstallDir = "$env:USERPROFILE\webcode"
 
 #############################################
@@ -210,15 +212,25 @@ function Install-DockerMode {
     }
     Set-Location $InstallDir
 
-    # Download docker-compose.yml
+    # Download docker-compose.yml (with mirror fallback)
     Print-Info "Downloading docker-compose.yml..."
+    $downloaded = $false
     try {
-        Invoke-WebRequest -Uri $DockerComposeUrl -OutFile "docker-compose.yml" -UseBasicParsing
+        Invoke-WebRequest -Uri $DockerComposeUrl -OutFile "docker-compose.yml" -UseBasicParsing -TimeoutSec 10
         Print-Success "Downloaded docker-compose.yml"
+        $downloaded = $true
     } catch {
-        Print-Error "Failed to download docker-compose.yml"
-        Print-Info "Check your internet connection and try again."
-        exit 1
+        Print-Warning "GitHub unreachable, trying mirror..."
+    }
+    if (-not $downloaded) {
+        try {
+            Invoke-WebRequest -Uri $DockerComposeUrlMirror -OutFile "docker-compose.yml" -UseBasicParsing -TimeoutSec 20
+            Print-Success "Downloaded docker-compose.yml (via mirror)"
+        } catch {
+            Print-Error "Failed to download docker-compose.yml"
+            Print-Info "Check your internet connection and try again."
+            exit 1
+        }
     }
 
     # Ask for custom credentials
@@ -293,16 +305,27 @@ function Install-LauncherMode {
     }
 
     if (-not (Test-Path $InstallDir)) {
-        try {
-            Write-Host "Cloning from $RepoUrl..."
-            $output = git clone $RepoUrl $InstallDir 2>&1
-            if ($LASTEXITCODE -ne 0) {
-                throw "git clone failed with exit code $LASTEXITCODE"
-            }
+        $cloned = $false
+        # Try GitHub first
+        Print-Info "Cloning from GitHub..."
+        $output = git clone $RepoUrl $InstallDir 2>&1
+        if ($LASTEXITCODE -eq 0) {
             Print-Success "Repository cloned"
             Set-Location "$InstallDir\launcher"
-        } catch {
-            Print-Error "Failed to clone repository: $_"
+            $cloned = $true
+        }
+        # Fallback to mirror
+        if (-not $cloned) {
+            Print-Warning "GitHub unreachable, trying mirror..."
+            $output = git clone $RepoUrlMirror $InstallDir 2>&1
+            if ($LASTEXITCODE -eq 0) {
+                Print-Success "Repository cloned (via mirror)"
+                Set-Location "$InstallDir\launcher"
+                $cloned = $true
+            }
+        }
+        if (-not $cloned) {
+            Print-Error "Failed to clone repository"
             Write-Host ""
             Print-Info "Try cloning manually:"
             Print-Info "  git clone $RepoUrl $InstallDir"

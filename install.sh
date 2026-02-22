@@ -16,7 +16,9 @@ NC='\033[0m' # No Color
 
 # Configuration
 REPO_URL="https://github.com/land007/webcode"
+REPO_URL_MIRROR="https://ghproxy.com/https://github.com/land007/webcode"
 DOCKER_COMPOSE_URL="https://raw.githubusercontent.com/land007/webcode/main/launcher/assets/docker-compose.yml"
+DOCKER_COMPOSE_URL_MIRROR="https://ghproxy.com/https://raw.githubusercontent.com/land007/webcode/main/launcher/assets/docker-compose.yml"
 INSTALLER_URL="https://raw.githubusercontent.com/land007/webcode/main/install.sh"
 INSTALL_DIR="$HOME/webcode"
 
@@ -240,14 +242,19 @@ install_docker_mode() {
     mkdir -p "$INSTALL_DIR"
     cd "$INSTALL_DIR"
 
-    # Download docker-compose.yml
+    # Download docker-compose.yml (with mirror fallback)
     print_info "Downloading docker-compose.yml..."
-    if curl -fsSL "$DOCKER_COMPOSE_URL" -o docker-compose.yml; then
+    if curl -fsSL --connect-timeout 10 "$DOCKER_COMPOSE_URL" -o docker-compose.yml 2>/dev/null; then
         print_success "Downloaded docker-compose.yml"
     else
-        print_error "Failed to download docker-compose.yml"
-        print_info "Check your internet connection and try again."
-        exit 1
+        print_warning "GitHub unreachable, trying mirror..."
+        if curl -fsSL --connect-timeout 15 "$DOCKER_COMPOSE_URL_MIRROR" -o docker-compose.yml 2>/dev/null; then
+            print_success "Downloaded docker-compose.yml (via mirror)"
+        else
+            print_error "Failed to download docker-compose.yml"
+            print_info "Check your internet connection and try again."
+            exit 1
+        fi
     fi
 
     # Ask for custom passwords (optional)
@@ -317,12 +324,18 @@ install_launcher_mode() {
     fi
 
     if [ ! -d "$INSTALL_DIR" ]; then
-        if git clone "$REPO_URL" "$INSTALL_DIR"; then
+        if git clone "$REPO_URL" "$INSTALL_DIR" 2>/dev/null; then
             print_success "Repository cloned"
             cd "$INSTALL_DIR/launcher"
         else
-            print_error "Failed to clone repository"
-            exit 1
+            print_warning "GitHub unreachable, trying mirror..."
+            if git clone "$REPO_URL_MIRROR" "$INSTALL_DIR"; then
+                print_success "Repository cloned (via mirror)"
+                cd "$INSTALL_DIR/launcher"
+            else
+                print_error "Failed to clone repository"
+                exit 1
+            fi
         fi
     fi
 
