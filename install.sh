@@ -373,6 +373,22 @@ main() {
 
     # Determine install mode
     printf "\n"
+
+    # Check if stdin is a terminal (for interactive input)
+    if [ ! -t 0 ]; then
+        print_warning "Non-interactive mode detected (stdin is not a terminal)"
+        print_info "For interactive installation, download and run the script directly:"
+        printf "\n"
+        print_info "  curl -fsSL https://raw.githubusercontent.com/land007/webcode/main/install.sh -o install.sh"
+        print_info "  bash install.sh"
+        printf "\n"
+        print_info "Or use Docker-only mode automatically..."
+        printf "\n"
+        install_docker_mode
+        print_completion_info
+        exit 0
+    fi
+
     if has_display || [ "$OS" = "macos" ]; then
         if has_display; then
             print_header "Desktop environment detected"
