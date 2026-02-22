@@ -80,21 +80,27 @@ check_docker() {
         return 1
     fi
 
-    # Check if Docker is running
-    if ! docker info >/dev/null 2>&1; then
-        print_error "Docker is not running or not accessible"
-        if [ -f /.dockerenv ]; then
-            print_info "Running inside Docker container. Checking for Docker socket..."
-            if [ -S /var/run/docker.sock ]; then
-                print_info "Docker socket found, but may not have sufficient permissions."
-                print_info "Try running with: docker run -v /var/run/docker.sock:/var/run/docker.sock ..."
-            else
-                print_info "Docker socket not mapped. This script should be run on the host machine."
-            fi
-        else
+    # Detect if running inside container
+    IN_CONTAINER=0
+    [ -f /.dockerenv ] && IN_CONTAINER=1
+    grep -qa docker /proc/1/cgroup >/dev/null 2>&1 && IN_CONTAINER=1
+
+    # Check if Docker is running (skip strict check in container)
+    if [ $IN_CONTAINER -eq 0 ]; then
+        # Not in container - require docker info to work
+        if ! docker info >/dev/null 2>&1; then
+            print_error "Docker is not running"
             print_info "Please start Docker and try again."
+            return 1
         fi
-        return 1
+    else
+        # In container - just check socket exists
+        if [ ! -S /var/run/docker.sock ]; then
+            print_warning "Running inside container without Docker socket"
+            print_info "This script should be run on the host machine."
+            print_info "Or map Docker socket: -v /var/run/docker.sock:/var/run/docker.sock"
+            return 1
+        fi
     fi
 
     # Check for docker compose
