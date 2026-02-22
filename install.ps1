@@ -370,7 +370,6 @@ function Install-LauncherMode {
         Print-Info "  npx nw ."
     }
 }
-}
 
 function Print-CompletionInfo {
     Write-Host ""
