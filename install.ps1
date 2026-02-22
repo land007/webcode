@@ -3,14 +3,17 @@
 
 $ErrorActionPreference = "Stop"
 
-# Colors (PowerShell 5.1+)
-$ColorScheme = @{
-    Cyan    = "`e[0;36m"
-    Green   = "`e[0;32m"
-    Yellow  = "`e[1;33m"
-    Red     = "`e[0;31m"
-    Blue    = "`e[0;34m"
-    Reset   = "`e[0m"
+# Colors
+function Get-Color {
+    param([string]$Name)
+    $colors = @{
+        Cyan    = [ConsoleColor]::Cyan
+        Green   = [ConsoleColor]::Green
+        Yellow  = [ConsoleColor]::Yellow
+        Red     = [ConsoleColor]::Red
+        Blue    = [ConsoleColor]::Blue
+    }
+    return $colors[$Name]
 }
 
 # Configuration
@@ -37,27 +40,27 @@ One-command browser-based dev environment installer
 
 function Print-Header {
     param([string]$Message)
-    Write-Host "$($ColorScheme.Cyan)▸ $Message$($ColorScheme.Reset)"
+    Write-Host "▸ $Message" -ForegroundColor Cyan
 }
 
 function Print-Success {
     param([string]$Message)
-    Write-Host "$($ColorScheme.Green)✓ $Message$($ColorScheme.Reset)"
+    Write-Host "✓ $Message" -ForegroundColor Green
 }
 
 function Print-Error {
     param([string]$Message)
-    Write-Host "$($ColorScheme.Red)✗ $Message$($ColorScheme.Reset)"
+    Write-Host "✗ $Message" -ForegroundColor Red
 }
 
 function Print-Warning {
     param([string]$Message)
-    Write-Host "$($ColorScheme.Yellow)⚠ $Message$($ColorScheme.Reset)"
+    Write-Host "⚠ $Message" -ForegroundColor Yellow
 }
 
 function Print-Info {
     param([string]$Message)
-    Write-Host "$($ColorScheme.Blue)  → $Message$($ColorScheme.Reset)"
+    Write-Host "  → $Message" -ForegroundColor Blue
 }
 
 function Test-DockerInstalled {
@@ -109,7 +112,8 @@ function Install-DockerMode {
 
     # Ask for custom credentials
     Write-Host ""
-    $customize = Read-Host "$($ColorScheme.Yellow)Customize credentials? [y/N]$($ColorScheme.Reset)"
+    Write-Host "Customize credentials? [y/N]: " -NoNewline -ForegroundColor Yellow
+    $customize = Read-Host
     if ($customize -eq 'y' -or $customize -eq 'Y') {
         $authUser = Read-Host "Basic Auth username [admin]"
         if ([string]::IsNullOrWhiteSpace($authUser)) { $authUser = "admin" }
@@ -164,8 +168,10 @@ function Print-CompletionInfo {
     Write-Host "  VNC Client       localhost:20005"
     Write-Host ""
     Print-Header "Default Credentials:"
-    Print-Info "Basic Auth: $($ColorScheme.Green)admin$($ColorScheme.Reset) / $($ColorScheme.Green)changeme$($ColorScheme.Reset)"
-    Print-Info "VNC Password: $($ColorScheme.Green)changeme$($ColorScheme.Reset)"
+    Write-Host "  Basic Auth: " -NoNewline
+    Write-Host "admin / changeme" -ForegroundColor Green
+    Write-Host "  VNC Password: " -NoNewline
+    Write-Host "changeme" -ForegroundColor Green
     Write-Host ""
     Print-Header "Common Commands:"
     Print-Info "View status:    cd $InstallDir; docker compose ps"
@@ -226,7 +232,8 @@ function Main {
     Write-Host "      Command-line installation - works everywhere"
     Write-Host ""
 
-    $choice = Read-Host "$($ColorScheme.Cyan)Enter choice [1]:$($ColorScheme.Reset)"
+    Write-Host "Enter choice [1]: " -NoNewline -ForegroundColor Cyan
+    $choice = Read-Host
 
     switch ($choice) {
         "1" {
