@@ -1,0 +1,425 @@
+#!/bin/bash
+set -e
+
+#############################################
+# webcode One-Command Installer
+# https://github.com/land007/webcode
+#############################################
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+# Configuration
+REPO_URL="https://github.com/land007/webcode"
+DOCKER_COMPOSE_URL="https://raw.githubusercontent.com/land007/webcode/main/launcher/assets/docker-compose.yml"
+INSTALLER_URL="https://raw.githubusercontent.com/land007/webcode/main/install.sh"
+INSTALL_DIR="$HOME/webcode"
+
+#############################################
+# Helper Functions
+#############################################
+
+print_logo() {
+    cat << "EOF"
+   __                    __              __
+  / /____  __  _______  / /_____  ____  / /___ _
+ / __/ _ \/ / / / ___/ / __/ __ \/ __ \/ / __ `/
+/ /_/  __/ /_/ / /    / /_/ /_/ / /_/ / / /_/ /
+\__/\___/\__,_/_/     \__/\____/\____/_/\__,_/
+
+One-command browser-based dev environment installer
+EOF
+    echo ""
+}
+
+print_header() {
+    echo -e "${CYAN}▸ $1${NC}"
+}
+
+print_success() {
+    echo -e "${GREEN}✓ $1${NC}"
+}
+
+print_error() {
+    echo -e "${RED}✗ $1${NC}"
+}
+
+print_warning() {
+    echo -e "${YELLOW}⚠ $1${NC}"
+}
+
+print_info() {
+    echo -e "${BLUE}  → $1${NC}"
+}
+
+detect_os() {
+    case "$(uname -s)" in
+        Linux*)     OS="linux";;
+        Darwin*)    OS="macos";;
+        *)          OS="unknown";;
+    esac
+}
+
+check_docker() {
+    if ! command -v docker &> /dev/null; then
+        print_error "Docker is not installed"
+        echo ""
+        print_header "Install Docker:"
+        if [ "$OS" = "macos" ]; then
+            print_info "Visit: https://www.docker.com/products/docker-desktop"
+            print_info "Or use: brew install --cask docker"
+        elif [ "$OS" = "linux" ]; then
+            print_info "Visit: https://docs.docker.com/engine/install/"
+            print_info "Or use: curl -fsSL https://get.docker.com | sh"
+        fi
+        return 1
+    fi
+
+    # Check if Docker is running
+    if ! docker info &> /dev/null; then
+        print_error "Docker is not running"
+        print_info "Please start Docker Desktop and try again."
+        return 1
+    fi
+
+    # Check for docker compose
+    if ! docker compose version &> /dev/null && ! docker-compose version &> /dev/null; then
+        print_error "docker compose is not available"
+        print_info "Please install Docker Compose and try again."
+        return 1
+    fi
+
+    print_success "Docker is installed and running"
+    return 0
+}
+
+check_git() {
+    if ! command -v git &> /dev/null; then
+        print_error "Git is not installed"
+        echo ""
+        print_header "Install Git:"
+        if [ "$OS" = "macos" ]; then
+            print_info "Already installed (comes with Xcode Command Line Tools)"
+            print_info "If missing: xcode-select --install"
+        elif [ "$OS" = "linux" ]; then
+            print_info "Ubuntu/Debian: sudo apt install git"
+            print_info "Fedora: sudo dnf install git"
+            print_info "Arch: sudo pacman -S git"
+        fi
+        return 1
+    fi
+
+    print_success "Git is installed"
+    return 0
+}
+
+check_nodejs() {
+    if ! command -v node &> /dev/null; then
+        print_warning "Node.js not found (required for Launcher mode)"
+        echo ""
+        print_header "Install Node.js:"
+        if [ "$OS" = "macos" ]; then
+            print_info "Visit: https://nodejs.org/"
+            print_info "Or use: brew install node"
+        elif [ "$OS" = "linux" ]; then
+            print_info "Visit: https://nodejs.org/"
+            print_info "Ubuntu/Debian: curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - && sudo apt install -y nodejs"
+            print_info "Fedora: sudo dnf install nodejs"
+        fi
+        return 1
+    fi
+
+    NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
+    if [ "$NODE_VERSION" -lt 18 ]; then
+        print_warning "Node.js $(node -v) found, but 18+ is required for Launcher"
+        print_info "Please upgrade Node.js: https://nodejs.org/"
+        return 1
+    fi
+
+    print_success "Node.js $(node -v) found"
+    return 0
+}
+
+has_display() {
+    [ -n "$DISPLAY" ] || [ -n "$WAYLAND_DISPLAY" ]
+}
+
+# Check all prerequisites
+check_prerequisites() {
+    local missing_docker=0
+    local missing_git=0
+    local missing_node=0
+
+    echo ""
+    print_header "Checking prerequisites..."
+    echo ""
+
+    # Check Docker (required for all modes)
+    if ! check_docker; then
+        missing_docker=1
+    fi
+
+    # Check Git (required for Launcher mode)
+    if ! check_git; then
+        missing_git=1
+    fi
+
+    # Check Node.js (optional, for Launcher mode)
+    check_nodejs || missing_node=1
+
+    echo ""
+
+    # Exit if Docker is missing (required)
+    if [ $missing_docker -eq 1 ]; then
+        print_error "Docker is required for webcode"
+        echo ""
+        print_info "Please install Docker and run this script again."
+        exit 1
+    fi
+
+    # Return status for Git and Node.js
+    return $((missing_git + missing_node))
+}
+
+install_docker_mode() {
+    print_header "Installing webcode (Docker mode)..."
+
+    # Create install directory
+    mkdir -p "$INSTALL_DIR"
+    cd "$INSTALL_DIR"
+
+    # Download docker-compose.yml
+    print_info "Downloading docker-compose.yml..."
+    if curl -fsSL "$DOCKER_COMPOSE_URL" -o docker-compose.yml; then
+        print_success "Downloaded docker-compose.yml"
+    else
+        print_error "Failed to download docker-compose.yml"
+        print_info "Check your internet connection and try again."
+        exit 1
+    fi
+
+    # Ask for custom passwords (optional)
+    echo ""
+    read -p "$(echo -e ${YELLOW}Customize credentials? [y/N]: ${NC})" customize
+    if [ "$customize" = "y" ] || [ "$customize" = "Y" ]; then
+        read -p "Basic Auth username [admin]: " auth_user
+        auth_user=${auth_user:-admin}
+
+        read -sp "Basic Auth password [changeme]: " auth_password
+        echo
+        auth_password=${auth_password:-changeme}
+
+        read -sp "VNC password [changeme]: " vnc_password
+        echo
+        vnc_password=${vnc_password:-changeme}
+
+        # Create .env file
+        cat > .env << EOF
+AUTH_USER=$auth_user
+AUTH_PASSWORD=$auth_password
+VNC_PASSWORD=$vnc_password
+EOF
+        print_success "Created .env with custom credentials"
+    else
+        print_info "Using default credentials (admin/changeme)"
+    fi
+
+    # Start container
+    echo ""
+    print_header "Starting container..."
+    if docker compose up -d; then
+        print_success "Container started successfully"
+    else
+        print_error "Failed to start container"
+        exit 1
+    fi
+
+    # Wait for services to be ready
+    print_info "Waiting for services to start..."
+    sleep 5
+
+    print_success "Installation complete!"
+}
+
+install_launcher_mode() {
+    print_header "Installing webcode (Launcher mode)..."
+
+    # Check for git
+    if ! command -v git &> /dev/null; then
+        print_error "Git is not installed"
+        print_info "Please install Git and try again."
+        exit 1
+    fi
+
+    # Clone repository
+    print_info "Cloning repository..."
+    if [ -d "$INSTALL_DIR" ]; then
+        print_warning "Directory already exists: $INSTALL_DIR"
+        read -p "Remove and re-clone? [y/N]: " remove_clone
+        if [ "$remove_clone" = "y" ] || [ "$remove_clone" = "Y" ]; then
+            rm -rf "$INSTALL_DIR"
+        else
+            print_info "Using existing installation"
+            cd "$INSTALL_DIR/launcher"
+        fi
+    fi
+
+    if [ ! -d "$INSTALL_DIR" ]; then
+        if git clone "$REPO_URL" "$INSTALL_DIR"; then
+            print_success "Repository cloned"
+            cd "$INSTALL_DIR/launcher"
+        else
+            print_error "Failed to clone repository"
+            exit 1
+        fi
+    fi
+
+    # Install dependencies
+    print_info "Installing dependencies..."
+    cd "$INSTALL_DIR/launcher"
+    if npm install; then
+        print_success "Dependencies installed"
+    else
+        print_error "Failed to install dependencies"
+        exit 1
+    fi
+
+    # Ensure nw is installed (for Launcher)
+    if [ ! -f "node_modules/.bin/nw" ]; then
+        print_info "Installing NW.js..."
+        if npm install --save-dev nw; then
+            print_success "NW.js installed"
+        else
+            print_error "Failed to install NW.js"
+            exit 1
+        fi
+    fi
+
+    # Start Launcher
+    echo ""
+    print_success "Installation complete!"
+    print_header "Starting Launcher..."
+    print_info "A GUI window will appear where you can configure and start webcode."
+    echo ""
+    print_info "To restart later: cd $INSTALL_DIR/launcher && npm start"
+    echo ""
+    exec ./node_modules/.bin/nw .
+}
+
+print_completion_info() {
+    echo ""
+    print_header "═══════════════════════════════════════════════════════════════"
+    print_success "webcode is ready!"
+    print_header "═══════════════════════════════════════════════════════════════"
+    echo ""
+    print_header "Access Points:"
+    echo ""
+    printf "  %-20s %s\n" "Theia IDE"        "http://localhost:20001"
+    printf "  %-20s %s\n" "Vibe Kanban"      "http://localhost:20002"
+    printf "  %-20s %s\n" "OpenClaw AI"      "http://localhost:20003"
+    printf "  %-20s %s\n" "noVNC Desktop"    "http://localhost:20004"
+    printf "  %-20s %s\n" "VNC Client"       "localhost:20005"
+    echo ""
+    print_header "Default Credentials:"
+    print_info "Basic Auth: ${GREEN}admin${NC} / ${GREEN}changeme${NC}"
+    print_info "VNC Password: ${GREEN}changeme${NC}"
+    echo ""
+    print_header "Common Commands:"
+    print_info "View status:    cd $INSTALL_DIR && docker compose ps"
+    print_info "View logs:      cd $INSTALL_DIR && docker compose logs -f"
+    print_info "Stop:           cd $INSTALL_DIR && docker compose down"
+    print_info "Restart:        cd $INSTALL_DIR && docker compose restart"
+    echo ""
+    print_header "Documentation:"
+    print_info "GitHub:  $REPO_URL"
+    print_info "Docker:  https://hub.docker.com/r/land007/webcode"
+    echo ""
+}
+
+#############################################
+# Main Flow
+#############################################
+
+main() {
+    print_logo
+
+    # Detect OS
+    detect_os
+    print_info "Detected OS: $OS"
+
+    # Check all prerequisites
+    check_prerequisites
+
+    # Determine install mode
+    echo ""
+    if has_display || [ "$OS" = "macos" ]; then
+        if has_display; then
+            print_header "Desktop environment detected"
+        else
+            print_header "macOS detected (remote session)"
+        fi
+        echo ""
+        print_info "Choose installation method:"
+        echo ""
+        echo -e "  ${GREEN}[1]${NC} Launcher (Recommended)"
+        echo -e "      GUI for easy configuration - requires Node.js 18+"
+        echo ""
+        echo -e "  ${GREEN}[2]${NC} Docker Only"
+        echo -e "      Command-line installation - works everywhere"
+        echo ""
+        read -p "$(echo -e ${CYAN}Enter choice [1-2]: ${NC})" choice
+
+        case $choice in
+            1)
+                echo ""
+                # Check Node.js again for Launcher mode
+                if ! check_nodejs; then
+                    print_error "Launcher requires Node.js 18+"
+                    echo ""
+                    print_info "Please install Node.js first, then choose:"
+                    echo ""
+                    echo -e "  ${GREEN}[1]${NC} Exit to install Node.js"
+                    echo -e "  ${GREEN}[2]${NC} Use Docker-only mode instead"
+                    echo ""
+                    read -p "$(echo -e ${CYAN}Enter choice [1-2]: ${NC})" node_choice
+                    case $node_choice in
+                        1)
+                            print_info "Install Node.js from: https://nodejs.org/"
+                            exit 0
+                            ;;
+                        2)
+                            install_docker_mode
+                            print_completion_info
+                            ;;
+                        *)
+                            print_error "Invalid choice"
+                            exit 1
+                            ;;
+                    esac
+                else
+                    install_launcher_mode
+                fi
+                ;;
+            2)
+                install_docker_mode
+                print_completion_info
+                ;;
+            *)
+                print_error "Invalid choice"
+                exit 1
+                ;;
+        esac
+    else
+        print_header "Server mode detected (no display)"
+        install_docker_mode
+        print_completion_info
+    fi
+}
+
+# Run main
+main

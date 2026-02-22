@@ -49,6 +49,21 @@ A Docker-based browser-accessible development environment with **Theia IDE**, **
 
 ## 🚀 Quick Start
 
+### One-Command Install (macOS / Linux)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/land007/webcode/main/install.sh | sh
+```
+
+> **Windows**: Use WSL or see Method 2 below
+
+This installer will:
+- Detect your environment (desktop vs server)
+- Offer Launcher GUI for desktop users (if Node.js 18+ is installed)
+- Or install directly using Docker
+
+---
+
 ### Method 1: Visual Launcher (Recommended for Desktop Users)
 
 ![Launcher Setup](https://raw.githubusercontent.com/land007/webcode/main/images/screenshot-launcher-setup.png)
@@ -352,6 +367,19 @@ The following data is stored in Docker volumes and survives container rebuilds:
 | **数据持久化** | ✅ Docker 卷 | ✅ 本地文件 | ⚠️ 需配置 |
 | **Linux 桌面** | ✅ 内置 | ❌ 无 | ❌ 无 |
 | **费用** | 免费（自有硬件） | 免费 | 付费档位 |
+
+### 一键安装（macOS / Linux）
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/land007/webcode/main/install.sh | sh
+```
+
+> **Windows**：请使用 WSL 或参考下方方法二
+
+安装程序将：
+- 自动检测环境（桌面 vs 服务器）
+- 为桌面用户提供 Launcher 图形界面（需 Node.js 18+）
+- 或直接使用 Docker 安装
 
 ---
 
