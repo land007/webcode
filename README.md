@@ -5,13 +5,13 @@
 ![Platforms](https://img.shields.io/badge/platform-amd64%20%7C%20arm64-blue)
 ![Image Size](https://img.shields.io/docker/image-size/land007/webcode/latest)
 
-[📦 Repository](https://github.com/land007/webcode) | [🐛 Issues](https://github.com/land007/webcode/issues) | [📖 Changelog](https://github.com/land007/webcode/releases)
+[📦 Repository](https://github.com/land007/webcode) | [🐳 Docker Hub](https://hub.docker.com/r/land007/webcode) | [🐛 Issues](https://github.com/land007/webcode/issues) | [📖 Changelog](https://github.com/land007/webcode/releases)
 
 A Docker-based browser-accessible development environment with Theia IDE, visual task board, VNC desktop, and AI assistant gateway.
 
 ---
 
-> **📦 View on GitHub**: [land007/webcode](https://github.com/land007/webcode) | **🐛 Report Issues**: [GitHub Issues](https://github.com/land007/webcode/issues)
+> **📦 View on GitHub**: [land007/webcode](https://github.com/land007/webcode) | **🐳 View on Docker Hub**: [land007/webcode](https://hub.docker.com/r/land007/webcode) | **🐛 Report Issues**: [GitHub Issues](https://github.com/land007/webcode/issues)
 
 ## 🚀 Quick Start
 
@@ -129,25 +129,22 @@ Default VNC password: `changeme`
 
 ## Security & Isolation
 
-**🔒 Container isolation**: Everything runs inside a Docker container — your host system is completely isolated.
+**🔒 Will AI break my computer? No!**
 
-- **Safe to experiment**: You can `rm -rf /`, mess up OpenClaw configs, break Vibe Kanban data, or install random packages — nothing affects your host machine.
-- **Easy reset**: Simply run `docker compose down -v` to wipe everything and start fresh.
-- **No escape**: The container has no special privileges; it cannot access host files outside of the mounted volumes you explicitly configure.
+Everything runs inside a **sandboxed Docker container**. Your host computer is 100% safe.
 
-> 💡 **Tip**: This makes webcode perfect for learning, testing AI tools, or trying out new workflows without risk.
+- ✅ **OpenClaw AI can't touch your files** — It only sees files inside the container, not your documents, photos, or anything on your computer
+- ✅ **Go wild with experiments** — Run any code, install anything, break things inside — your computer stays untouched
+- ✅ **One-command reset** — Messed up? Run `docker compose down -v` and start fresh
 
-**⚠️ Docker socket mounting (optional)**:
+> 💡 **Think of it like this**: webcode is a safe "playground computer" inside your real computer. You can do anything inside the playground — it won't affect your real computer at all.
 
-By default, `docker-compose.yml` mounts `/var/run/docker.sock` to enable Docker-in-Docker functionality. This gives the container ability to control your host Docker daemon.
+**⚠️ Advanced: Docker socket (optional)**
 
-**Risks if enabled**:
-- The container can start/stop/manage any container on your host
-- Malicious code inside could potentially access host resources through Docker
+By default, `docker-compose.yml` has `/var/run/docker.sock` enabled for Docker-in-Docker. This gives the container extra power to manage other containers.
 
-**Recommendation**:
-- For **production** or untrusted workloads: Comment out the `/var/run/docker.sock` line in `docker-compose.yml`
-- For **development/personal use**: Keep it enabled for full functionality
+- **For most users**: Keep it enabled — you probably want this feature
+- **For production/security**: Comment it out if running untrusted code
 
 ---
 
@@ -289,7 +286,7 @@ The following data is stored in Docker volumes and survives container rebuilds:
 
 ---
 
-> **📦 GitHub 仓库**: [land007/webcode](https://github.com/land007/webcode) | **🐛 提交问题**: [GitHub Issues](https://github.com/land007/webcode/issues)
+> **📦 GitHub 仓库**: [land007/webcode](https://github.com/land007/webcode) | **🐳 Docker Hub**: [land007/webcode](https://hub.docker.com/r/land007/webcode) | **🐛 提交问题**: [GitHub Issues](https://github.com/land007/webcode/issues)
 
 ## 🚀 快速开始
 
@@ -407,25 +404,22 @@ docker compose up -d
 
 ## 安全性与隔离
 
-**🔒 容器隔离**：所有操作都在 Docker 容器内运行 — 宿主机完全隔离。
+**🔒 AI 会弄坏我的电脑吗？不会！**
 
-- **安全试错**：你可以随意 `rm -rf /`、搞乱 OpenClaw 配置、破坏 Vibe Kanban 数据，或安装各种包 — 宿主机不受任何影响。
-- **一键重置**：运行 `docker compose down -v` 即可清空所有数据，从头开始。
-- **无逃逸风险**：容器没有特殊权限，无法访问宿主机文件（除非你显式配置挂载卷）。
+所有操作都在**沙箱化的 Docker 容器**里运行。你的电脑 100% 安全。
 
-> 💡 **小贴士**：这让 webcode 非常适合学习、测试 AI 工具或尝试新工作流，无需担心弄坏电脑。
+- ✅ **OpenClaw AI 碰不到你的文件** — 它只能看到容器里的文件，碰不到你的文档、照片或电脑上的任何东西
+- ✅ **随便折腾没关系** — 任何代码、任何操作、搞坏任何东西 — 你的电脑毫发无损
+- ✅ **一键恢复** — 搞乱了？运行 `docker compose down -v` 就能重新开始
 
-**⚠️ Docker socket 挂载（可选）**：
+> 💡 **打个比方**：webcode 就像你真实电脑里的一台"沙盒电脑"。你可以在沙盒里为所欲为 — 完全不会影响你的真实电脑。
 
-默认情况下，`docker-compose.yml` 挂载了 `/var/run/docker.sock` 以支持 Docker-in-Docker 功能。这会让容器获得控制宿主机 Docker 守护进程的能力。
+**⚠️ 高级：Docker socket（可选）**
 
-**启用时的风险**：
-- 容器内可以启动/停止/管理宿主机上的任何容器
-- 恶意代码可能通过 Docker 访问宿主机资源
+默认情况下，`docker-compose.yml` 启用了 `/var/run/docker.sock` 以支持 Docker-in-Docker 功能，这会让容器获得管理其他容器的额外能力。
 
-**建议**：
-- **生产环境**或不可信场景：在 `docker-compose.yml` 中注释掉 `/var/run/docker.sock` 这一行
-- **个人开发/学习**：保持启用以获得完整功能
+- **大多数用户**：保持启用 — 你可能需要这个功能
+- **生产/安全场景**：如果运行不可信代码，可以注释掉这一行
 
 ---
 
