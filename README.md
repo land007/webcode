@@ -60,6 +60,8 @@ docker compose up -d
 
 ### Method 2: Visual Launcher (Recommended for Desktop Users)
 
+![Launcher Setup](images/screenshot-launcher-setup.png)
+
 **Prerequisites**:
 - Docker Desktop (macOS / Windows) or Docker Engine (Linux)
 - [Git](https://git-scm.com/)
@@ -86,6 +88,8 @@ npx nw .
 ```
 
 A GUI window will appear where you can configure credentials, ports, and startup mode, then click **Start** to launch the container.
+
+![Launcher Status](images/screenshot-launcher-status.png)
 
 ---
 
@@ -164,11 +168,15 @@ MODE=lite docker compose up -d
 
 Browser-based VS Code. Working directory is `/home/ubuntu/projects` inside the container (mapped to the `projects` volume).
 
+![Theia IDE](images/screenshot-theia.png)
+
 Access: http://localhost:20001 (Basic Auth required)
 
 ### Vibe Kanban
 
 Kanban-style task management tool for tracking project progress.
+
+![Vibe Kanban](images/screenshot-kanban.png)
 
 Access: http://localhost:20002
 
@@ -176,11 +184,15 @@ Access: http://localhost:20002
 
 Full Linux desktop in your browser (desktop mode only).
 
+![noVNC Desktop](images/screenshot-desktop.png)
+
 Access: http://localhost:20004 — enter the VNC password to log in.
 
 ### OpenClaw AI Assistant
 
 Self-hosted AI assistant gateway supporting multiple AI services.
+
+![OpenClaw AI](images/screenshot-openclaw.png)
 
 Access: http://localhost:20003
 
@@ -300,6 +312,8 @@ docker compose up -d
 
 ### 方法二：Launcher 图形界面（桌面用户推荐）
 
+![Launcher 设置向导](images/screenshot-launcher-setup.png)
+
 **先决条件**：
 - Docker Desktop（macOS / Windows）或 Docker Engine（Linux）
 - [Git](https://git-scm.com/)
@@ -326,6 +340,8 @@ npx nw .
 ```
 
 弹出图形界面后，可配置账号密码、端口、启动模式，点击 **Start** 即可启动容器。
+
+![Launcher 状态页](images/screenshot-launcher-status.png)
 
 ---
 
@@ -404,11 +420,15 @@ MODE=lite docker compose up -d
 
 浏览器版 VS Code，工作目录为容器内 `/home/ubuntu/projects`（对应 `projects` 数据卷）。
 
+![Theia IDE](images/screenshot-theia.png)
+
 访问：http://localhost:20001（需输入 Basic Auth 账号密码）
 
 ### Vibe Kanban
 
 看板式任务管理工具，用于跟踪项目进度。
+
+![Vibe Kanban](images/screenshot-kanban.png)
 
 访问：http://localhost:20002
 
@@ -416,11 +436,15 @@ MODE=lite docker compose up -d
 
 在浏览器中操作完整 Linux 桌面（desktop 模式专属）。
 
+![noVNC 桌面](images/screenshot-desktop.png)
+
 访问：http://localhost:20004，输入 VNC 密码登录。
 
 ### OpenClaw AI 助手
 
 自托管 AI 助手网关，支持配置多个 AI 服务。
+
+![OpenClaw AI](images/screenshot-openclaw.png)
 
 访问：http://localhost:20003
 
