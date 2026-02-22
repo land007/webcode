@@ -13,5 +13,14 @@
   "chromium-args": "--disable-web-security --allow-running-insecure-content",
   "dependencies": {
     "http-proxy": "^1.18.1"
+  },
+  "devDependencies": {
+    "nw-builder": "^4"
+  },
+  "scripts": {
+    "build:linux":     "nwbuild --mode=build --platform=linux --arch=x64   --outDir=dist",
+    "build:win":       "nwbuild --mode=build --platform=win   --arch=x64   --outDir=dist",
+    "build:osx-x64":   "nwbuild --mode=build --platform=osx  --arch=x64   --outDir=dist",
+    "build:osx-arm64": "nwbuild --mode=build --platform=osx  --arch=arm64 --outDir=dist"
   }
 }

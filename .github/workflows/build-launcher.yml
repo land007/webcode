@@ -1,0 +1,76 @@
+name: Build Launcher
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+            artifact: webcode-linux-x64.tar.gz
+          - os: windows-latest
+            platform: win
+            arch: x64
+            artifact: webcode-win-x64.zip
+          - os: macos-13
+            platform: osx
+            arch: x64
+            artifact: webcode-osx-x64.zip
+          - os: macos-latest
+            platform: osx
+            arch: arm64
+            artifact: webcode-osx-arm64.zip
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: launcher
+
+      - name: Build (Linux / macOS)
+        if: runner.os != 'Windows'
+        working-directory: launcher
+        run: |
+          npx nwbuild --mode=build --platform=${{ matrix.platform }} --arch=${{ matrix.arch }} --outDir=dist
+          tar -czf ${{ matrix.artifact }} -C dist .
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        working-directory: launcher
+        run: |
+          npx nwbuild --mode=build --platform=${{ matrix.platform }} --arch=${{ matrix.arch }} --outDir=dist
+          Compress-Archive -Path dist\* -DestinationPath ${{ matrix.artifact }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: launcher/${{ matrix.artifact }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
