@@ -56,12 +56,12 @@ A Docker-based browser-accessible development environment with **Theia IDE**, **
 curl -fsSL https://raw.githubusercontent.com/land007/webcode/main/install.sh | bash
 ```
 
-**Windows** (PowerShell):
+**Windows** (PowerShell - **Run as Administrator**):
 ```powershell
 irm https://raw.githubusercontent.com/land007/webcode/main/install.ps1 | iex
 ```
 
-> **Note**: Windows users can also use WSL to run the bash script.
+> **Note**: Windows users must run PowerShell as Administrator for automatic Node.js installation. Alternatively, use WSL to run the bash script.
 
 This installer will:
 - Detect your environment (desktop vs server)
@@ -381,12 +381,12 @@ The following data is stored in Docker volumes and survives container rebuilds:
 curl -fsSL https://raw.githubusercontent.com/land007/webcode/main/install.sh | bash
 ```
 
-**Windows** (PowerShell):
+**Windows** (PowerShell - **需以管理员身份运行**):
 ```powershell
 irm https://raw.githubusercontent.com/land007/webcode/main/install.ps1 | iex
 ```
 
-> **Note**：Windows 用户也可以使用 WSL 运行 bash 脚本。
+> **Note**：Windows 用户必须以管理员身份运行 PowerShell 才能自动安装 Node.js。或者使用 WSL 运行 bash 脚本。
 
 安装程序将：
 - 自动检测环境（桌面 vs 服务器）
