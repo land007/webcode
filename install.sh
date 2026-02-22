@@ -20,6 +20,12 @@ DOCKER_COMPOSE_URL="https://raw.githubusercontent.com/land007/webcode/main/launc
 INSTALLER_URL="https://raw.githubusercontent.com/land007/webcode/main/install.sh"
 INSTALL_DIR="$HOME/webcode"
 
+# Detect if we need sudo for docker
+DOCKER_CMD="docker"
+if ! docker info >/dev/null 2>&1 && sudo -n docker info >/dev/null 2>&1; then
+    DOCKER_CMD="sudo docker"
+fi
+
 #############################################
 # Helper Functions
 #############################################
@@ -75,7 +81,7 @@ detect_os() {
 }
 
 check_docker() {
-    if ! type docker >/dev/null 2>&1; then
+    if ! type $DOCKER_CMD >/dev/null 2>&1; then
         print_error "Docker is not installed"
         printf "\n"
         print_header "Install Docker:"
@@ -97,7 +103,7 @@ check_docker() {
     # Check if Docker is running (skip strict check in container)
     if [ $IN_CONTAINER -eq 0 ]; then
         # Not in container - require docker info to work
-        if ! docker info >/dev/null 2>&1; then
+        if ! $DOCKER_CMD info >/dev/null 2>&1; then
             print_error "Docker is not running"
             print_info "Please start Docker and try again."
             return 1
@@ -113,7 +119,7 @@ check_docker() {
     fi
 
     # Check for docker compose
-    if ! docker compose version >/dev/null 2>&1 && ! docker-compose version >/dev/null 2>&1; then
+    if ! $DOCKER_CMD compose version >/dev/null 2>&1 && ! $DOCKER_CMD-compose version >/dev/null 2>&1; then
         print_error "docker compose is not available"
         print_info "Please install Docker Compose and try again."
         return 1
@@ -262,25 +268,10 @@ EOF
         print_info "Using default credentials (admin/changeme)"
     fi
 
-    # Check Docker socket access before starting
-    if ! docker info >/dev/null 2>&1; then
-        printf "\n"
-        print_error "Cannot access Docker daemon"
-        printf "\n"
-        print_info "Possible solutions:"
-        print_info "  1. Run this script with sudo: sudo bash install.sh"
-        print_info "  2. Add your user to docker group: sudo usermod -aG docker \$USER"
-        print_info "  3. Fix socket permissions: sudo chmod 666 /var/run/docker.sock"
-        printf "\n"
-        print_info "If running inside a container, restart with:"
-        print_info "  docker run --user root -v /var/run/docker.sock:/var/run/docker.sock ..."
-        exit 1
-    fi
-
     # Start container
     printf "\n"
     print_header "Starting container..."
-    if docker compose up -d; then
+    if $DOCKER_CMD compose up -d; then
         print_success "Container started successfully"
     else
         print_error "Failed to start container"
