@@ -391,6 +391,12 @@ main() {
     # Determine install mode
     printf "\n"
 
+    # Check if Launcher is supported
+    LAUNCHER_SUPPORTED=0
+    if check_nodejs; then
+        LAUNCHER_SUPPORTED=1
+    fi
+
     if has_display || [ "$OS" = "macos" ]; then
         if has_display; then
             print_header "Desktop environment detected"
@@ -400,13 +406,24 @@ main() {
         printf "\n"
         print_info "Choose installation method:"
         printf "\n"
-        echo -e "  ${GREEN}[1]${NC} Launcher (Recommended)"
-        echo -e "      GUI for easy configuration - requires Node.js 18+"
-        printf "\n"
-        echo -e "  ${GREEN}[2]${NC} Docker Only"
-        echo -e "      Command-line installation - works everywhere"
-        printf "\n"
-        read -rp "$(printf "${CYAN}Enter choice [1-2]: ${NC}")" choice < /dev/tty
+
+        if [ $LAUNCHER_SUPPORTED -eq 1 ]; then
+            echo -e "  ${GREEN}[1]${NC} Launcher (Recommended)"
+            echo -e "      GUI for easy configuration"
+            printf "\n"
+            echo -e "  ${GREEN}[2]${NC} Docker Only"
+            echo -e "      Command-line installation"
+            printf "\n"
+            read -rp "$(printf "${CYAN}Enter choice [1-2]: ${NC}")" choice < /dev/tty
+        else
+            echo -e "  ${GREEN}[1]${NC} Docker Only"
+            echo -e "      Command-line installation (recommended for this system)"
+            printf "\n"
+            print_warning "Launcher is not available on this platform"
+            print_info "Press Enter to continue with Docker installation..."
+            read -r choice < /dev/tty
+            choice=2
+        fi
 
         case $choice in
             1)
