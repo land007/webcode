@@ -300,24 +300,38 @@ function Install-LauncherMode {
     }
 
     # Install dependencies
-    Print-Info "Installing dependencies..."
+    Print-Info "Installing dependencies (this may take a minute)..."
     Set-Location "$InstallDir\launcher"
     try {
-        npm install
+        $output = npm install 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            throw "npm install failed with exit code $LASTEXITCODE"
+        }
         Print-Success "Dependencies installed"
     } catch {
-        Print-Error "Failed to install dependencies"
+        Print-Error "Failed to install dependencies: $_"
+        Write-Host ""
+        Print-Info "Try running manually:"
+        Print-Info "  cd $InstallDir\launcher"
+        Print-Info "  npm install"
         exit 1
     }
 
     # Ensure nw is installed
-    if (-not (Test-Path "node_modules\.bin\nw")) {
+    if (-not (Test-Path "node_modules\nw")) {
         Print-Info "Installing NW.js..."
         try {
-            npm install --save-dev nw
+            $output = npm install --save-dev nw 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                throw "npm install nw failed with exit code $LASTEXITCODE"
+            }
             Print-Success "NW.js installed"
         } catch {
-            Print-Error "Failed to install NW.js"
+            Print-Error "Failed to install NW.js: $_"
+            Write-Host ""
+            Print-Info "Try running manually:"
+            Print-Info "  cd $InstallDir\launcher"
+            Print-Info "  npm install --save-dev nw"
             exit 1
         }
     }
@@ -330,8 +344,19 @@ function Install-LauncherMode {
     Write-Host ""
     Print-Info "To restart later: cd $InstallDir\launcher; npm start"
     Write-Host ""
+    Print-Info "Press Ctrl+C to stop the Launcher"
+    Write-Host ""
 
-    npx nw .
+    try {
+        npx nw .
+    } catch {
+        Print-Error "Failed to start Launcher"
+        Write-Host ""
+        Print-Info "Try starting manually:"
+        Print-Info "  cd $InstallDir\launcher"
+        Print-Info "  npx nw ."
+    }
+}
 }
 
 function Print-CompletionInfo {
