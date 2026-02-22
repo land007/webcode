@@ -140,7 +140,8 @@ function Install-NodeJS {
         Print-Success "Downloaded Node.js installer"
 
         # Install silently
-        Write-Host "Installing Node.js (this may take a minute)..."
+        Write-Host "Installing Node.js (this may take 1-2 minutes)..."
+        Write-Host "Please wait..." -ForegroundColor Yellow
         $installArgs = @(
             "/i"
             $installerPath
@@ -148,7 +149,18 @@ function Install-NodeJS {
             "/norestart"
         )
 
-        $process = Start-Process "msiexec.exe" -ArgumentList $installArgs -Wait -PassThru -NoNewWindow
+        # Use WaitForExit with timeout to handle long installations
+        $process = Start-Process "msiexec.exe" -ArgumentList $installArgs -PassThru -NoNewWindow
+
+        # Wait up to 5 minutes
+        $timeout = 300000  # 5 minutes in milliseconds
+        if (!$process.WaitForExit($timeout)) {
+            Print-Warning "Installation is taking longer than expected..."
+            Print-Info "The installation will continue in the background."
+            Print-Info "Please restart PowerShell after 2 minutes and run this script again."
+            Remove-Item -Recurse -Force $tempDir -ErrorAction SilentlyContinue
+            return $false
+        }
 
         if ($process.ExitCode -eq 0) {
             Print-Success "Node.js installed successfully"
