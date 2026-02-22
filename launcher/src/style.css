@@ -416,3 +416,35 @@ details[open] > summary { margin-bottom: 10px; }
 .port-status.ok { color: var(--success); }
 .port-status.error { color: var(--danger); }
 .port-status.checking { color: var(--accent); }
+
+/* ── Language switcher ───────────────────────────────────────────── */
+.wizard-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.lang-toggle {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.lang-btn {
+  padding: 3px 8px;
+  font-size: 11px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.lang-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}

@@ -1,0 +1,257 @@
+'use strict';
+
+// ── Translations ──────────────────────────────────────────────────────────────
+
+const translations = {
+  'zh-CN': {
+    // Wizard header
+    title:            'webcode 启动器',
+    subtitle:         '浏览器可访问的开发环境，由 Docker 驱动',
+
+    // Step 1
+    step1_detecting:  '正在检测运行环境…',
+    docker_installed: 'Docker 已安装',
+    docker_running:   'Docker 正在运行',
+    badge_checking:   '检测中',
+    docker_help_prefix: '请先安装并启动',
+    docker_help_suffix: '，然后刷新检测。',
+    btn_recheck:      '重新检测',
+    btn_step1_next:   '下一步',
+
+    // Step 2
+    label_run_mode:   '运行模式',
+    mode_desktop:     '🖥 Desktop（完整桌面）',
+    mode_lite:        '⚡ Lite（仅 IDE + 看板）',
+    label_auth_password: 'Basic Auth 密码',
+    label_vnc_password:  'VNC 密码',
+    label_openclaw_token: 'OpenClaw Token',
+    summary_advanced: '高级选项',
+    label_auth_user:  'Basic Auth 用户名',
+    label_vnc_resolution: 'VNC 分辨率',
+    label_git_name:   'Git 用户名',
+    label_git_email:  'Git 邮箱',
+    ph_optional:      '（可选）',
+    label_cf_token:   'Cloudflare Tunnel Token（可选）',
+    label_port_config: '端口配置（自动检测冲突）',
+    btn_check_ports:  '🔍 检测端口冲突',
+    btn_step2_back:   '上一步',
+    btn_step2_next:   '下一步：启动容器',
+
+    // Step 3
+    step3_desc:       '正在启动 webcode 容器，首次运行将拉取镜像（约 2–5 分钟）…',
+    btn_step3_back:   '返回配置',
+    btn_step3_next:   '进入工作区 →',
+
+    // Step 4
+    step4_desc:       '配置已加载，容器当前未运行。',
+    btn_step4_start:  '▶ 启动容器',
+    btn_step4_config: '修改配置',
+    btn_step4_enter:  '直接进入工作区',
+
+    // Workspace tabs
+    tab_status:       '● 状态',
+    tab_vnc:          '🖥 桌面',
+    tab_ide:          '💻 IDE',
+    tab_kanban:       '📋 看板',
+    tab_ai:           '🤖 AI',
+    title_refresh:    '刷新',
+    title_open_browser: '在浏览器中打开',
+    status_detecting: '检测中…',
+    btn_restart:      '重启',
+    btn_stop:         '停止',
+
+    // Status panel
+    h_container_status: '容器状态',
+    state_unknown:    '未知',
+    h_config:         '配置',
+    label_run_mode_ws: '运行模式',
+    mode_desktop_short: '🖥 Desktop',
+    mode_lite_short:  '⚡ Lite',
+    label_port_config_ws: '端口配置',
+    btn_save_config:  '保存配置',
+    btn_save_restart: '保存并重启容器',
+    h_container_logs: '容器日志',
+
+    // Dynamic strings (used in JS via t())
+    dyn_not_found:    '未找到',
+    dyn_running:      '运行中',
+    dyn_not_running:  '未运行',
+    dyn_stopped:      '已停止',
+    dyn_launch_ok:    '\n✓ 容器启动成功！\n',
+    dyn_launch_fail:  '\n✗ 启动失败（exit {code}）\n',
+    dyn_relaunch_ok:  '\n✓ 启动成功！\n',
+    dyn_confirm_restart: '确定要重启容器吗？',
+    dyn_confirm_stop:    '确定要停止容器吗？',
+    dyn_port_conflict:   '检测到端口冲突！是否自动修复？',
+    dyn_port_occupied:   '  - {name} 端口 {port} 被占用',
+    dyn_port_fixed:   '端口已自动调整，请保存配置以生效。',
+    dyn_port_ok:      '所有端口均可用！',
+    dyn_config_saved: '配置已保存。如需生效请重启容器。',
+  },
+
+  'en': {
+    // Wizard header
+    title:            'webcode Launcher',
+    subtitle:         'Browser-accessible dev environment, powered by Docker',
+
+    // Step 1
+    step1_detecting:  'Checking environment…',
+    docker_installed: 'Docker installed',
+    docker_running:   'Docker is running',
+    badge_checking:   'Checking',
+    docker_help_prefix: 'Please install and start',
+    docker_help_suffix: ', then refresh.',
+    btn_recheck:      'Re-check',
+    btn_step1_next:   'Next',
+
+    // Step 2
+    label_run_mode:   'Run mode',
+    mode_desktop:     '🖥 Desktop (full desktop)',
+    mode_lite:        '⚡ Lite (IDE + Kanban only)',
+    label_auth_password: 'Basic Auth password',
+    label_vnc_password:  'VNC password',
+    label_openclaw_token: 'OpenClaw Token',
+    summary_advanced: 'Advanced options',
+    label_auth_user:  'Basic Auth username',
+    label_vnc_resolution: 'VNC resolution',
+    label_git_name:   'Git username',
+    label_git_email:  'Git email',
+    ph_optional:      '(optional)',
+    label_cf_token:   'Cloudflare Tunnel Token (optional)',
+    label_port_config: 'Port config (auto conflict detection)',
+    btn_check_ports:  '🔍 Check port conflicts',
+    btn_step2_back:   'Back',
+    btn_step2_next:   'Next: Launch container',
+
+    // Step 3
+    step3_desc:       'Starting webcode container, first run will pull the image (~2–5 min)…',
+    btn_step3_back:   'Back to config',
+    btn_step3_next:   'Enter workspace →',
+
+    // Step 4
+    step4_desc:       'Config loaded, container not running.',
+    btn_step4_start:  '▶ Start container',
+    btn_step4_config: 'Edit config',
+    btn_step4_enter:  'Enter workspace',
+
+    // Workspace tabs
+    tab_status:       '● Status',
+    tab_vnc:          '🖥 Desktop',
+    tab_ide:          '💻 IDE',
+    tab_kanban:       '📋 Kanban',
+    tab_ai:           '🤖 AI',
+    title_refresh:    'Refresh',
+    title_open_browser: 'Open in browser',
+    status_detecting: 'Detecting…',
+    btn_restart:      'Restart',
+    btn_stop:         'Stop',
+
+    // Status panel
+    h_container_status: 'Container status',
+    state_unknown:    'Unknown',
+    h_config:         'Config',
+    label_run_mode_ws: 'Run mode',
+    mode_desktop_short: '🖥 Desktop',
+    mode_lite_short:  '⚡ Lite',
+    label_port_config_ws: 'Port config',
+    btn_save_config:  'Save config',
+    btn_save_restart: 'Save & restart',
+    h_container_logs: 'Container logs',
+
+    // Dynamic strings
+    dyn_not_found:    'Not found',
+    dyn_running:      'Running',
+    dyn_not_running:  'Not running',
+    dyn_stopped:      'Stopped',
+    dyn_launch_ok:    '\n✓ Container started successfully!\n',
+    dyn_launch_fail:  '\n✗ Launch failed (exit {code})\n',
+    dyn_relaunch_ok:  '\n✓ Started successfully!\n',
+    dyn_confirm_restart: 'Restart the container?',
+    dyn_confirm_stop:    'Stop the container?',
+    dyn_port_conflict:   'Port conflict detected! Auto-fix?',
+    dyn_port_occupied:   '  - {name} port {port} is occupied',
+    dyn_port_fixed:   'Ports adjusted. Save config to apply.',
+    dyn_port_ok:      'All ports available!',
+    dyn_config_saved: 'Config saved. Restart container to apply changes.',
+  },
+};
+
+// ── State ─────────────────────────────────────────────────────────────────────
+
+const STORAGE_KEY = 'webcode-lang';
+
+function detectLang() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored && translations[stored]) return stored;
+  } catch (e) {}
+  const nav = (navigator.language || 'zh-CN');
+  if (nav.startsWith('zh')) return 'zh-CN';
+  return 'en';
+}
+
+let currentLang = detectLang();
+
+// ── API ───────────────────────────────────────────────────────────────────────
+
+/**
+ * Translate a key, optionally interpolating {param} placeholders.
+ * @param {string} key
+ * @param {Object} [params]
+ * @returns {string}
+ */
+function t(key, params) {
+  const dict = translations[currentLang] || translations['zh-CN'];
+  let str = (dict && dict[key] !== undefined) ? dict[key]
+          : (translations['zh-CN'][key] !== undefined ? translations['zh-CN'][key] : key);
+  if (params) {
+    Object.keys(params).forEach(k => {
+      str = str.replace(new RegExp('\\{' + k + '\\}', 'g'), String(params[k]));
+    });
+  }
+  return str;
+}
+
+/**
+ * Switch language and re-apply translations to the DOM.
+ * @param {string} lang  e.g. 'zh-CN' | 'en'
+ */
+function setLang(lang) {
+  if (!translations[lang]) return;
+  currentLang = lang;
+  try { localStorage.setItem(STORAGE_KEY, lang); } catch (e) {}
+  // DOM 更新由调用方负责（index.html 中的 applyTranslations），
+  // 避免在 Node 模块上下文访问 document 可能引发的问题。
+}
+
+/** Return the current language code. */
+function getLang() { return currentLang; }
+
+/**
+ * Walk the DOM and apply translations to all annotated elements.
+ * Attributes recognised:
+ *   data-i18n             → element.textContent
+ *   data-i18n-title       → element.title
+ *   data-i18n-placeholder → element.placeholder
+ */
+function applyTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    el.title = t(el.getAttribute('data-i18n-title'));
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+  });
+
+  // Sync language toggle buttons
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-lang') === currentLang);
+  });
+
+  // Update <html lang="…">
+  document.documentElement.lang = currentLang;
+}
+
+module.exports = { t, setLang, getLang, applyTranslations };

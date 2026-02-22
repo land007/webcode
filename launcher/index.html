@@ -10,82 +10,88 @@
 <!-- ═══════════════════════ WIZARD ═══════════════════════════════ -->
 <div id="wizard">
   <div class="wizard-card">
-    <h1>webcode 启动器</h1>
-    <p class="subtitle">浏览器可访问的开发环境，由 Docker 驱动</p>
+    <div class="wizard-header">
+      <h1 data-i18n="title">webcode 启动器</h1>
+      <div class="lang-toggle">
+        <button class="lang-btn active" data-lang="zh-CN">中文</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+    </div>
+    <p class="subtitle" data-i18n="subtitle">浏览器可访问的开发环境，由 Docker 驱动</p>
 
     <!-- Step dots -->
     <div class="step-indicator" id="step-dots"></div>
 
     <!-- Step 1: Docker check -->
     <div id="step-1">
-      <p class="text-muted text-sm" style="margin-bottom:16px">正在检测运行环境…</p>
+      <p class="text-muted text-sm" style="margin-bottom:16px" data-i18n="step1_detecting">正在检测运行环境…</p>
       <div id="check-docker-installed" class="check-row">
         <span class="icon">🐳</span>
-        <span class="label">Docker 已安装</span>
-        <span class="badge badge-checking">检测中</span>
+        <span class="label" data-i18n="docker_installed">Docker 已安装</span>
+        <span class="badge badge-checking" data-i18n="badge_checking">检测中</span>
       </div>
       <div id="check-docker-running" class="check-row">
         <span class="icon">▶</span>
-        <span class="label">Docker 正在运行</span>
-        <span class="badge badge-checking">检测中</span>
+        <span class="label" data-i18n="docker_running">Docker 正在运行</span>
+        <span class="badge badge-checking" data-i18n="badge_checking">检测中</span>
       </div>
       <div id="docker-help" style="display:none; margin-top:12px; font-size:12px; color:var(--text-muted)">
-        请先安装并启动
-        <a class="link" id="docker-dl-link">Docker Desktop</a>，然后刷新检测。
+        <span data-i18n="docker_help_prefix">请先安装并启动</span>
+        <a class="link" id="docker-dl-link">Docker Desktop</a><span data-i18n="docker_help_suffix">，然后刷新检测。</span>
       </div>
       <div class="action-row">
-        <button class="btn-secondary btn-sm" id="btn-recheck">重新检测</button>
-        <button class="btn-primary" id="btn-step1-next" disabled>下一步</button>
+        <button class="btn-secondary btn-sm" id="btn-recheck" data-i18n="btn_recheck">重新检测</button>
+        <button class="btn-primary" id="btn-step1-next" disabled data-i18n="btn_step1_next">下一步</button>
       </div>
     </div>
 
     <!-- Step 2: Config -->
     <div id="step-2" style="display:none">
       <div class="form-group">
-        <label>运行模式</label>
+        <label data-i18n="label_run_mode">运行模式</label>
         <div class="toggle-row">
-          <button class="toggle-btn active" data-mode="desktop" id="mode-desktop">🖥 Desktop（完整桌面）</button>
-          <button class="toggle-btn" data-mode="lite" id="mode-lite">⚡ Lite（仅 IDE + 看板）</button>
+          <button class="toggle-btn active" data-mode="desktop" id="mode-desktop" data-i18n="mode_desktop">🖥 Desktop（完整桌面）</button>
+          <button class="toggle-btn" data-mode="lite" id="mode-lite" data-i18n="mode_lite">⚡ Lite（仅 IDE + 看板）</button>
         </div>
       </div>
       <div class="form-group">
-        <label>Basic Auth 密码</label>
+        <label data-i18n="label_auth_password">Basic Auth 密码</label>
         <input type="password" id="cfg-auth-password" placeholder="changeme">
       </div>
       <div id="vnc-group" class="form-group">
-        <label>VNC 密码</label>
+        <label data-i18n="label_vnc_password">VNC 密码</label>
         <input type="password" id="cfg-vnc-password" placeholder="changeme">
       </div>
       <div class="form-group">
-        <label>OpenClaw Token</label>
+        <label data-i18n="label_openclaw_token">OpenClaw Token</label>
         <input type="text" id="cfg-openclaw-token" placeholder="changeme">
       </div>
       <details>
-        <summary>高级选项</summary>
+        <summary data-i18n="summary_advanced">高级选项</summary>
         <div class="config-grid" style="margin-top:10px">
           <div class="form-group">
-            <label>Basic Auth 用户名</label>
+            <label data-i18n="label_auth_user">Basic Auth 用户名</label>
             <input type="text" id="cfg-auth-user" placeholder="admin">
           </div>
           <div class="form-group">
-            <label>VNC 分辨率</label>
+            <label data-i18n="label_vnc_resolution">VNC 分辨率</label>
             <input type="text" id="cfg-vnc-resolution" placeholder="1920x1080">
           </div>
           <div class="form-group">
-            <label>Git 用户名</label>
-            <input type="text" id="cfg-git-name" placeholder="（可选）">
+            <label data-i18n="label_git_name">Git 用户名</label>
+            <input type="text" id="cfg-git-name" data-i18n-placeholder="ph_optional" placeholder="（可选）">
           </div>
           <div class="form-group">
-            <label>Git 邮箱</label>
-            <input type="text" id="cfg-git-email" placeholder="（可选）">
+            <label data-i18n="label_git_email">Git 邮箱</label>
+            <input type="text" id="cfg-git-email" data-i18n-placeholder="ph_optional" placeholder="（可选）">
           </div>
         </div>
         <div class="form-group">
-          <label>Cloudflare Tunnel Token（可选）</label>
+          <label data-i18n="label_cf_token">Cloudflare Tunnel Token（可选）</label>
           <input type="text" id="cfg-cf-token" placeholder="">
         </div>
         <div class="form-group">
-          <label>端口配置（自动检测冲突）</label>
+          <label data-i18n="label_port_config">端口配置（自动检测冲突）</label>
           <div class="port-grid" id="port-grid">
             <div class="port-item">
               <span class="port-label">Theia IDE</span>
@@ -113,32 +119,32 @@
               <span class="port-status" id="port-status-vnc"></span>
             </div>
           </div>
-          <button class="btn-secondary btn-sm" id="btn-check-ports" style="margin-top:8px">🔍 检测端口冲突</button>
+          <button class="btn-secondary btn-sm" id="btn-check-ports" style="margin-top:8px" data-i18n="btn_check_ports">🔍 检测端口冲突</button>
         </div>
       </details>
       <div class="action-row">
-        <button class="btn-secondary btn-sm" id="btn-step2-back">上一步</button>
-        <button class="btn-primary" id="btn-step2-next">下一步：启动容器</button>
+        <button class="btn-secondary btn-sm" id="btn-step2-back" data-i18n="btn_step2_back">上一步</button>
+        <button class="btn-primary" id="btn-step2-next" data-i18n="btn_step2_next">下一步：启动容器</button>
       </div>
     </div>
 
     <!-- Step 3: Launch -->
     <div id="step-3" style="display:none">
-      <p class="text-muted text-sm" style="margin-bottom:12px">正在启动 webcode 容器，首次运行将拉取镜像（约 2–5 分钟）…</p>
+      <p class="text-muted text-sm" style="margin-bottom:12px" data-i18n="step3_desc">正在启动 webcode 容器，首次运行将拉取镜像（约 2–5 分钟）…</p>
       <div class="log-area" id="launch-log" style="height:240px"></div>
       <div class="action-row">
-        <button class="btn-secondary btn-sm" id="btn-step3-back">返回配置</button>
-        <button class="btn-primary" id="btn-step3-next" disabled>进入工作区 →</button>
+        <button class="btn-secondary btn-sm" id="btn-step3-back" data-i18n="btn_step3_back">返回配置</button>
+        <button class="btn-primary" id="btn-step3-next" disabled data-i18n="btn_step3_next">进入工作区 →</button>
       </div>
     </div>
 
     <!-- Step 4: Ready (re-launch) -->
     <div id="step-4" style="display:none">
-      <p class="text-muted text-sm" style="margin-bottom:16px">配置已加载，容器当前未运行。</p>
+      <p class="text-muted text-sm" style="margin-bottom:16px" data-i18n="step4_desc">配置已加载，容器当前未运行。</p>
       <div class="action-row" style="justify-content:flex-start; flex-wrap:wrap; gap:10px">
-        <button class="btn-primary" id="btn-step4-start">▶ 启动容器</button>
-        <button class="btn-secondary btn-sm" id="btn-step4-config">修改配置</button>
-        <button class="btn-secondary btn-sm" id="btn-step4-enter">直接进入工作区</button>
+        <button class="btn-primary" id="btn-step4-start" data-i18n="btn_step4_start">▶ 启动容器</button>
+        <button class="btn-secondary btn-sm" id="btn-step4-config" data-i18n="btn_step4_config">修改配置</button>
+        <button class="btn-secondary btn-sm" id="btn-step4-enter" data-i18n="btn_step4_enter">直接进入工作区</button>
       </div>
       <div class="log-area mt-3" id="relaunch-log" style="height:200px; display:none"></div>
     </div>
@@ -149,23 +155,27 @@
 <div id="workspace">
   <!-- Top bar -->
   <div class="topbar">
-    <button class="tab-btn" id="tab-status" data-tab="status">● 状态</button>
-    <button class="tab-btn" id="tab-vnc"    data-tab="vnc">🖥 桌面</button>
-    <button class="tab-btn" id="tab-ide"    data-tab="ide">💻 IDE</button>
-    <button class="tab-btn" id="tab-kanban" data-tab="kanban">📋 看板</button>
-    <button class="tab-btn" id="tab-ai"     data-tab="ai">🤖 AI</button>
+    <button class="tab-btn" id="tab-status" data-tab="status" data-i18n="tab_status">● 状态</button>
+    <button class="tab-btn" id="tab-vnc"    data-tab="vnc"    data-i18n="tab_vnc">🖥 桌面</button>
+    <button class="tab-btn" id="tab-ide"    data-tab="ide"    data-i18n="tab_ide">💻 IDE</button>
+    <button class="tab-btn" id="tab-kanban" data-tab="kanban" data-i18n="tab_kanban">📋 看板</button>
+    <button class="tab-btn" id="tab-ai"     data-tab="ai"     data-i18n="tab_ai">🤖 AI</button>
     <span class="topbar-spacer"></span>
     <div class="tab-actions" id="tab-actions" style="display:none">
-      <button class="btn-icon" id="btn-refresh" title="刷新">🔄</button>
-      <button class="btn-icon" id="btn-open-browser" title="在浏览器中打开">🌐</button>
+      <button class="btn-icon" id="btn-refresh"      data-i18n-title="title_refresh"      title="刷新">🔄</button>
+      <button class="btn-icon" id="btn-open-browser" data-i18n-title="title_open_browser" title="在浏览器中打开">🌐</button>
     </div>
     <div class="status-pill">
       <span class="dot dot-gray" id="status-dot"></span>
-      <span id="status-text">检测中…</span>
+      <span id="status-text" data-i18n="status_detecting">检测中…</span>
+    </div>
+    <div class="lang-toggle" style="margin-right:6px">
+      <button class="lang-btn active" data-lang="zh-CN">中文</button>
+      <button class="lang-btn" data-lang="en">EN</button>
     </div>
     <div class="topbar-actions">
-      <button class="btn-secondary btn-sm" id="btn-restart">重启</button>
-      <button class="btn-secondary btn-sm" id="btn-stop">停止</button>
+      <button class="btn-secondary btn-sm" id="btn-restart" data-i18n="btn_restart">重启</button>
+      <button class="btn-secondary btn-sm" id="btn-stop"    data-i18n="btn_stop">停止</button>
     </div>
   </div>
 
@@ -174,61 +184,61 @@
     <!-- Status panel (not an iframe) -->
     <div id="panel-status">
       <div>
-        <h3 style="font-size:15px; font-weight:600; margin-bottom:12px">容器状态</h3>
+        <h3 style="font-size:15px; font-weight:600; margin-bottom:12px" data-i18n="h_container_status">容器状态</h3>
         <div class="status-grid" id="status-grid">
           <div class="svc-card">
             <div class="svc-name">webcode</div>
-            <div class="svc-state"><span class="dot dot-gray"></span> <span id="main-state">未知</span></div>
+            <div class="svc-state"><span class="dot dot-gray"></span> <span id="main-state" data-i18n="state_unknown">未知</span></div>
           </div>
         </div>
       </div>
 
       <!-- Config section -->
       <div class="config-section">
-        <h3>配置</h3>
+        <h3 data-i18n="h_config">配置</h3>
         <div class="config-grid">
           <div class="form-group">
-            <label>运行模式</label>
+            <label data-i18n="label_run_mode_ws">运行模式</label>
             <div class="toggle-row">
-              <button class="toggle-btn" data-mode="desktop" id="ws-mode-desktop">🖥 Desktop</button>
-              <button class="toggle-btn" data-mode="lite"    id="ws-mode-lite">⚡ Lite</button>
+              <button class="toggle-btn" data-mode="desktop" id="ws-mode-desktop" data-i18n="mode_desktop_short">🖥 Desktop</button>
+              <button class="toggle-btn" data-mode="lite"    id="ws-mode-lite"    data-i18n="mode_lite_short">⚡ Lite</button>
             </div>
           </div>
           <div class="form-group">
-            <label>Basic Auth 密码</label>
+            <label data-i18n="label_auth_password">Basic Auth 密码</label>
             <input type="password" id="ws-auth-password">
           </div>
           <div class="form-group">
-            <label>VNC 密码</label>
+            <label data-i18n="label_vnc_password">VNC 密码</label>
             <input type="password" id="ws-vnc-password">
           </div>
           <div class="form-group">
-            <label>OpenClaw Token</label>
+            <label data-i18n="label_openclaw_token">OpenClaw Token</label>
             <input type="text" id="ws-openclaw-token">
           </div>
           <div class="form-group">
-            <label>Basic Auth 用户名</label>
+            <label data-i18n="label_auth_user">Basic Auth 用户名</label>
             <input type="text" id="ws-auth-user">
           </div>
           <div class="form-group">
-            <label>VNC 分辨率</label>
+            <label data-i18n="label_vnc_resolution">VNC 分辨率</label>
             <input type="text" id="ws-vnc-resolution">
           </div>
           <div class="form-group">
-            <label>Git 用户名</label>
+            <label data-i18n="label_git_name">Git 用户名</label>
             <input type="text" id="ws-git-name">
           </div>
           <div class="form-group">
-            <label>Git 邮箱</label>
+            <label data-i18n="label_git_email">Git 邮箱</label>
             <input type="text" id="ws-git-email">
           </div>
         </div>
         <div class="form-group">
-          <label>Cloudflare Tunnel Token（可选）</label>
+          <label data-i18n="label_cf_token">Cloudflare Tunnel Token（可选）</label>
           <input type="text" id="ws-cf-token">
         </div>
         <div class="form-group">
-          <label>端口配置</label>
+          <label data-i18n="label_port_config_ws">端口配置</label>
           <div class="port-grid" id="ws-port-grid">
             <div class="port-item">
               <span class="port-label">Theia IDE</span>
@@ -251,17 +261,17 @@
               <input type="number" id="ws-port-vnc" class="port-input">
             </div>
           </div>
-          <button class="btn-secondary btn-sm" id="ws-btn-check-ports" style="margin-top:8px">🔍 检测端口冲突</button>
+          <button class="btn-secondary btn-sm" id="ws-btn-check-ports" style="margin-top:8px" data-i18n="btn_check_ports">🔍 检测端口冲突</button>
         </div>
         <div class="action-row" style="margin-top:0">
-          <button class="btn-secondary btn-sm" id="btn-save-config">保存配置</button>
-          <button class="btn-primary btn-sm"   id="btn-save-restart">保存并重启容器</button>
+          <button class="btn-secondary btn-sm" id="btn-save-config"  data-i18n="btn_save_config">保存配置</button>
+          <button class="btn-primary btn-sm"   id="btn-save-restart" data-i18n="btn_save_restart">保存并重启容器</button>
         </div>
       </div>
 
       <!-- Logs -->
       <div>
-        <h3 style="font-size:14px; font-weight:600; margin-bottom:8px">容器日志</h3>
+        <h3 style="font-size:14px; font-weight:600; margin-bottom:8px" data-i18n="h_container_logs">容器日志</h3>
         <div class="log-area" id="ws-log" style="height:260px"></div>
       </div>
     </div>
@@ -275,10 +285,87 @@
 </div>
 
 <!-- ═══════════════════════ SCRIPTS ══════════════════════════════ -->
+
+<!-- 早期脚本：在页面上显示 JS 错误（不依赖 DevTools） -->
 <script>
-// Bring in Node modules via nw.js
-const app = require('./src/app.js');
-const { readConfig, writeConfig, configExists, ensureComposeFile } = require('./src/config.js');
+window.onerror = function(msg, src, line, col, err) {
+  var d = document.getElementById('_err_overlay');
+  if (!d) {
+    d = document.createElement('div');
+    d.id = '_err_overlay';
+    d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;' +
+      'background:#1a0000;color:#ff8080;padding:10px 14px;' +
+      'font:11px/1.6 monospace;max-height:50vh;overflow:auto;' +
+      'border-bottom:2px solid #c00;word-break:break-all';
+    document.body.appendChild(d);
+  }
+  var text = (src || '') + ':' + line + '\n' + msg;
+  if (err && err.stack) text += '\n' + err.stack;
+  var pre = document.createElement('pre');
+  pre.style.margin = '0 0 8px';
+  pre.textContent = text;
+  d.appendChild(pre);
+  return false;
+};
+</script>
+
+<script>
+// ─── Load modules (with visible error if require fails) ───────────────────────
+let app, readConfig, writeConfig, configExists, ensureComposeFile;
+let t, setLang, getLang;
+
+(function loadModules() {
+  try {
+    app = require('./src/app.js');
+    ({ readConfig, writeConfig, configExists, ensureComposeFile } = require('./src/config.js'));
+    ({ t, setLang, getLang } = require('./src/i18n.js'));
+  } catch (err) {
+    var d = document.getElementById('_err_overlay');
+    if (!d) {
+      d = document.createElement('div');
+      d.id = '_err_overlay';
+      d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;' +
+        'background:#1a0000;color:#ff8080;padding:16px;font:12px/1.6 monospace;' +
+        'max-height:60vh;overflow:auto;border-bottom:2px solid #c00';
+      document.body.appendChild(d);
+    }
+    var pre = document.createElement('pre');
+    pre.style.margin = '0';
+    pre.textContent = '⚠ 模块加载失败\n' + (err.stack || err.message);
+    d.appendChild(pre);
+  }
+})();
+
+if (!t) throw new Error('i18n module failed to load');
+
+// ─── applyTranslations：在页面上下文中运行，确保能访问 document ────────────────
+
+function applyTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(function(el) {
+    el.title = t(el.getAttribute('data-i18n-title'));
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+    el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+  });
+  // 同步语言按钮激活状态
+  var lang = getLang();
+  document.querySelectorAll('.lang-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+  });
+  document.documentElement.lang = lang;
+}
+
+// ─── Language switcher（事件委托，挂在 document 上最可靠）────────────────────
+
+document.addEventListener('click', function(e) {
+  var btn = e.target.closest('.lang-btn');
+  if (!btn) return;
+  setLang(btn.getAttribute('data-lang'));
+  applyTranslations();
+});
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -329,8 +416,8 @@ function showWorkspace() {
 // ─── Step 1: Docker check ────────────────────────────────────────────────────
 
 function runDockerCheck() {
-  setCheckState('check-docker-installed', 'checking', '检测中');
-  setCheckState('check-docker-running',   'checking', '检测中');
+  setCheckState('check-docker-installed', 'checking', t('badge_checking'));
+  setCheckState('check-docker-running',   'checking', t('badge_checking'));
   document.getElementById('docker-help').style.display = 'none';
   document.getElementById('btn-step1-next').disabled = true;
 
@@ -338,16 +425,16 @@ function runDockerCheck() {
     if (result.installed) {
       setCheckState('check-docker-installed', 'ok', result.version);
     } else {
-      setCheckState('check-docker-installed', 'fail', '未找到');
+      setCheckState('check-docker-installed', 'fail', t('dyn_not_found'));
       setCheckState('check-docker-running',   'fail', '—');
       document.getElementById('docker-help').style.display = '';
       return;
     }
     if (result.running) {
-      setCheckState('check-docker-running', 'ok', '运行中');
+      setCheckState('check-docker-running', 'ok', t('dyn_running'));
       document.getElementById('btn-step1-next').disabled = false;
     } else {
-      setCheckState('check-docker-running', 'fail', '未运行');
+      setCheckState('check-docker-running', 'fail', t('dyn_not_running'));
       document.getElementById('docker-help').style.display = '';
     }
   });
@@ -501,10 +588,10 @@ function startLaunch(logId, nextBtn, backBtn) {
     (code) => {
       document.getElementById(backBtn).disabled = false;
       if (code === 0) {
-        appendLog(logId, '\n✓ 容器启动成功！\n');
+        appendLog(logId, t('dyn_launch_ok'));
         document.getElementById(nextBtn).disabled = false;
       } else {
-        appendLog(logId, `\n✗ 启动失败（exit ${code}）\n`);
+        appendLog(logId, t('dyn_launch_fail', { code }));
       }
     }
   );
@@ -527,10 +614,10 @@ document.getElementById('btn-step4-start').addEventListener('click', () => {
     (code) => {
       document.getElementById('btn-step4-start').disabled = false;
       if (code === 0) {
-        appendLog('relaunch-log', '\n✓ 启动成功！\n');
+        appendLog('relaunch-log', t('dyn_relaunch_ok'));
         showWorkspace();
       } else {
-        appendLog('relaunch-log', `\n✗ 启动失败（exit ${code}）\n`);
+        appendLog('relaunch-log', t('dyn_launch_fail', { code }));
       }
     }
   );
@@ -624,16 +711,16 @@ function updateStatusUI(containers) {
 
   if (running) {
     dot.className = 'dot dot-green';
-    text.textContent = '运行中';
+    text.textContent = t('dyn_running');
   } else {
     dot.className = 'dot dot-gray';
-    text.textContent = '已停止';
+    text.textContent = t('dyn_stopped');
   }
 
   // Status grid
   const grid = document.getElementById('status-grid');
   if (containers.length === 0) {
-    grid.innerHTML = '<div class="svc-card"><div class="svc-name">webcode</div><div class="svc-state"><span class="dot dot-gray"></span> 未运行</div></div>';
+    grid.innerHTML = `<div class="svc-card"><div class="svc-name">webcode</div><div class="svc-state"><span class="dot dot-gray"></span> ${t('dyn_not_running')}</div></div>`;
     return;
   }
   grid.innerHTML = containers.map(c => {
@@ -667,7 +754,7 @@ function startLogStream() {
 // ─── Workspace: start / stop buttons ─────────────────────────────────────────
 
 document.getElementById('btn-restart').addEventListener('click', () => {
-  if (!confirm('确定要重启容器吗？')) return;
+  if (!confirm(t('dyn_confirm_restart'))) return;
   app.dockerDown(cfg, null, () => {
     app.dockerUp(cfg, null, () => {
       iframeLoaded['ide'] = iframeLoaded['kanban'] = iframeLoaded['vnc'] = iframeLoaded['ai'] = false;
@@ -678,7 +765,7 @@ document.getElementById('btn-restart').addEventListener('click', () => {
 });
 
 document.getElementById('btn-stop').addEventListener('click', () => {
-  if (!confirm('确定要停止容器吗？')) return;
+  if (!confirm(t('dyn_confirm_stop'))) return;
   app.dockerDown(cfg, null, null);
 });
 
@@ -732,7 +819,7 @@ function collectWorkspaceForm() {
   cfg.PORT_KANBAN   = parseInt(document.getElementById('ws-port-kanban').value)   || 20002;
   cfg.PORT_OPENCLAW = parseInt(document.getElementById('ws-port-openclaw').value) || 20003;
   cfg.PORT_NOVNC    = parseInt(document.getElementById('ws-port-novnc').value)    || 20004;
-  cfg.PORT_VNC      = parseInt(document.getElementById('ws-port-novnc').value)      || 20005;
+  cfg.PORT_VNC      = parseInt(document.getElementById('ws-port-vnc').value)      || 20005;
 
   writeConfig(cfg);
 }
@@ -758,25 +845,24 @@ document.getElementById('ws-btn-check-ports').addEventListener('click', async ()
   }
 
   if (hasConflicts) {
-    if (confirm('检测到端口冲突！是否自动修复？\n' +
-      Object.entries(results)
-        .filter(([_, r]) => !r.available)
-        .map(([_, r]) => `  - ${r.name} 端口 ${r.port} 被占用`)
-        .join('\n'))) {
-
+    const detail = Object.entries(results)
+      .filter(([_, r]) => !r.available)
+      .map(([_, r]) => t('dyn_port_occupied', { name: r.name, port: r.port }))
+      .join('\n');
+    if (confirm(t('dyn_port_conflict') + '\n' + detail)) {
       const fixedPorts = await app.autoFixPorts(ports);
 
       // 更新表单
-      document.getElementById('ws-port-theia').value = fixedPorts.theia;
-      document.getElementById('ws-port-kanban').value = fixedPorts.kanban;
+      document.getElementById('ws-port-theia').value    = fixedPorts.theia;
+      document.getElementById('ws-port-kanban').value   = fixedPorts.kanban;
       document.getElementById('ws-port-openclaw').value = fixedPorts.openclaw;
-      document.getElementById('ws-port-novnc').value = fixedPorts.novnc;
-      document.getElementById('ws-port-vnc').value = fixedPorts.vnc;
+      document.getElementById('ws-port-novnc').value    = fixedPorts.novnc;
+      document.getElementById('ws-port-vnc').value      = fixedPorts.vnc;
 
-      alert('端口已自动调整，请保存配置以生效。');
+      alert(t('dyn_port_fixed'));
     }
   } else {
-    alert('所有端口均可用！');
+    alert(t('dyn_port_ok'));
   }
 });
 
@@ -786,7 +872,7 @@ document.getElementById('btn-save-config').addEventListener('click', () => {
   app.startProxies(cfg);
   // Reset iframes so they reload with new auth
   Object.keys(iframeLoaded).forEach(k => iframeLoaded[k] = false);
-  alert('配置已保存。如需生效请重启容器。');
+  alert(t('dyn_config_saved'));
 });
 
 document.getElementById('btn-save-restart').addEventListener('click', () => {
@@ -807,6 +893,9 @@ document.getElementById('btn-save-restart').addEventListener('click', () => {
 // ─── Boot logic ───────────────────────────────────────────────────────────────
 
 function boot() {
+  // Apply translations to all annotated elements
+  applyTranslations();
+
   if (!configExists()) {
     // First run: wizard from step 1
     showWizard(1);
