@@ -273,9 +273,13 @@ function Install-LauncherMode {
         Print-Info "Please install Git: https://git-scm.com/download/win"
         exit 1
     }
+    Print-Success "Git is available"
 
     # Clone repository
-    Print-Info "Cloning repository..."
+    Write-Host ""
+    Print-Info "Cloning repository from GitHub..."
+    Print-Info "This may take a minute depending on your connection..."
+    Write-Host ""
     if (Test-Path $InstallDir) {
         Print-Warning "Directory already exists: $InstallDir"
         Write-Host "Remove and re-clone? [y/N]: " -NoNewline -ForegroundColor Yellow
@@ -290,11 +294,20 @@ function Install-LauncherMode {
 
     if (-not (Test-Path $InstallDir)) {
         try {
-            git clone $RepoUrl $InstallDir
+            Write-Host "Cloning from $RepoUrl..."
+            $output = git clone $RepoUrl $InstallDir 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                throw "git clone failed with exit code $LASTEXITCODE"
+            }
             Print-Success "Repository cloned"
             Set-Location "$InstallDir\launcher"
         } catch {
-            Print-Error "Failed to clone repository"
+            Print-Error "Failed to clone repository: $_"
+            Write-Host ""
+            Print-Info "Try cloning manually:"
+            Print-Info "  git clone $RepoUrl $InstallDir"
+            Print-Info "  cd $InstallDir\launcher"
+            Print-Info "  npm install"
             exit 1
         }
     }
