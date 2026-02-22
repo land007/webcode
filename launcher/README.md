@@ -58,3 +58,37 @@ NW.js 进程
 | 11002 | 10002 | Vibe Kanban |
 | 11003 | 10003 | OpenClaw |
 | 11004 | 10004 | noVNC |
+
+## 机器人自我进化（DNA 生态）
+
+容器内置 `/home/ubuntu/dna` 目录，挂载为持久化 Docker volume。启动时若目录为空，自动从 `DNA_REPO_URL` 克隆项目源码。
+
+**机器人进化工作流：**
+
+1. 容器启动 → `/home/ubuntu/dna` 自动 clone 基因库
+2. 机器人（AI）在容器内修改 DNA（Dockerfile、configs 等）
+3. 通过已挂载的 `/var/run/docker.sock` 执行 `docker build` 构建新镜像
+4. `docker run` 启动子代容器，形成新机器人
+
+**使用 fork 仓库作为基因来源：**
+
+在 `config.json` 中设置 `DNA_REPO_URL` 字段：
+
+```json
+{
+  "DNA_REPO_URL": "https://github.com/your-fork/webcode"
+}
+```
+
+**生态链路：**
+
+```
+原始库 https://github.com/land007/webcode
+    ↑ PR / merge（机器人进化成果反哺）
+    │
+fork-A/webcode ──→ 机器人 A（DNA_REPO_URL=fork-A）
+    │                  └─→ 子代容器
+fork-B/webcode ──→ 机器人 B（DNA_REPO_URL=fork-B）
+    │                  └─→ 子代容器
+    └──→ 互相 PR，形成开放进化生态
+```

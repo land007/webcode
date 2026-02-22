@@ -11,6 +11,7 @@ services:
       - "20005:10005"  # TigerVNC (direct connection)
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - dna-data:/home/ubuntu/dna          # DNA 目录：项目源码，空时自动 clone
       - projects:/home/ubuntu/projects
       - vibe-kanban-data:/home/ubuntu/.local/share/vibe-kanban
       - theia-data:/home/ubuntu/.theia
@@ -27,12 +28,14 @@ services:
       - CF_TUNNEL_TOKEN=${CF_TUNNEL_TOKEN:-}
       - GIT_USER_NAME=${GIT_USER_NAME:-}
       - GIT_USER_EMAIL=${GIT_USER_EMAIL:-}
+      - DNA_REPO_URL=${DNA_REPO_URL:-https://github.com/land007/webcode}
     shm_size: "512m"
     security_opt:
       - seccomp=unconfined
     restart: unless-stopped
 
 volumes:
+  dna-data:
   projects:
   vibe-kanban-data:
   theia-data:

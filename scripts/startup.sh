@@ -18,6 +18,18 @@ chown -R ubuntu:ubuntu /home/ubuntu/projects
 chown -R ubuntu:ubuntu /home/ubuntu/Desktop
 chown -R ubuntu:ubuntu /home/ubuntu/.local
 
+# ─── DNA directory (self-evolution source) ───────────────────────────
+# DNA_REPO_URL: 机器人的基因来源，支持 fork 仓库，默认指向原始库
+DNA_REPO_URL="${DNA_REPO_URL:-https://github.com/land007/webcode}"
+mkdir -p /home/ubuntu/dna
+if [ -z "$(ls -A /home/ubuntu/dna 2>/dev/null)" ]; then
+    echo "[startup] DNA directory is empty, cloning from ${DNA_REPO_URL} ..."
+    git clone "$DNA_REPO_URL" /home/ubuntu/dna \
+        && echo "[startup] DNA cloned successfully" \
+        || echo "[startup] WARNING: Failed to clone DNA repository, robot will retry manually"
+fi
+chown -R ubuntu:ubuntu /home/ubuntu/dna
+
 # ─── Persist bash history ────────────────────────────────────────────
 HIST_DIR="/home/ubuntu/.local/share/shell"
 mkdir -p "$HIST_DIR"

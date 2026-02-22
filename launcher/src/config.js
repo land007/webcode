@@ -13,6 +13,8 @@ const DEFAULT_CONFIG = {
   GIT_USER_NAME: '',
   GIT_USER_EMAIL: '',
   CF_TUNNEL_TOKEN: '',
+  // 机器人 DNA 来源：可设为自己的 fork URL，支持自我进化生态
+  DNA_REPO_URL: 'https://github.com/land007/webcode',
   // 端口配置（宿主机端口）
   PORT_THEIA: 20001,
   PORT_KANBAN: 20002,

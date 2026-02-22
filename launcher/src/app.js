@@ -89,7 +89,8 @@ function buildEnv(cfg) {
     VNC_RESOLUTION: cfg.VNC_RESOLUTION || '1920x1080',
     CF_TUNNEL_TOKEN: cfg.CF_TUNNEL_TOKEN || '',
     GIT_USER_NAME: cfg.GIT_USER_NAME || '',
-    GIT_USER_EMAIL: cfg.GIT_USER_EMAIL || ''
+    GIT_USER_EMAIL: cfg.GIT_USER_EMAIL || '',
+    DNA_REPO_URL: cfg.DNA_REPO_URL || 'https://github.com/land007/webcode'
   });
 }
 

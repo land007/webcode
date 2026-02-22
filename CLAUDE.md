@@ -92,6 +92,7 @@ Caddy serves as a unified Basic Auth gateway in front of Theia, Vibe Kanban, and
 | `configs/desktop-shortcuts/` | `.desktop` files for Chrome, Theia, Vibe Kanban on desktop |
 
 ### Persistent Volumes (docker-compose.yml)
+- `dna-data` → `/home/ubuntu/dna` — project source (DNA); auto-cloned from `DNA_REPO_URL` on first start
 - `projects` → `/home/ubuntu/projects` — user code
 - `theia-data` → `/home/ubuntu/.theia` — Theia settings
 - `vibe-kanban-data` → `/home/ubuntu/.local/share/vibe-kanban`
@@ -99,6 +100,37 @@ Caddy serves as a unified Basic Auth gateway in front of Theia, Vibe Kanban, and
 - `openclaw-data` → `/home/ubuntu/.openclaw` — OpenClaw config and data
 - `gitconfig` → `/home/ubuntu/.gitconfig-vol` — git identity (symlinked to `~/.gitconfig` at startup)
 - `/var/run/docker.sock` — Docker socket passthrough
+
+### Self-Evolution / DNA Ecosystem
+
+The container supports a self-evolution model where the AI inside can modify its own source code and spawn new container variants:
+
+- **`/home/ubuntu/dna`** — the robot's DNA: full project source (Dockerfile, configs, scripts). Backed by the `dna-data` named volume so it persists across restarts.
+- On startup, `scripts/startup.sh` checks if `/home/ubuntu/dna` is empty and auto-clones from `DNA_REPO_URL`.
+- The mounted `/var/run/docker.sock` allows the robot to run `docker build` and `docker run` inside the container, targeting the host Docker daemon.
+
+**Evolution workflow (inside container):**
+```bash
+# 1. Modify DNA
+vim /home/ubuntu/dna/Dockerfile
+
+# 2. Build evolved image
+docker build -t webcode-evolved /home/ubuntu/dna/
+
+# 3. Spawn child robot
+docker run -d ... webcode-evolved
+
+# 4. Contribute back
+cd /home/ubuntu/dna && git commit && git push && gh pr create
+```
+
+**`DNA_REPO_URL` environment variable** — specifies the git repository to clone as DNA. Defaults to `https://github.com/land007/webcode`. Set to a fork URL to create an independent evolutionary branch:
+
+```bash
+DNA_REPO_URL=https://github.com/your-fork/webcode docker compose up -d
+```
+
+The ecosystem design: forks evolve independently, and robots can submit PRs back to `land007/webcode`, merging evolutionary improvements into the shared gene pool.
 
 ## CI/CD
 
