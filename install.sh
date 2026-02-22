@@ -386,7 +386,7 @@ main() {
     print_info "Detected OS: $OS ($ARCH)"
 
     # Check all prerequisites
-    check_prerequisites
+    check_prerequisites || true  # Don't exit on Node.js/Git check failure
 
     # Determine install mode
     printf "\n"
