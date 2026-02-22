@@ -49,13 +49,19 @@ A Docker-based browser-accessible development environment with **Theia IDE**, **
 
 ## 🚀 Quick Start
 
-### One-Command Install (macOS / Linux)
+### One-Command Install
 
+**macOS / Linux**:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/land007/webcode/main/install.sh | bash
 ```
 
-> **Windows**: Use WSL or see Method 2 below
+**Windows** (PowerShell):
+```powershell
+irm https://raw.githubusercontent.com/land007/webcode/main/install.ps1 | iex
+```
+
+> **Note**: Windows users can also use WSL to run the bash script.
 
 This installer will:
 - Detect your environment (desktop vs server)
@@ -368,13 +374,19 @@ The following data is stored in Docker volumes and survives container rebuilds:
 | **Linux 桌面** | ✅ 内置 | ❌ 无 | ❌ 无 |
 | **费用** | 免费（自有硬件） | 免费 | 付费档位 |
 
-### 一键安装（macOS / Linux）
+### 一键安装
 
+**macOS / Linux**:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/land007/webcode/main/install.sh | bash
 ```
 
-> **Windows**：请使用 WSL 或参考下方方法二
+**Windows** (PowerShell):
+```powershell
+irm https://raw.githubusercontent.com/land007/webcode/main/install.ps1 | iex
+```
+
+> **Note**：Windows 用户也可以使用 WSL 运行 bash 脚本。
 
 安装程序将：
 - 自动检测环境（桌面 vs 服务器）
