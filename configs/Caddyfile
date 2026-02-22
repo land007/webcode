@@ -2,23 +2,31 @@
 	admin off
 }
 
-:3080 {
+# Theia IDE
+:20001 {
 	basicauth {
 		{$AUTH_USER} {$AUTH_PASS_HASH}
 	}
-	reverse_proxy 127.0.0.1:3000
+	reverse_proxy 127.0.0.1:10001
 }
 
-:5180 {
+# Vibe Kanban
+:20002 {
 	basicauth {
 		{$AUTH_USER} {$AUTH_PASS_HASH}
 	}
-	reverse_proxy 127.0.0.1:5173
+	reverse_proxy 127.0.0.1:10002
 }
 
-:18800 {
+# OpenClaw
+:20003 {
 	basicauth {
 		{$AUTH_USER} {$AUTH_PASS_HASH}
 	}
-	reverse_proxy 127.0.0.1:18789
+	reverse_proxy 127.0.0.1:10003
+}
+
+# noVNC (Web VNC client)
+:20004 {
+	reverse_proxy 127.0.0.1:10004
 }

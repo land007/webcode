@@ -444,10 +444,10 @@ const iframeLoaded = {};
 
 function iframeUrl(tab) {
   switch (tab) {
-    case 'ide':    return 'http://localhost:14001';
-    case 'kanban': return 'http://localhost:14002';
-    case 'vnc':    return `http://localhost:26080/?autoconnect=true&password=${encodeURIComponent(cfg.VNC_PASSWORD)}`;
-    case 'ai':     return `http://localhost:14003/?token=${encodeURIComponent(cfg.OPENCLAW_TOKEN)}`;
+    case 'ide':    return 'http://localhost:11001';
+    case 'kanban': return 'http://localhost:11002';
+    case 'vnc':    return `http://localhost:11004/?autoconnect=true&password=${encodeURIComponent(cfg.VNC_PASSWORD)}`;
+    case 'ai':     return `http://localhost:11003/?token=${encodeURIComponent(cfg.OPENCLAW_TOKEN)}`;
   }
 }
 

@@ -24,11 +24,15 @@ docker compose up -d
 
 | 服务 | 地址 | 认证 |
 |------|------|------|
-| Theia IDE | http://localhost:23000 | Basic Auth |
-| Vibe Kanban | http://localhost:25173 | Basic Auth |
-| noVNC 桌面 | http://localhost:26080 | VNC 密码 |
-| VNC 客户端 | localhost:25901 | VNC 密码 |
-| OpenClaw AI | http://localhost:28789 | Basic Auth |
+| Theia IDE | http://localhost:20001 | Basic Auth |
+| Vibe Kanban | http://localhost:20002 | Basic Auth |
+| OpenClaw AI | http://localhost:20003 | Basic Auth |
+| noVNC 桌面 | http://localhost:20004 | VNC 密码 |
+| VNC 客户端 | localhost:20005 | VNC 密码 |
+
+**端口规律：**
+- **20001-20004**: Caddy 代理端口（带 Basic Auth）
+- **20005**: VNC 直连端口（VNC 密码认证）
 
 默认 Basic Auth：`admin` / `changeme`
 默认 VNC 密码：`changeme`
@@ -81,25 +85,25 @@ MODE=lite docker compose up -d
 
 浏览器版 VS Code，工作目录为容器内 `/home/ubuntu/projects`（对应 `projects` 数据卷）。
 
-访问：http://localhost:23000（需输入 Basic Auth 账号密码）
+访问：http://localhost:20001（需输入 Basic Auth 账号密码）
 
 ### Vibe Kanban
 
 看板式任务管理工具，用于跟踪项目进度。
 
-访问：http://localhost:25173
+访问：http://localhost:20002
 
 ### noVNC 桌面
 
 在浏览器中操作完整 Linux 桌面（desktop 模式专属）。
 
-访问：http://localhost:26080，输入 VNC 密码登录。
+访问：http://localhost:20004，输入 VNC 密码登录。
 
 ### OpenClaw AI 助手
 
 自托管 AI 助手网关，支持配置多个 AI 服务。
 
-访问：http://localhost:28789
+访问：http://localhost:20003
 
 **认证说明（两步）：**
 1. 浏览器弹出 Basic Auth 对话框 → 输入 `AUTH_USER` / `AUTH_PASSWORD`
@@ -115,7 +119,7 @@ MODE=lite docker compose up -d
 docker exec -it -u ubuntu webcode openclaw onboard
 ```
 
-按提示完成配置后，刷新 http://localhost:28789 即可使用。
+按提示完成配置后，刷新 http://localhost:20003 即可使用。
 
 ---
 

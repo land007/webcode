@@ -66,9 +66,10 @@ function stopProxies() {
 function startProxies(cfg) {
   stopProxies();
   const auth = Buffer.from(`${cfg.AUTH_USER}:${cfg.AUTH_PASSWORD}`).toString('base64');
-  startProxy(14001, 23000, auth);   // Theia
-  startProxy(14002, 25173, auth);   // Vibe Kanban
-  startProxy(14003, 28789, auth);   // OpenClaw
+  startProxy(11001, 10001, auth);   // Theia
+  startProxy(11002, 10002, auth);   // Vibe Kanban
+  startProxy(11003, 10003, auth);   // OpenClaw
+  startProxy(11004, 10004, auth);   // noVNC
 }
 
 // ─── Docker helpers ──────────────────────────────────────────────────────────

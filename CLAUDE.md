@@ -6,12 +6,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **webcode** is a Docker-based browser-accessible development environment that provides:
 - A full GNOME Flashback desktop accessible via VNC/noVNC (browser)
-- Theia IDE (browser-based VS Code-like editor) on port 3000
-- Vibe Kanban (task board) on port 5173
-- VNC on port 5901, noVNC web client on port 6080
+- Theia IDE (browser-based VS Code-like editor) on port 10001
+- Vibe Kanban (task board) on port 10002
+- OpenClaw (self-hosted AI assistant gateway) on port 10003
+- noVNC web client on port 10004, TigerVNC on port 10005
 - Chinese input support (fcitx + Google Pinyin)
-- OpenClaw (self-hosted AI assistant gateway) on port 18789
 - Docker-in-Docker capability (Docker CLI inside container)
+
+**Port Architecture:**
+- **10001-10005**: Internal application ports (actual app listeners)
+- **20001-20005**: External access ports via Caddy (with Basic Auth)
+- **11001-11004**: Launcher proxy ports (desktop app internal use, no auth)
 
 ## Running the Environment
 
@@ -30,11 +35,11 @@ AUTH_USER=myuser AUTH_PASSWORD=mypassword docker compose up -d
 ```
 
 **Access points (as configured in docker-compose.yml):**
-- Theia IDE: http://localhost:23000 (Basic Auth)
-- Vibe Kanban: http://localhost:25173 (Basic Auth)
-- noVNC browser client: http://localhost:26080 (VNC password)
-- VNC client: localhost:25901 (VNC password: `changeme`)
-- OpenClaw gateway: http://localhost:28789 (Basic Auth)
+- Theia IDE: http://localhost:20001 (Basic Auth)
+- Vibe Kanban: http://localhost:20002 (Basic Auth)
+- OpenClaw gateway: http://localhost:20003 (Basic Auth)
+- noVNC browser client: http://localhost:20004 (VNC password)
+- VNC client: localhost:20005 (VNC password: `changeme`)
 
 Default Basic Auth credentials: `admin` / `changeme` (configurable via `AUTH_USER` / `AUTH_PASSWORD`)
 
@@ -77,11 +82,12 @@ Caddy serves as a unified Basic Auth gateway in front of Theia, Vibe Kanban, and
 | `configs/theia-package.json` | Theia plugin set; changing this triggers a full Theia rebuild |
 | `configs/supervisord.conf` | Main supervisor config (desktop mode) |
 | `configs/supervisord-lite.conf` | Lite mode supervisor config |
-| `configs/supervisor-theia.conf` | Theia process (port 3000, serves `/home/ubuntu/projects`) |
-| `configs/supervisor-vibe-kanban.conf` | Vibe Kanban process (port 5173) |
-| `configs/supervisor-openclaw.conf` | OpenClaw gateway process (port 18789, launched via npx) |
-| `configs/Caddyfile` | Caddy reverse proxy config with Basic Auth |
-| `configs/supervisor-caddy.conf` | Caddy process (ports 3080, 5180, 18800) |
+| `configs/supervisor-theia.conf` | Theia process (port 10001, serves `/home/ubuntu/projects`) |
+| `configs/supervisor-vibe-kanban.conf` | Vibe Kanban process (port 10002) |
+| `configs/supervisor-openclaw.conf` | OpenClaw gateway process (port 10003, launched via npx) |
+| `configs/Caddyfile` | Caddy reverse proxy config with Basic Auth (ports 20001-20004) |
+| `configs/supervisor-caddy.conf` | Caddy process (ports 20001-20004) |
+| `configs/supervisord.conf` | Main supervisor config, includes noVNC (port 10004) and TigerVNC (port 10005) |
 | `configs/xsession` | GNOME Flashback session startup script |
 | `configs/desktop-shortcuts/` | `.desktop` files for Chrome, Theia, Vibe Kanban on desktop |
 

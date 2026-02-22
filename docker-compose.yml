@@ -4,11 +4,11 @@ services:
     build: .
     container_name: webcode
     ports:
-      - "23000:3080"
-      - "25173:5180"
-      - "25901:5901"
-      - "26080:6080"
-      - "28789:18800"
+      - "20001:20001"  # Theia IDE (via Caddy)
+      - "20002:20002"  # Vibe Kanban (via Caddy)
+      - "20003:20003"  # OpenClaw (via Caddy)
+      - "20004:20004"  # noVNC (via Caddy)
+      - "20005:10005"  # TigerVNC (direct connection)
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - projects:/home/ubuntu/projects
