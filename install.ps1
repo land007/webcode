@@ -329,9 +329,19 @@ function Main {
     } else {
         try {
             $null = Get-Command node -ErrorAction Stop
-            Print-Warning "Node.js found, but 18+ is required for Launcher"
+            $nodeVersion = node -v
+            Print-Warning "Node.js $nodeVersion found, but 18+ is required for Launcher"
+            Write-Host ""
+            Print-Header "Upgrade Node.js:"
+            Print-Info "Visit: https://nodejs.org/"
+            Write-Host ""
         } catch {
             Print-Warning "Node.js not found (required for Launcher mode)"
+            Write-Host ""
+            Print-Header "Install Node.js:"
+            Print-Info "Visit: https://nodejs.org/"
+            Print-Info "Or use: winget install OpenJS.NodeJS.LTS"
+            Write-Host ""
         }
     }
 
