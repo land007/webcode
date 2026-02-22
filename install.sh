@@ -66,7 +66,7 @@ detect_os() {
 }
 
 check_docker() {
-    if ! which docker > /dev/null 2>&1; then
+    if ! type docker >/dev/null 2>&1; then
         print_error "Docker is not installed"
         printf "\n"
         print_header "Install Docker:"
@@ -81,14 +81,14 @@ check_docker() {
     fi
 
     # Check if Docker is running
-    if ! docker info > /dev/null 2>&1; then
+    if ! docker info >/dev/null 2>&1; then
         print_error "Docker is not running"
         print_info "Please start Docker and try again."
         return 1
     fi
 
     # Check for docker compose
-    if ! docker compose version > /dev/null 2>&1 && ! docker-compose version > /dev/null 2>&1; then
+    if ! docker compose version >/dev/null 2>&1 && ! docker-compose version >/dev/null 2>&1; then
         print_error "docker compose is not available"
         print_info "Please install Docker Compose and try again."
         return 1
@@ -99,7 +99,7 @@ check_docker() {
 }
 
 check_git() {
-    if ! which git > /dev/null 2>&1; then
+    if ! type git >/dev/null 2>&1; then
         print_error "Git is not installed"
         printf "\n"
         print_header "Install Git:"
@@ -119,7 +119,7 @@ check_git() {
 }
 
 check_nodejs() {
-    if ! which node > /dev/null 2>&1; then
+    if ! type node >/dev/null 2>&1; then
         print_warning "Node.js not found (required for Launcher mode)"
         printf "\n"
         print_header "Install Node.js:"
