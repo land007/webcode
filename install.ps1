@@ -114,40 +114,73 @@ function Install-NodeJS {
     Print-Header "Installing Node.js..."
 
     # Try winget first (Windows 10 1809+)
+    $wingetAvailable = $false
     try {
-        Write-Host "Installing Node.js via winget..."
-        winget install --id OpenJS.NodeJS.LTS --accept-source-agreements --accept-package-agreements -e | Out-Null
-        if ($LASTEXITCODE -eq 0) {
-            Print-Success "Node.js installed via winget"
-            # Refresh PATH
-            $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-            return $true
+        $null = Get-Command winget -ErrorAction Stop
+        $wingetAvailable = $true
+    } catch {}
+
+    if ($wingetAvailable) {
+        try {
+            Write-Host "Installing Node.js via winget..."
+            $result = winget install --id OpenJS.NodeJS.LTS --accept-source-agreements --accept-package-agreements -h 2>&1
+            if ($LASTEXITCODE -eq 0) {
+                Print-Success "Node.js installed via winget"
+                # Refresh PATH
+                $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+                return $true
+            } else {
+                Print-Warning "winget installation failed (exit code: $LASTEXITCODE)"
+            }
+        } catch {
+            Print-Warning "winget installation failed: $_"
         }
-    } catch {
-        # winget failed, try chocolatey
+    } else {
+        Write-Host "winget not found, skipping..."
     }
 
     # Try chocolatey
+    $chocoAvailable = $false
     try {
-        Write-Host "Installing Node.js via chocolatey..."
-        choco install nodejs-lts -y | Out-Null
-        if ($LASTEXITCODE -eq 0) {
-            Print-Success "Node.js installed via chocolatey"
-            # Refresh PATH
-            $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-            return $true
+        $null = Get-Command choco -ErrorAction Stop
+        $chocoAvailable = $true
+    } catch {}
+
+    if ($chocoAvailable) {
+        try {
+            Write-Host "Installing Node.js via chocolatey..."
+            choco install nodejs-lts -y 2>&1 | Out-Null
+            if ($LASTEXITCODE -eq 0) {
+                Print-Success "Node.js installed via chocolatey"
+                # Refresh PATH
+                $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+                return $true
+            } else {
+                Print-Warning "chocolatey installation failed"
+            }
+        } catch {
+            Print-Warning "chocolatey installation failed: $_"
         }
-    } catch {
-        # chocolatey failed
+    } else {
+        Write-Host "chocolatey not found, skipping..."
     }
 
     # Both failed, show manual instructions
+    Write-Host ""
     Print-Error "Failed to install Node.js automatically"
     Write-Host ""
     Print-Header "Install Node.js manually:"
-    Print-Info "1. Visit: https://nodejs.org/"
-    Print-Info "2. Download and install LTS version"
-    Print-Info "3. Then run this script again"
+    Print-Info "Option 1 - Download from website:"
+    Print-Info "  1. Visit: https://nodejs.org/"
+    Print-Info "  2. Download and install LTS version"
+    Print-Info "  3. Restart PowerShell and run this script again"
+    Write-Host ""
+    Print-Info "Option 2 - Use winget (if available):"
+    Print-Info "  winget install OpenJS.NodeJS.LTS"
+    Write-Host ""
+    Print-Info "Option 3 - Use chocolatey (if available):"
+    Print-Info "  choco install nodejs-lts"
+    Write-Host ""
     return $false
 }
 
