@@ -133,6 +133,7 @@ COPY configs/supervisor-openclaw.conf /etc/supervisor/conf.d/supervisor-openclaw
 COPY configs/Caddyfile /etc/caddy/Caddyfile
 COPY configs/supervisor-caddy.conf /etc/supervisor/conf.d/supervisor-caddy.conf
 COPY configs/supervisor-cloudflared.conf /etc/supervisor/conf.d/supervisor-cloudflared.conf
+COPY configs/supervisor-analytics.conf /etc/supervisor/conf.d/supervisor-analytics.conf
 
 COPY configs/xsession /opt/xsession
 RUN chmod +x /opt/xsession
@@ -141,7 +142,11 @@ COPY configs/desktop-shortcuts/ /opt/desktop-shortcuts/
 
 COPY scripts/startup.sh /opt/startup.sh
 COPY scripts/vnc-setpass.py /opt/vnc-setpass.py
-RUN chmod +x /opt/startup.sh
+COPY scripts/analytics.sh /scripts/analytics.sh
+RUN chmod +x /opt/startup.sh /scripts/analytics.sh
+
+RUN echo "land007/webcode" > /.image_name && \
+    echo $(date "+%Y-%m-%d_%H:%M:%S") > /.image_time
 
 # ─── Environment defaults ───────────────────────────────────────────
 ENV MODE=desktop
