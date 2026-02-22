@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>webcode</title>
+  <link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+
+<!-- ═══════════════════════ WIZARD ═══════════════════════════════ -->
+<div id="wizard">
+  <div class="wizard-card">
+    <h1>webcode 启动器</h1>
+    <p class="subtitle">浏览器可访问的开发环境，由 Docker 驱动</p>
+
+    <!-- Step dots -->
+    <div class="step-indicator" id="step-dots"></div>
+
+    <!-- Step 1: Docker check -->
+    <div id="step-1">
+      <p class="text-muted text-sm" style="margin-bottom:16px">正在检测运行环境…</p>
+      <div id="check-docker-installed" class="check-row">
+        <span class="icon">🐳</span>
+        <span class="label">Docker 已安装</span>
+        <span class="badge badge-checking">检测中</span>
+      </div>
+      <div id="check-docker-running" class="check-row">
+        <span class="icon">▶</span>
+        <span class="label">Docker 正在运行</span>
+        <span class="badge badge-checking">检测中</span>
+      </div>
+      <div id="docker-help" style="display:none; margin-top:12px; font-size:12px; color:var(--text-muted)">
+        请先安装并启动
+        <a class="link" id="docker-dl-link">Docker Desktop</a>，然后刷新检测。
+      </div>
+      <div class="action-row">
+        <button class="btn-secondary btn-sm" id="btn-recheck">重新检测</button>
+        <button class="btn-primary" id="btn-step1-next" disabled>下一步</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Config -->
+    <div id="step-2" style="display:none">
+      <div class="form-group">
+        <label>运行模式</label>
+        <div class="toggle-row">
+          <button class="toggle-btn active" data-mode="desktop" id="mode-desktop">🖥 Desktop（完整桌面）</button>
+          <button class="toggle-btn" data-mode="lite" id="mode-lite">⚡ Lite（仅 IDE + 看板）</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Basic Auth 密码</label>
+        <input type="password" id="cfg-auth-password" placeholder="changeme">
+      </div>
+      <div id="vnc-group" class="form-group">
+        <label>VNC 密码</label>
+        <input type="password" id="cfg-vnc-password" placeholder="changeme">
+      </div>
+      <div class="form-group">
+        <label>OpenClaw Token</label>
+        <input type="text" id="cfg-openclaw-token" placeholder="changeme">
+      </div>
+      <details>
+        <summary>高级选项</summary>
+        <div class="config-grid" style="margin-top:10px">
+          <div class="form-group">
+            <label>Basic Auth 用户名</label>
+            <input type="text" id="cfg-auth-user" placeholder="admin">
+          </div>
+          <div class="form-group">
+            <label>VNC 分辨率</label>
+            <input type="text" id="cfg-vnc-resolution" placeholder="1920x1080">
+          </div>
+          <div class="form-group">
+            <label>Git 用户名</label>
+            <input type="text" id="cfg-git-name" placeholder="（可选）">
+          </div>
+          <div class="form-group">
+            <label>Git 邮箱</label>
+            <input type="text" id="cfg-git-email" placeholder="（可选）">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Cloudflare Tunnel Token（可选）</label>
+          <input type="text" id="cfg-cf-token" placeholder="">
+        </div>
+      </details>
+      <div class="action-row">
+        <button class="btn-secondary btn-sm" id="btn-step2-back">上一步</button>
+        <button class="btn-primary" id="btn-step2-next">下一步：启动容器</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Launch -->
+    <div id="step-3" style="display:none">
+      <p class="text-muted text-sm" style="margin-bottom:12px">正在启动 webcode 容器，首次运行将拉取镜像（约 2–5 分钟）…</p>
+      <div class="log-area" id="launch-log" style="height:240px"></div>
+      <div class="action-row">
+        <button class="btn-secondary btn-sm" id="btn-step3-back">返回配置</button>
+        <button class="btn-primary" id="btn-step3-next" disabled>进入工作区 →</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Ready (re-launch) -->
+    <div id="step-4" style="display:none">
+      <p class="text-muted text-sm" style="margin-bottom:16px">配置已加载，容器当前未运行。</p>
+      <div class="action-row" style="justify-content:flex-start; flex-wrap:wrap; gap:10px">
+        <button class="btn-primary" id="btn-step4-start">▶ 启动容器</button>
+        <button class="btn-secondary btn-sm" id="btn-step4-config">修改配置</button>
+        <button class="btn-secondary btn-sm" id="btn-step4-enter">直接进入工作区</button>
+      </div>
+      <div class="log-area mt-3" id="relaunch-log" style="height:200px; display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ WORKSPACE ════════════════════════════ -->
+<div id="workspace">
+  <!-- Top bar -->
+  <div class="topbar">
+    <button class="tab-btn" id="tab-status" data-tab="status">● 状态</button>
+    <button class="tab-btn" id="tab-ide"    data-tab="ide">💻 IDE</button>
+    <button class="tab-btn" id="tab-kanban" data-tab="kanban">📋 看板</button>
+    <button class="tab-btn" id="tab-vnc"    data-tab="vnc">🖥 桌面</button>
+    <button class="tab-btn" id="tab-ai"     data-tab="ai">🤖 AI</button>
+    <span class="topbar-spacer"></span>
+    <div class="status-pill">
+      <span class="dot dot-gray" id="status-dot"></span>
+      <span id="status-text">检测中…</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-secondary btn-sm" id="btn-restart">重启</button>
+      <button class="btn-secondary btn-sm" id="btn-stop">停止</button>
+    </div>
+  </div>
+
+  <!-- Content area -->
+  <div class="iframe-area" id="iframe-area">
+    <!-- Status panel (not an iframe) -->
+    <div id="panel-status">
+      <div>
+        <h3 style="font-size:15px; font-weight:600; margin-bottom:12px">容器状态</h3>
+        <div class="status-grid" id="status-grid">
+          <div class="svc-card">
+            <div class="svc-name">webcode</div>
+            <div class="svc-state"><span class="dot dot-gray"></span> <span id="main-state">未知</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Config section -->
+      <div class="config-section">
+        <h3>配置</h3>
+        <div class="config-grid">
+          <div class="form-group">
+            <label>运行模式</label>
+            <div class="toggle-row">
+              <button class="toggle-btn" data-mode="desktop" id="ws-mode-desktop">🖥 Desktop</button>
+              <button class="toggle-btn" data-mode="lite"    id="ws-mode-lite">⚡ Lite</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Basic Auth 密码</label>
+            <input type="password" id="ws-auth-password">
+          </div>
+          <div class="form-group">
+            <label>VNC 密码</label>
+            <input type="password" id="ws-vnc-password">
+          </div>
+          <div class="form-group">
+            <label>OpenClaw Token</label>
+            <input type="text" id="ws-openclaw-token">
+          </div>
+          <div class="form-group">
+            <label>Basic Auth 用户名</label>
+            <input type="text" id="ws-auth-user">
+          </div>
+          <div class="form-group">
+            <label>VNC 分辨率</label>
+            <input type="text" id="ws-vnc-resolution">
+          </div>
+          <div class="form-group">
+            <label>Git 用户名</label>
+            <input type="text" id="ws-git-name">
+          </div>
+          <div class="form-group">
+            <label>Git 邮箱</label>
+            <input type="text" id="ws-git-email">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Cloudflare Tunnel Token（可选）</label>
+          <input type="text" id="ws-cf-token">
+        </div>
+        <div class="action-row" style="margin-top:0">
+          <button class="btn-secondary btn-sm" id="btn-save-config">保存配置</button>
+          <button class="btn-primary btn-sm"   id="btn-save-restart">保存并重启容器</button>
+        </div>
+      </div>
+
+      <!-- Logs -->
+      <div>
+        <h3 style="font-size:14px; font-weight:600; margin-bottom:8px">容器日志</h3>
+        <div class="log-area" id="ws-log" style="height:260px"></div>
+      </div>
+    </div>
+
+    <!-- iframes (lazy – src set when first activated) -->
+    <iframe id="iframe-ide"    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads"></iframe>
+    <iframe id="iframe-kanban" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"></iframe>
+    <iframe id="iframe-vnc"    sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+    <iframe id="iframe-ai"     sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"></iframe>
+  </div>
+</div>
+
+<!-- ═══════════════════════ SCRIPTS ══════════════════════════════ -->
+<script>
+// Bring in Node modules via nw.js
+const app = require('./src/app.js');
+const { readConfig, writeConfig, configExists, ensureComposeFile } = require('./src/config.js');
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+let currentStep = 1;
+let currentTab  = 'status';
+let cfg = readConfig();
+let proxyStarted = false;
+let logsProc = null;
+
+function setStep(n) {
+  for (let i = 1; i <= 4; i++) {
+    document.getElementById('step-' + i).style.display = (i === n) ? '' : 'none';
+  }
+  currentStep = n;
+  renderStepDots(n);
+}
+
+function renderStepDots(active) {
+  const dots = document.getElementById('step-dots');
+  dots.innerHTML = '';
+  for (let i = 1; i <= 3; i++) {
+    const d = document.createElement('div');
+    d.className = 'step-dot' +
+      (i < active ? ' done' : (i === active ? ' active' : ''));
+    dots.appendChild(d);
+  }
+}
+
+function showWizard(step) {
+  document.getElementById('wizard').style.display = '';
+  document.getElementById('workspace').style.display = 'none';
+  setStep(step);
+}
+
+function showWorkspace() {
+  document.getElementById('wizard').style.display = 'none';
+  document.getElementById('workspace').style.display = 'flex';
+  activateTab('status');
+  loadConfigIntoWorkspaceForm();
+  startStatusPolling();
+  startLogStream();
+  if (!proxyStarted) {
+    app.startProxies(cfg);
+    proxyStarted = true;
+  }
+}
+
+// ─── Step 1: Docker check ────────────────────────────────────────────────────
+
+function runDockerCheck() {
+  setCheckState('check-docker-installed', 'checking', '检测中');
+  setCheckState('check-docker-running',   'checking', '检测中');
+  document.getElementById('docker-help').style.display = 'none';
+  document.getElementById('btn-step1-next').disabled = true;
+
+  app.checkDocker((result) => {
+    if (result.installed) {
+      setCheckState('check-docker-installed', 'ok', result.version);
+    } else {
+      setCheckState('check-docker-installed', 'fail', '未找到');
+      setCheckState('check-docker-running',   'fail', '—');
+      document.getElementById('docker-help').style.display = '';
+      return;
+    }
+    if (result.running) {
+      setCheckState('check-docker-running', 'ok', '运行中');
+      document.getElementById('btn-step1-next').disabled = false;
+    } else {
+      setCheckState('check-docker-running', 'fail', '未运行');
+      document.getElementById('docker-help').style.display = '';
+    }
+  });
+}
+
+function setCheckState(id, state, text) {
+  const row  = document.getElementById(id);
+  const badge = row.querySelector('.badge');
+  badge.textContent = text;
+  badge.className = 'badge ' + (state === 'ok' ? 'badge-ok' : state === 'fail' ? 'badge-fail' : 'badge-checking');
+}
+
+document.getElementById('btn-recheck').addEventListener('click', runDockerCheck);
+
+document.getElementById('btn-step1-next').addEventListener('click', () => {
+  loadConfigIntoWizardForm();
+  setStep(2);
+});
+
+// Docker Desktop download link
+document.getElementById('docker-dl-link').addEventListener('click', () => {
+  nw.Shell.openExternal('https://www.docker.com/products/docker-desktop/');
+});
+
+// ─── Step 2: Config form ─────────────────────────────────────────────────────
+
+let selectedMode = cfg.MODE || 'desktop';
+
+document.querySelectorAll('[data-mode]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    selectedMode = btn.dataset.mode;
+    // update active state for sibling buttons sharing the same parent
+    btn.closest('.toggle-row').querySelectorAll('.toggle-btn').forEach(b => {
+      b.classList.toggle('active', b === btn);
+    });
+    if (btn.closest('#step-2')) {
+      document.getElementById('vnc-group').style.display =
+        selectedMode === 'desktop' ? '' : 'none';
+    }
+  });
+});
+
+function loadConfigIntoWizardForm() {
+  document.getElementById('cfg-auth-password').value  = cfg.AUTH_PASSWORD || '';
+  document.getElementById('cfg-vnc-password').value   = cfg.VNC_PASSWORD  || '';
+  document.getElementById('cfg-openclaw-token').value = cfg.OPENCLAW_TOKEN || '';
+  document.getElementById('cfg-auth-user').value      = cfg.AUTH_USER || 'admin';
+  document.getElementById('cfg-vnc-resolution').value = cfg.VNC_RESOLUTION || '1920x1080';
+  document.getElementById('cfg-git-name').value       = cfg.GIT_USER_NAME || '';
+  document.getElementById('cfg-git-email').value      = cfg.GIT_USER_EMAIL || '';
+  document.getElementById('cfg-cf-token').value       = cfg.CF_TUNNEL_TOKEN || '';
+
+  selectedMode = cfg.MODE || 'desktop';
+  document.getElementById('mode-desktop').classList.toggle('active', selectedMode === 'desktop');
+  document.getElementById('mode-lite').classList.toggle('active', selectedMode === 'lite');
+  document.getElementById('vnc-group').style.display = selectedMode === 'desktop' ? '' : 'none';
+}
+
+function collectWizardForm() {
+  cfg.AUTH_PASSWORD  = document.getElementById('cfg-auth-password').value  || 'changeme';
+  cfg.VNC_PASSWORD   = document.getElementById('cfg-vnc-password').value   || 'changeme';
+  cfg.OPENCLAW_TOKEN = document.getElementById('cfg-openclaw-token').value || 'changeme';
+  cfg.AUTH_USER      = document.getElementById('cfg-auth-user').value      || 'admin';
+  cfg.VNC_RESOLUTION = document.getElementById('cfg-vnc-resolution').value || '1920x1080';
+  cfg.GIT_USER_NAME  = document.getElementById('cfg-git-name').value  || '';
+  cfg.GIT_USER_EMAIL = document.getElementById('cfg-git-email').value || '';
+  cfg.CF_TUNNEL_TOKEN= document.getElementById('cfg-cf-token').value  || '';
+  cfg.MODE = selectedMode;
+  writeConfig(cfg);
+}
+
+document.getElementById('btn-step2-back').addEventListener('click', () => setStep(1));
+document.getElementById('btn-step2-next').addEventListener('click', () => {
+  collectWizardForm();
+  startLaunch();
+});
+
+// ─── Step 3: Launch ──────────────────────────────────────────────────────────
+
+function appendLog(id, text) {
+  const el = document.getElementById(id);
+  el.textContent += text;
+  el.scrollTop = el.scrollHeight;
+}
+
+function startLaunch(logId, nextBtn, backBtn) {
+  logId   = logId   || 'launch-log';
+  nextBtn = nextBtn || 'btn-step3-next';
+  backBtn = backBtn || 'btn-step3-back';
+
+  setStep(3);
+  document.getElementById(logId).textContent = '';
+  document.getElementById(nextBtn).disabled = true;
+  document.getElementById(backBtn).disabled = true;
+
+  ensureComposeFile();
+
+  app.dockerUp(cfg,
+    (data) => appendLog(logId, data),
+    (code) => {
+      document.getElementById(backBtn).disabled = false;
+      if (code === 0) {
+        appendLog(logId, '\n✓ 容器启动成功！\n');
+        document.getElementById(nextBtn).disabled = false;
+      } else {
+        appendLog(logId, `\n✗ 启动失败（exit ${code}）\n`);
+      }
+    }
+  );
+}
+
+document.getElementById('btn-step3-back').addEventListener('click', () => setStep(2));
+document.getElementById('btn-step3-next').addEventListener('click', () => {
+  showWorkspace();
+});
+
+// ─── Step 4: Re-launch (config exists, container not running) ─────────────────
+
+document.getElementById('btn-step4-start').addEventListener('click', () => {
+  document.getElementById('relaunch-log').style.display = '';
+  document.getElementById('relaunch-log').textContent = '';
+  document.getElementById('btn-step4-start').disabled = true;
+
+  app.dockerUp(cfg,
+    (data) => appendLog('relaunch-log', data),
+    (code) => {
+      document.getElementById('btn-step4-start').disabled = false;
+      if (code === 0) {
+        appendLog('relaunch-log', '\n✓ 启动成功！\n');
+        showWorkspace();
+      } else {
+        appendLog('relaunch-log', `\n✗ 启动失败（exit ${code}）\n`);
+      }
+    }
+  );
+});
+
+document.getElementById('btn-step4-config').addEventListener('click', () => {
+  loadConfigIntoWizardForm();
+  setStep(2);
+});
+
+document.getElementById('btn-step4-enter').addEventListener('click', () => {
+  showWorkspace();
+});
+
+// ─── Workspace: tab switching ─────────────────────────────────────────────────
+
+const IFRAME_IDS = { ide: 'iframe-ide', kanban: 'iframe-kanban', vnc: 'iframe-vnc', ai: 'iframe-ai' };
+const iframeLoaded = {};
+
+function iframeUrl(tab) {
+  switch (tab) {
+    case 'ide':    return 'http://localhost:14001';
+    case 'kanban': return 'http://localhost:14002';
+    case 'vnc':    return `http://localhost:26080/?autoconnect=true&password=${encodeURIComponent(cfg.VNC_PASSWORD)}`;
+    case 'ai':     return `http://localhost:14003/?token=${encodeURIComponent(cfg.OPENCLAW_TOKEN)}`;
+  }
+}
+
+function activateTab(tab) {
+  currentTab = tab;
+
+  // Update tab buttons
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
+  });
+
+  // Show/hide status panel vs iframes
+  const panel = document.getElementById('panel-status');
+  panel.classList.toggle('visible', tab === 'status');
+
+  Object.keys(IFRAME_IDS).forEach(t => {
+    const fr = document.getElementById(IFRAME_IDS[t]);
+    fr.classList.toggle('visible', t === tab);
+    if (t === tab && !iframeLoaded[t]) {
+      fr.src = iframeUrl(t);
+      iframeLoaded[t] = true;
+    }
+  });
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => activateTab(btn.dataset.tab));
+});
+
+// ─── Workspace: status polling ────────────────────────────────────────────────
+
+function startStatusPolling() {
+  app.startPolling(cfg, (containers) => {
+    updateStatusUI(containers);
+  });
+}
+
+function containerRunning(containers) {
+  if (!containers || containers.length === 0) return false;
+  return containers.some(c => (c.State || c.status || '').toLowerCase().includes('running'));
+}
+
+function updateStatusUI(containers) {
+  const running = containerRunning(containers);
+  const dot  = document.getElementById('status-dot');
+  const text = document.getElementById('status-text');
+
+  if (running) {
+    dot.className = 'dot dot-green';
+    text.textContent = '运行中';
+  } else {
+    dot.className = 'dot dot-gray';
+    text.textContent = '已停止';
+  }
+
+  // Status grid
+  const grid = document.getElementById('status-grid');
+  if (containers.length === 0) {
+    grid.innerHTML = '<div class="svc-card"><div class="svc-name">webcode</div><div class="svc-state"><span class="dot dot-gray"></span> 未运行</div></div>';
+    return;
+  }
+  grid.innerHTML = containers.map(c => {
+    const state = (c.State || c.Status || 'unknown').toLowerCase();
+    const dotClass = state.includes('running') ? 'dot-green' :
+                     state.includes('starting') ? 'dot-yellow' : 'dot-red';
+    return `<div class="svc-card">
+      <div class="svc-name">${escHtml(c.Service || c.Name || 'webcode')}</div>
+      <div class="svc-state"><span class="dot ${dotClass}"></span> ${escHtml(state)}</div>
+    </div>`;
+  }).join('');
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── Workspace: live logs ─────────────────────────────────────────────────────
+
+function startLogStream() {
+  if (logsProc) { try { logsProc.kill(); } catch(e) {} }
+  const el = document.getElementById('ws-log');
+  el.textContent = '';
+  logsProc = app.dockerLogs(cfg, (data) => {
+    el.textContent += data;
+    el.scrollTop = el.scrollHeight;
+  });
+}
+
+// ─── Workspace: start / stop buttons ─────────────────────────────────────────
+
+document.getElementById('btn-restart').addEventListener('click', () => {
+  if (!confirm('确定要重启容器吗？')) return;
+  app.dockerDown(cfg, null, () => {
+    app.dockerUp(cfg, null, () => {
+      iframeLoaded['ide'] = iframeLoaded['kanban'] = iframeLoaded['vnc'] = iframeLoaded['ai'] = false;
+      if (currentTab !== 'status') activateTab(currentTab);
+      startLogStream();
+    });
+  });
+});
+
+document.getElementById('btn-stop').addEventListener('click', () => {
+  if (!confirm('确定要停止容器吗？')) return;
+  app.dockerDown(cfg, null, null);
+});
+
+// ─── Workspace: config form ───────────────────────────────────────────────────
+
+let wsMode = cfg.MODE || 'desktop';
+
+document.querySelectorAll('#panel-status [data-mode]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    wsMode = btn.dataset.mode;
+    document.getElementById('ws-mode-desktop').classList.toggle('active', wsMode === 'desktop');
+    document.getElementById('ws-mode-lite').classList.toggle('active', wsMode === 'lite');
+  });
+});
+
+function loadConfigIntoWorkspaceForm() {
+  document.getElementById('ws-auth-password').value  = cfg.AUTH_PASSWORD || '';
+  document.getElementById('ws-vnc-password').value   = cfg.VNC_PASSWORD  || '';
+  document.getElementById('ws-openclaw-token').value = cfg.OPENCLAW_TOKEN || '';
+  document.getElementById('ws-auth-user').value      = cfg.AUTH_USER || 'admin';
+  document.getElementById('ws-vnc-resolution').value = cfg.VNC_RESOLUTION || '1920x1080';
+  document.getElementById('ws-git-name').value       = cfg.GIT_USER_NAME || '';
+  document.getElementById('ws-git-email').value      = cfg.GIT_USER_EMAIL || '';
+  document.getElementById('ws-cf-token').value       = cfg.CF_TUNNEL_TOKEN || '';
+  wsMode = cfg.MODE || 'desktop';
+  document.getElementById('ws-mode-desktop').classList.toggle('active', wsMode === 'desktop');
+  document.getElementById('ws-mode-lite').classList.toggle('active', wsMode === 'lite');
+}
+
+function collectWorkspaceForm() {
+  cfg.AUTH_PASSWORD  = document.getElementById('ws-auth-password').value  || 'changeme';
+  cfg.VNC_PASSWORD   = document.getElementById('ws-vnc-password').value   || 'changeme';
+  cfg.OPENCLAW_TOKEN = document.getElementById('ws-openclaw-token').value || 'changeme';
+  cfg.AUTH_USER      = document.getElementById('ws-auth-user').value      || 'admin';
+  cfg.VNC_RESOLUTION = document.getElementById('ws-vnc-resolution').value || '1920x1080';
+  cfg.GIT_USER_NAME  = document.getElementById('ws-git-name').value  || '';
+  cfg.GIT_USER_EMAIL = document.getElementById('ws-git-email').value || '';
+  cfg.CF_TUNNEL_TOKEN= document.getElementById('ws-cf-token').value  || '';
+  cfg.MODE = wsMode;
+  writeConfig(cfg);
+}
+
+document.getElementById('btn-save-config').addEventListener('click', () => {
+  collectWorkspaceForm();
+  // Restart proxies with new credentials
+  app.startProxies(cfg);
+  // Reset iframes so they reload with new auth
+  Object.keys(iframeLoaded).forEach(k => iframeLoaded[k] = false);
+  alert('配置已保存。如需生效请重启容器。');
+});
+
+document.getElementById('btn-save-restart').addEventListener('click', () => {
+  collectWorkspaceForm();
+  app.startProxies(cfg);
+  Object.keys(iframeLoaded).forEach(k => iframeLoaded[k] = false);
+  app.dockerDown(cfg, null, () => {
+    app.dockerUp(cfg, (data) => {
+      document.getElementById('ws-log').textContent += data;
+      document.getElementById('ws-log').scrollTop = document.getElementById('ws-log').scrollHeight;
+    }, () => {
+      if (currentTab !== 'status') activateTab(currentTab);
+      startLogStream();
+    });
+  });
+});
+
+// ─── Boot logic ───────────────────────────────────────────────────────────────
+
+function boot() {
+  if (!configExists()) {
+    // First run: wizard from step 1
+    showWizard(1);
+    runDockerCheck();
+  } else {
+    // Config exists: check if container is running
+    ensureComposeFile();
+    app.dockerPs(cfg, (err, containers) => {
+      if (!err && containerRunning(containers)) {
+        // Already running → go straight to workspace
+        showWorkspace();
+      } else {
+        // Not running → step 4
+        showWizard(4);
+      }
+    });
+  }
+}
+
+boot();
+</script>
+</body>
+</html>

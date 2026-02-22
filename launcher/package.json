@@ -1,0 +1,17 @@
+{
+  "name": "webcode-launcher",
+  "version": "1.0.0",
+  "main": "index.html",
+  "window": {
+    "title": "webcode",
+    "width": 1280,
+    "height": 800,
+    "min_width": 900,
+    "min_height": 580,
+    "icon": "assets/icon.png"
+  },
+  "chromium-args": "--disable-web-security --allow-running-insecure-content",
+  "dependencies": {
+    "http-proxy": "^1.18.1"
+  }
+}
