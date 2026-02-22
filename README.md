@@ -33,6 +33,20 @@ A Docker-based browser-accessible development environment with **Theia IDE**, **
 
 ---
 
+## 📊 Comparison
+
+| | webcode | Local VS Code | GitPod / Codespaces |
+|---|---|---|---|
+| **Setup Time** | ~1 min | 30+ min | Instant |
+| **Isolation** | ✅ Full container | ❌ Host system | ✅ Container |
+| **AI Safety** | ✅ Sandbox protects host | ❌ AI has host access | ⚠️ Shared environment |
+| **Offline Use** | ✅ Fully offline | ✅ | ❌ Requires internet |
+| **Data Persistence** | ✅ Docker volumes | ✅ Local files | ⚠️ Needs setup |
+| **Linux Desktop** | ✅ Included | ❌ N/A | ❌ N/A |
+| **Cost** | Free (your hardware) | Free | Paid tiers |
+
+---
+
 ## 🚀 Quick Start
 
 ### Method 1: Visual Launcher (Recommended for Desktop Users)
@@ -324,6 +338,20 @@ The following data is stored in Docker volumes and survives container rebuilds:
 - **📚 学习环境**：练习 Linux、编程或 DevOps — 用 `docker compose down -v` 一键重置
 - **🌐 远程开发**：从任何设备的浏览器访问完整开发环境
 - **🔧 临时项目沙盒**：为临时项目快速启动隔离的开发环境
+
+---
+
+## 📊 对比
+
+| | webcode | 本地 VS Code | GitPod / Codespaces |
+|---|---|---|---|
+| **安装时间** | ~1 分钟 | 30+ 分钟 | 即开 |
+| **隔离性** | ✅ 完全容器化 | ❌ 宿主机系统 | ✅ 容器 |
+| **AI 安全性** | ✅ 沙箱保护宿主机 | ❌ AI 可访问宿主机 | ⚠️ 共享环境 |
+| **离线使用** | ✅ 完全离线 | ✅ | ❌ 需要联网 |
+| **数据持久化** | ✅ Docker 卷 | ✅ 本地文件 | ⚠️ 需配置 |
+| **Linux 桌面** | ✅ 内置 | ❌ 无 | ❌ 无 |
+| **费用** | 免费（自有硬件） | 免费 | 付费档位 |
 
 ---
 
