@@ -44,7 +44,7 @@ docker compose up -d
 | `VNC_RESOLUTION` | `1920x1080` | 桌面分辨率，仅 desktop 模式有效 |
 | `AUTH_USER` | `admin` | Basic Auth 用户名，适用于 Theia / Vibe Kanban / OpenClaw |
 | `AUTH_PASSWORD` | `changeme` | Basic Auth 密码 |
-| `OPENCLAW_PASSWORD` | `changeme` | OpenClaw 内部登录密码（独立于 Basic Auth） |
+| `OPENCLAW_TOKEN` | `changeme` | OpenClaw 网关 token（访问时通过 `?token=<值>` 传入） |
 | `GIT_USER_NAME` | — | Git 提交用户名 |
 | `GIT_USER_EMAIL` | — | Git 提交邮箱 |
 | `CF_TUNNEL_TOKEN` | 空（不启用）| Cloudflare Tunnel token，设置后自动启用内网穿透 |
@@ -103,7 +103,7 @@ MODE=lite docker compose up -d
 
 **认证说明（两步）：**
 1. 浏览器弹出 Basic Auth 对话框 → 输入 `AUTH_USER` / `AUTH_PASSWORD`
-2. OpenClaw 内部登录页面 → 输入 `OPENCLAW_PASSWORD`
+2. OpenClaw 内部登录页面 → 使用 `?token=<OPENCLAW_TOKEN>` 传入 token
 
 ---
 

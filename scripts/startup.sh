@@ -50,6 +50,23 @@ chown -R ubuntu:ubuntu /home/ubuntu/.theia
 mkdir -p /home/ubuntu/.openclaw
 chown -R ubuntu:ubuntu /home/ubuntu/.openclaw
 
+# ─── OpenClaw config (allow Control UI over plain HTTP) ────────────
+OPENCLAW_CONFIG="/home/ubuntu/.openclaw/openclaw.json5"
+if [ ! -f "$OPENCLAW_CONFIG" ]; then
+    cat > "$OPENCLAW_CONFIG" <<'EOF'
+{
+  gateway: {
+    trustedProxies: "0.0.0.0/0",
+    controlUi: {
+      allowInsecureAuth: true,
+    },
+  },
+}
+EOF
+    chown ubuntu:ubuntu "$OPENCLAW_CONFIG"
+    echo "[startup] OpenClaw config written (allowInsecureAuth enabled)"
+fi
+
 # ─── Caddy auth setup (Basic Auth for all web services) ──────────
 export AUTH_USER="${AUTH_USER:-admin}"
 if [ -z "$AUTH_PASSWORD" ]; then
