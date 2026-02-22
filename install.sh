@@ -22,7 +22,15 @@ INSTALL_DIR="$HOME/webcode"
 
 # Detect if we need sudo for docker
 DOCKER_CMD="docker"
-if ! docker info >/dev/null 2>&1 && sudo -n docker info >/dev/null 2>&1; then
+IN_CONTAINER=0
+[ -f /.dockerenv ] && IN_CONTAINER=1
+grep -qa docker /proc/1/cgroup >/dev/null 2>&1 && IN_CONTAINER=1
+
+if [ $IN_CONTAINER -eq 1 ]; then
+    # Inside container, always use sudo
+    DOCKER_CMD="sudo docker"
+elif ! docker info >/dev/null 2>&1; then
+    # Try with sudo if regular docker fails
     DOCKER_CMD="sudo docker"
 fi
 
