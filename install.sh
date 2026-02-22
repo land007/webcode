@@ -221,16 +221,16 @@ install_docker_mode() {
 
     # Ask for custom passwords (optional)
     printf "\n"
-    read -rp "$(printf "${YELLOW}Customize credentials? [y/N]: ${NC}")" customize
+    read -rp "$(printf "${YELLOW}Customize credentials? [y/N]: ${NC}")" customize < /dev/tty
     if [ "$customize" = "y" ] || [ "$customize" = "Y" ]; then
-        read -rp "Basic Auth username [admin]: " auth_user
+        read -rp "Basic Auth username [admin]: " auth_user < /dev/tty
         auth_user=${auth_user:-admin}
 
-        read -rsp "Basic Auth password [changeme]: " auth_password
+        read -rsp "Basic Auth password [changeme]: " auth_password < /dev/tty
         printf "\n"
         auth_password=${auth_password:-changeme}
 
-        read -rsp "VNC password [changeme]: " vnc_password
+        read -rsp "VNC password [changeme]: " vnc_password < /dev/tty
         printf "\n"
         vnc_password=${vnc_password:-changeme}
 
@@ -276,7 +276,7 @@ install_launcher_mode() {
     print_info "Cloning repository..."
     if [ -d "$INSTALL_DIR" ]; then
         print_warning "Directory already exists: $INSTALL_DIR"
-        read -rp "Remove and re-clone? [y/N]: " remove_clone
+        read -rp "Remove and re-clone? [y/N]: " remove_clone < /dev/tty
         if [ "$remove_clone" = "y" ] || [ "$remove_clone" = "Y" ]; then
             rm -rf "$INSTALL_DIR"
         else
@@ -374,21 +374,6 @@ main() {
     # Determine install mode
     printf "\n"
 
-    # Check if stdin is a terminal (for interactive input)
-    if [ ! -t 0 ]; then
-        print_warning "Non-interactive mode detected (stdin is not a terminal)"
-        print_info "For interactive installation, download and run the script directly:"
-        printf "\n"
-        print_info "  curl -fsSL https://raw.githubusercontent.com/land007/webcode/main/install.sh -o install.sh"
-        print_info "  bash install.sh"
-        printf "\n"
-        print_info "Or use Docker-only mode automatically..."
-        printf "\n"
-        install_docker_mode
-        print_completion_info
-        exit 0
-    fi
-
     if has_display || [ "$OS" = "macos" ]; then
         if has_display; then
             print_header "Desktop environment detected"
@@ -404,7 +389,7 @@ main() {
         echo -e "  ${GREEN}[2]${NC} Docker Only"
         echo -e "      Command-line installation - works everywhere"
         printf "\n"
-        read -rp "$(printf "${CYAN}Enter choice [1-2]: ${NC}")" choice
+        read -rp "$(printf "${CYAN}Enter choice [1-2]: ${NC}")" choice < /dev/tty
 
         case $choice in
             1)
@@ -418,7 +403,7 @@ main() {
                     echo -e "  ${GREEN}[1]${NC} Exit to install Node.js"
                     echo -e "  ${GREEN}[2]${NC} Use Docker-only mode instead"
                     printf "\n"
-                    read -rp "$(printf "${CYAN}Enter choice [1-2]: ${NC}")" node_choice
+                    read -rp "$(printf "${CYAN}Enter choice [1-2]: ${NC}")" node_choice < /dev/tty
                     case $node_choice in
                         1)
                             print_info "Install Node.js from: https://nodejs.org/"
