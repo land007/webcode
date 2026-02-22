@@ -1,13 +1,35 @@
 # webcode
 
 ![GitHub Stars](https://img.shields.io/github/stars/land007/webcode?style=social)
+![License](https://img.shields.io/badge/license-MIT-blue)
 ![Docker Pulls](https://img.shields.io/docker/pulls/land007/webcode)
 ![Platforms](https://img.shields.io/badge/platform-amd64%20%7C%20arm64-blue)
 ![Image Size](https://img.shields.io/docker/image-size/land007/webcode/latest)
 
 [📦 Repository](https://github.com/land007/webcode) | [🐳 Docker Hub](https://hub.docker.com/r/land007/webcode) | [🐛 Issues](https://github.com/land007/webcode/issues) | [📖 Changelog](https://github.com/land007/webcode/releases)
 
-A Docker-based browser-accessible development environment with Theia IDE, visual task board, VNC desktop, and AI assistant gateway.
+A Docker-based browser-accessible development environment with **Theia IDE**, **Vibe Kanban**, **noVNC Desktop**, and **OpenClaw AI**.
+
+---
+
+## ✨ What's Inside
+
+| Component | Description |
+|-----------|-------------|
+| 💻 **Theia IDE** | Browser-based VS Code alternative with full coding experience |
+| 📊 **Vibe Kanban** | Visual task board for project management |
+| 🤖 **OpenClaw AI** | Self-hosted AI assistant gateway (supports multiple AI providers) |
+| 🖥️ **noVNC Desktop** | Full GNOME Flashback Linux desktop accessible via browser |
+| 🔒 **Sandboxed** | Complete isolation — AI cannot access your host files |
+
+---
+
+## 🎯 Use Cases
+
+- **🧪 AI Development & Testing**: Experiment with AI tools safely without risking your host system
+- **📚 Learning Environment**: Practice Linux, coding, or DevOps — reset instantly with `docker compose down -v`
+- **🌐 Remote Development**: Access your full development environment from any device with a browser
+- **🔧 Quick Project Sandbox**: Spin up an isolated dev environment for temporary projects
 
 ---
 
@@ -280,11 +302,30 @@ The following data is stored in Docker volumes and survives container rebuilds:
 
 # webcode（中文文档）
 
-基于 Docker 的浏览器可访问开发环境，内置 Theia IDE、可视化任务板、VNC 桌面和 AI 助手网关。
+基于 Docker 的浏览器可访问开发环境，内置 **Theia IDE**、**Vibe Kanban**、**noVNC 桌面**和 **OpenClaw AI**。
 
 ---
 
-## 🚀 快速开始
+## ✨ 内置组件
+
+| 组件 | 说明 |
+|------|------|
+| 💻 **Theia IDE** | 浏览器版 VS Code 替代品，完整编码体验 |
+| 📊 **Vibe Kanban** | 可视化看板任务管理工具 |
+| 🤖 **OpenClaw AI** | 自托管 AI 助手网关（支持多种 AI 服务商） |
+| 🖥️ **noVNC 桌面** | 通过浏览器访问的完整 GNOME Linux 桌面 |
+| 🔒 **沙箱隔离** | 完全隔离 — AI 无法访问你的宿主机文件 |
+
+---
+
+## 🎯 适用场景
+
+- **🧪 AI 开发与测试**：安全地试验各种 AI 工具，无需担心影响宿主机
+- **📚 学习环境**：练习 Linux、编程或 DevOps — 用 `docker compose down -v` 一键重置
+- **🌐 远程开发**：从任何设备的浏览器访问完整开发环境
+- **🔧 临时项目沙盒**：为临时项目快速启动隔离的开发环境
+
+---
 
 ### 方法一：Launcher 图形界面（桌面用户推荐）
 
