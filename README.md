@@ -127,6 +127,18 @@ Default VNC password: `changeme`
 
 ---
 
+## Security & Isolation
+
+**🔒 Container isolation**: Everything runs inside a Docker container — your host system is completely isolated.
+
+- **Safe to experiment**: You can `rm -rf /`, mess up OpenClaw configs, break Vibe Kanban data, or install random packages — nothing affects your host machine.
+- **Easy reset**: Simply run `docker compose down -v` to wipe everything and start fresh.
+- **No escape**: The container has no special privileges; it cannot access host files outside of the mounted volumes you explicitly configure.
+
+> 💡 **Tip**: This makes webcode perfect for learning, testing AI tools, or trying out new workflows without risk.
+
+---
+
 ## Configuration (.env)
 
 | Variable | Default | Description |
@@ -378,6 +390,18 @@ docker compose up -d
 
 默认 Basic Auth：`admin` / `changeme`
 默认 VNC 密码：`changeme`
+
+---
+
+## 安全性与隔离
+
+**🔒 容器隔离**：所有操作都在 Docker 容器内运行 — 宿主机完全隔离。
+
+- **安全试错**：你可以随意 `rm -rf /`、搞乱 OpenClaw 配置、破坏 Vibe Kanban 数据，或安装各种包 — 宿主机不受任何影响。
+- **一键重置**：运行 `docker compose down -v` 即可清空所有数据，从头开始。
+- **无逃逸风险**：容器没有特殊权限，无法访问宿主机文件（除非你显式配置挂载卷）。
+
+> 💡 **小贴士**：这让 webcode 非常适合学习、测试 AI 工具或尝试新工作流，无需担心弄坏电脑。
 
 ---
 
