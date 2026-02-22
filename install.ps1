@@ -229,6 +229,7 @@ function Install-DockerMode {
         } catch {
             Print-Error "Failed to download docker-compose.yml"
             Print-Info "Check your internet connection and try again."
+            Read-Host "Press Enter to exit"
             exit 1
         }
     }
@@ -266,6 +267,7 @@ VNC_PASSWORD=$vncPassword
         Print-Success "Container started successfully"
     } catch {
         Print-Error "Failed to start container"
+        Read-Host "Press Enter to exit"
         exit 1
     }
 
@@ -283,6 +285,7 @@ function Install-LauncherMode {
     if (-not (Test-GitInstalled)) {
         Print-Error "Git is not installed"
         Print-Info "Please install Git: https://git-scm.com/download/win"
+        Read-Host "Press Enter to exit"
         exit 1
     }
     Print-Success "Git is available"
@@ -292,7 +295,10 @@ function Install-LauncherMode {
     Print-Info "Cloning repository from GitHub..."
     Print-Info "This may take a minute depending on your connection..."
     Write-Host ""
-    if (Test-Path $InstallDir) {
+    # Check if existing installation is complete (has launcher/package.json)
+    $launcherOk = (Test-Path "$InstallDir\launcher\package.json")
+
+    if ((Test-Path $InstallDir) -and $launcherOk) {
         Print-Warning "Directory already exists: $InstallDir"
         Write-Host "Remove and re-clone? [y/N]: " -NoNewline -ForegroundColor Yellow
         $removeClone = Read-Host
@@ -300,8 +306,11 @@ function Install-LauncherMode {
             Remove-Item -Recurse -Force $InstallDir
         } else {
             Print-Info "Using existing installation"
-            Set-Location "$InstallDir\launcher"
         }
+    } elseif (Test-Path $InstallDir) {
+        # Directory exists but incomplete, remove and re-clone
+        Print-Warning "Existing directory is incomplete, re-cloning..."
+        Remove-Item -Recurse -Force $InstallDir
     }
 
     if (-not (Test-Path $InstallDir)) {
@@ -311,7 +320,6 @@ function Install-LauncherMode {
         git clone --quiet $RepoUrl $InstallDir 2>$null
         if ($LASTEXITCODE -eq 0) {
             Print-Success "Repository cloned"
-            Set-Location "$InstallDir\launcher"
             $cloned = $true
         }
         # Fallback to mirror
@@ -320,7 +328,6 @@ function Install-LauncherMode {
             git clone $RepoUrlMirror $InstallDir
             if ($LASTEXITCODE -eq 0) {
                 Print-Success "Repository cloned (via mirror)"
-                Set-Location "$InstallDir\launcher"
                 $cloned = $true
             }
         }
@@ -331,6 +338,7 @@ function Install-LauncherMode {
             Print-Info "  git clone $RepoUrl $InstallDir"
             Print-Info "  cd $InstallDir\launcher"
             Print-Info "  npm install"
+            Read-Host "Press Enter to exit"
             exit 1
         }
     }
@@ -338,38 +346,32 @@ function Install-LauncherMode {
     # Install dependencies
     Print-Info "Installing dependencies (this may take a minute)..."
     Set-Location "$InstallDir\launcher"
-    try {
-        $output = npm install 2>&1
-        if ($LASTEXITCODE -ne 0) {
-            throw "npm install failed with exit code $LASTEXITCODE"
-        }
-        Print-Success "Dependencies installed"
-    } catch {
-        Print-Error "Failed to install dependencies: $_"
+    npm install
+    if ($LASTEXITCODE -ne 0) {
+        Print-Error "Failed to install dependencies"
         Write-Host ""
         Print-Info "Try running manually:"
         Print-Info "  cd $InstallDir\launcher"
         Print-Info "  npm install"
+        Read-Host "Press Enter to exit"
         exit 1
     }
+    Print-Success "Dependencies installed"
 
     # Ensure nw is installed
     if (-not (Test-Path "node_modules\nw")) {
         Print-Info "Installing NW.js..."
-        try {
-            $output = npm install --save-dev nw 2>&1
-            if ($LASTEXITCODE -ne 0) {
-                throw "npm install nw failed with exit code $LASTEXITCODE"
-            }
-            Print-Success "NW.js installed"
-        } catch {
-            Print-Error "Failed to install NW.js: $_"
+        npm install --save-dev nw
+        if ($LASTEXITCODE -ne 0) {
+            Print-Error "Failed to install NW.js"
             Write-Host ""
             Print-Info "Try running manually:"
             Print-Info "  cd $InstallDir\launcher"
             Print-Info "  npm install --save-dev nw"
+            Read-Host "Press Enter to exit"
             exit 1
         }
+        Print-Success "NW.js installed"
     }
 
     # Start Launcher
@@ -446,6 +448,7 @@ function Main {
         Print-Header "Install Docker Desktop:"
         Print-Info "Visit: https://www.docker.com/products/docker-desktop"
         Write-Host "  Download and install Docker Desktop for Windows, then run this script again."
+        Read-Host "Press Enter to exit"
         exit 1
     }
     Print-Success "Docker is installed"
@@ -454,6 +457,7 @@ function Main {
     if (-not (Test-DockerRunning)) {
         Print-Error "Docker is not running"
         Print-Info "Please start Docker Desktop and try again."
+        Read-Host "Press Enter to exit"
         exit 1
     }
     Print-Success "Docker is running"
@@ -462,6 +466,7 @@ function Main {
     if (-not (Test-DockerCompose)) {
         Print-Error "docker compose is not available"
         Print-Info "Please install Docker Compose and try again."
+        Read-Host "Press Enter to exit"
         exit 1
     }
     Print-Success "Docker Compose is available"
@@ -505,6 +510,7 @@ function Main {
                 } else {
                     Print-Error "Node.js installation verification failed"
                     Write-Host "Please restart your terminal and run this script again."
+                    Read-Host "Press Enter to exit"
                     exit 1
                 }
             } else {
