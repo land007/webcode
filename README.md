@@ -52,7 +52,7 @@ A Docker-based browser-accessible development environment with **Theia IDE**, **
 ### One-Command Install (macOS / Linux)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/land007/webcode/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/land007/webcode/main/install.sh | bash
 ```
 
 > **Windows**: Use WSL or see Method 2 below
@@ -371,7 +371,7 @@ The following data is stored in Docker volumes and survives container rebuilds:
 ### 一键安装（macOS / Linux）
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/land007/webcode/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/land007/webcode/main/install.sh | bash
 ```
 
 > **Windows**：请使用 WSL 或参考下方方法二
