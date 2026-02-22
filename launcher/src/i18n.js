@@ -72,6 +72,11 @@ const translations = {
     btn_save_restart: '保存并重启容器',
     h_container_logs: '容器日志',
 
+    // Theme switcher
+    theme_dark:   '暗色',
+    theme_light:  '浅色',
+    theme_system: '系统',
+
     // Dynamic strings (used in JS via t())
     dyn_not_found:    '未找到',
     dyn_running:      '运行中',
@@ -157,6 +162,11 @@ const translations = {
     btn_save_config:  'Save config',
     btn_save_restart: 'Save & restart',
     h_container_logs: 'Container logs',
+
+    // Theme switcher
+    theme_dark:   'Dark',
+    theme_light:  'Light',
+    theme_system: 'System',
 
     // Dynamic strings
     dyn_not_found:    'Not found',

@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <title>webcode</title>
+  <!-- 主题初始化：在 CSS 加载前设置 data-theme，防止页面闪烁 -->
+  <script>(function(){
+    var t = localStorage.getItem('webcode-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+  })();</script>
   <link rel="stylesheet" href="src/style.css">
 </head>
 <body>
@@ -12,9 +17,16 @@
   <div class="wizard-card">
     <div class="wizard-header">
       <h1 data-i18n="title">webcode 启动器</h1>
-      <div class="lang-toggle">
-        <button class="lang-btn active" data-lang="zh-CN">中文</button>
-        <button class="lang-btn" data-lang="en">EN</button>
+      <div class="header-controls">
+        <div class="theme-toggle">
+          <button class="theme-btn" data-theme-val="dark"   data-i18n="theme_dark">暗色</button>
+          <button class="theme-btn" data-theme-val="light"  data-i18n="theme_light">浅色</button>
+          <button class="theme-btn" data-theme-val="system" data-i18n="theme_system">系统</button>
+        </div>
+        <div class="lang-toggle">
+          <button class="lang-btn active" data-lang="zh-CN">中文</button>
+          <button class="lang-btn" data-lang="en">EN</button>
+        </div>
       </div>
     </div>
     <p class="subtitle" data-i18n="subtitle">浏览器可访问的开发环境，由 Docker 驱动</p>
@@ -168,6 +180,11 @@
     <div class="status-pill">
       <span class="dot dot-gray" id="status-dot"></span>
       <span id="status-text" data-i18n="status_detecting">检测中…</span>
+    </div>
+    <div class="theme-toggle" style="margin-right:4px">
+      <button class="theme-btn" data-theme-val="dark"   data-i18n="theme_dark">暗色</button>
+      <button class="theme-btn" data-theme-val="light"  data-i18n="theme_light">浅色</button>
+      <button class="theme-btn" data-theme-val="system" data-i18n="theme_system">系统</button>
     </div>
     <div class="lang-toggle" style="margin-right:6px">
       <button class="lang-btn active" data-lang="zh-CN">中文</button>
@@ -356,7 +373,37 @@ function applyTranslations() {
     btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
   });
   document.documentElement.lang = lang;
+  // 同步主题按钮激活状态（语言切换后文字更新，active 也要同步）
+  var theme = localStorage.getItem(THEME_KEY) || 'dark';
+  document.querySelectorAll('.theme-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.getAttribute('data-theme-val') === theme);
+  });
 }
+
+// ─── Theme ────────────────────────────────────────────────────────────────────
+
+const THEME_KEY = 'webcode-theme';
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem(THEME_KEY, theme);
+  document.querySelectorAll('.theme-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.getAttribute('data-theme-val') === theme);
+  });
+}
+
+// 监听系统主题变化，当选择"系统"时实时响应
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
+  if ((localStorage.getItem(THEME_KEY) || 'dark') === 'system') {
+    applyTheme('system'); // 重新触发（CSS @media 自动生效，这里只刷新按钮状态）
+  }
+});
+
+document.addEventListener('click', function(e) {
+  var btn = e.target.closest('.theme-btn');
+  if (!btn) return;
+  applyTheme(btn.getAttribute('data-theme-val'));
+});
 
 // ─── Language switcher（事件委托，挂在 document 上最可靠）────────────────────
 
@@ -893,6 +940,8 @@ document.getElementById('btn-save-restart').addEventListener('click', () => {
 // ─── Boot logic ───────────────────────────────────────────────────────────────
 
 function boot() {
+  // 初始化主题（head 脚本已设 data-theme，这里同步按钮状态）
+  applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
   // Apply translations to all annotated elements
   applyTranslations();
 

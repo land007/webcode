@@ -17,6 +17,27 @@
   --radius:    8px;
 }
 
+/* ── Light theme ────────────────────────────────────────────────── */
+html[data-theme="light"] {
+  --bg:        #f0f2f5;
+  --surface:   #ffffff;
+  --surface2:  #edf0f5;
+  --border:    #d1d5df;
+  --text:      #1e2130;
+  --text-muted:#5c667a;
+}
+
+@media (prefers-color-scheme: light) {
+  html[data-theme="system"] {
+    --bg:        #f0f2f5;
+    --surface:   #ffffff;
+    --surface2:  #edf0f5;
+    --border:    #d1d5df;
+    --text:      #1e2130;
+    --text-muted:#5c667a;
+  }
+}
+
 html, body {
   height: 100%;
   background: var(--bg);
@@ -417,7 +438,7 @@ details[open] > summary { margin-bottom: 10px; }
 .port-status.error { color: var(--danger); }
 .port-status.checking { color: var(--accent); }
 
-/* ── Language switcher ───────────────────────────────────────────── */
+/* ── Header controls（语言 + 主题切换）──────────────────────────── */
 .wizard-header {
   display: flex;
   align-items: flex-start;
@@ -425,15 +446,25 @@ details[open] > summary { margin-bottom: 10px; }
   margin-bottom: 4px;
 }
 
-.lang-toggle {
+.header-controls {
   display: flex;
-  gap: 2px;
+  gap: 6px;
+  align-items: center;
   flex-shrink: 0;
   margin-left: 8px;
 }
 
-.lang-btn {
-  padding: 3px 8px;
+/* shared toggle group */
+.lang-toggle,
+.theme-toggle {
+  display: flex;
+  gap: 2px;
+}
+
+/* shared mini-button */
+.lang-btn,
+.theme-btn {
+  padding: 3px 7px;
   font-size: 11px;
   background: var(--surface2);
   border: 1px solid var(--border);
@@ -441,9 +472,11 @@ details[open] > summary { margin-bottom: 10px; }
   color: var(--text-muted);
   cursor: pointer;
   line-height: 1.4;
+  white-space: nowrap;
 }
 
-.lang-btn.active {
+.lang-btn.active,
+.theme-btn.active {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
