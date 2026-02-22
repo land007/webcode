@@ -262,6 +262,21 @@ EOF
         print_info "Using default credentials (admin/changeme)"
     fi
 
+    # Check Docker socket access before starting
+    if ! docker info >/dev/null 2>&1; then
+        printf "\n"
+        print_error "Cannot access Docker daemon"
+        printf "\n"
+        print_info "Possible solutions:"
+        print_info "  1. Run this script with sudo: sudo bash install.sh"
+        print_info "  2. Add your user to docker group: sudo usermod -aG docker \$USER"
+        print_info "  3. Fix socket permissions: sudo chmod 666 /var/run/docker.sock"
+        printf "\n"
+        print_info "If running inside a container, restart with:"
+        print_info "  docker run --user root -v /var/run/docker.sock:/var/run/docker.sock ..."
+        exit 1
+    fi
+
     # Start container
     printf "\n"
     print_header "Starting container..."
