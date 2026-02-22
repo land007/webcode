@@ -63,6 +63,15 @@ detect_os() {
         Darwin*)    OS="macos";;
         *)          OS="unknown";;
     esac
+
+    # Detect architecture
+    ARCH=$(uname -m)
+    case "$ARCH" in
+        x86_64|amd64) ARCH="x64";;
+        aarch64|arm64) ARCH="arm64";;
+        armv7l) ARCH="armv7l";;
+        *) ARCH="$ARCH";;
+    esac
 }
 
 check_docker() {
@@ -154,6 +163,13 @@ check_nodejs() {
     if [ "$NODE_VERSION" -lt 18 ]; then
         print_warning "Node.js $(node -v) found, but 18+ is required for Launcher"
         print_info "Please upgrade Node.js: https://nodejs.org/"
+        return 1
+    fi
+
+    # Check platform compatibility for Launcher
+    if [ "$OS" = "linux" ] && [ "$ARCH" = "arm64" ]; then
+        print_warning "Node.js $(node -v) found, but Launcher is not supported on Linux ARM64"
+        print_info "NW.js does not provide Linux ARM64 builds. Use Docker-only mode."
         return 1
     fi
 
@@ -366,7 +382,7 @@ main() {
 
     # Detect OS
     detect_os
-    print_info "Detected OS: $OS"
+    print_info "Detected OS: $OS ($ARCH)"
 
     # Check all prerequisites
     check_prerequisites
