@@ -168,8 +168,9 @@ check_nodejs() {
 
     # Check platform compatibility for Launcher
     if [ "$OS" = "linux" ] && [ "$ARCH" = "arm64" ]; then
-        print_warning "Node.js $(node -v) found, but Launcher is not supported on Linux ARM64"
-        print_info "NW.js does not provide Linux ARM64 builds. Use Docker-only mode."
+        print_warning "Node.js $(node -v) found, but Launcher is not available on Linux ARM64"
+        print_info "NW.js does not provide official Linux ARM64 builds."
+        print_info "Docker-only mode is fully supported and recommended."
         return 1
     fi
 
