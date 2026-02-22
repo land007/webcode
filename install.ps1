@@ -1,6 +1,9 @@
 # webcode One-Command Installer for Windows
 # https://github.com/land007/webcode
 
+# Allow scripts (like npm.ps1) to run in this process only
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
+
 $ErrorActionPreference = "Stop"
 
 # Colors
