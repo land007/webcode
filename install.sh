@@ -66,9 +66,9 @@ detect_os() {
 }
 
 check_docker() {
-    if ! command -v docker &> /dev/null; then
+    if ! which docker > /dev/null 2>&1; then
         print_error "Docker is not installed"
-        echo ""
+        printf "\n"
         print_header "Install Docker:"
         if [ "$OS" = "macos" ]; then
             print_info "Visit: https://www.docker.com/products/docker-desktop"
@@ -81,14 +81,14 @@ check_docker() {
     fi
 
     # Check if Docker is running
-    if ! docker info &> /dev/null; then
+    if ! docker info > /dev/null 2>&1; then
         print_error "Docker is not running"
-        print_info "Please start Docker Desktop and try again."
+        print_info "Please start Docker and try again."
         return 1
     fi
 
     # Check for docker compose
-    if ! docker compose version &> /dev/null && ! docker-compose version &> /dev/null; then
+    if ! docker compose version > /dev/null 2>&1 && ! docker-compose version > /dev/null 2>&1; then
         print_error "docker compose is not available"
         print_info "Please install Docker Compose and try again."
         return 1
@@ -99,9 +99,9 @@ check_docker() {
 }
 
 check_git() {
-    if ! command -v git &> /dev/null; then
+    if ! which git > /dev/null 2>&1; then
         print_error "Git is not installed"
-        echo ""
+        printf "\n"
         print_header "Install Git:"
         if [ "$OS" = "macos" ]; then
             print_info "Already installed (comes with Xcode Command Line Tools)"
@@ -119,9 +119,9 @@ check_git() {
 }
 
 check_nodejs() {
-    if ! command -v node &> /dev/null; then
+    if ! which node > /dev/null 2>&1; then
         print_warning "Node.js not found (required for Launcher mode)"
-        echo ""
+        printf "\n"
         print_header "Install Node.js:"
         if [ "$OS" = "macos" ]; then
             print_info "Visit: https://nodejs.org/"
@@ -155,9 +155,9 @@ check_prerequisites() {
     local missing_git=0
     local missing_node=0
 
-    echo ""
+    printf "\n"
     print_header "Checking prerequisites..."
-    echo ""
+    printf "\n"
 
     # Check Docker (required for all modes)
     if ! check_docker; then
@@ -172,12 +172,12 @@ check_prerequisites() {
     # Check Node.js (optional, for Launcher mode)
     check_nodejs || missing_node=1
 
-    echo ""
+    printf "\n"
 
     # Exit if Docker is missing (required)
     if [ $missing_docker -eq 1 ]; then
         print_error "Docker is required for webcode"
-        echo ""
+        printf "\n"
         print_info "Please install Docker and run this script again."
         exit 1
     fi
@@ -230,7 +230,7 @@ EOF
     fi
 
     # Start container
-    echo ""
+    printf "\n"
     print_header "Starting container..."
     if docker compose up -d; then
         print_success "Container started successfully"
@@ -301,44 +301,44 @@ install_launcher_mode() {
     fi
 
     # Start Launcher
-    echo ""
+    printf "\n"
     print_success "Installation complete!"
     print_header "Starting Launcher..."
     print_info "A GUI window will appear where you can configure and start webcode."
-    echo ""
+    printf "\n"
     print_info "To restart later: cd $INSTALL_DIR/launcher && npm start"
-    echo ""
+    printf "\n"
     exec ./node_modules/.bin/nw .
 }
 
 print_completion_info() {
-    echo ""
+    printf "\n"
     print_header "═══════════════════════════════════════════════════════════════"
     print_success "webcode is ready!"
     print_header "═══════════════════════════════════════════════════════════════"
-    echo ""
+    printf "\n"
     print_header "Access Points:"
-    echo ""
+    printf "\n"
     printf "  %-20s %s\n" "Theia IDE"        "http://localhost:20001"
     printf "  %-20s %s\n" "Vibe Kanban"      "http://localhost:20002"
     printf "  %-20s %s\n" "OpenClaw AI"      "http://localhost:20003"
     printf "  %-20s %s\n" "noVNC Desktop"    "http://localhost:20004"
     printf "  %-20s %s\n" "VNC Client"       "localhost:20005"
-    echo ""
+    printf "\n"
     print_header "Default Credentials:"
     print_info "Basic Auth: ${GREEN}admin${NC} / ${GREEN}changeme${NC}"
     print_info "VNC Password: ${GREEN}changeme${NC}"
-    echo ""
+    printf "\n"
     print_header "Common Commands:"
     print_info "View status:    cd $INSTALL_DIR && docker compose ps"
     print_info "View logs:      cd $INSTALL_DIR && docker compose logs -f"
     print_info "Stop:           cd $INSTALL_DIR && docker compose down"
     print_info "Restart:        cd $INSTALL_DIR && docker compose restart"
-    echo ""
+    printf "\n"
     print_header "Documentation:"
     print_info "GitHub:  $REPO_URL"
     print_info "Docker:  https://hub.docker.com/r/land007/webcode"
-    echo ""
+    printf "\n"
 }
 
 #############################################
@@ -356,36 +356,36 @@ main() {
     check_prerequisites
 
     # Determine install mode
-    echo ""
+    printf "\n"
     if has_display || [ "$OS" = "macos" ]; then
         if has_display; then
             print_header "Desktop environment detected"
         else
             print_header "macOS detected (remote session)"
         fi
-        echo ""
+        printf "\n"
         print_info "Choose installation method:"
-        echo ""
+        printf "\n"
         echo -e "  ${GREEN}[1]${NC} Launcher (Recommended)"
         echo -e "      GUI for easy configuration - requires Node.js 18+"
-        echo ""
+        printf "\n"
         echo -e "  ${GREEN}[2]${NC} Docker Only"
         echo -e "      Command-line installation - works everywhere"
-        echo ""
+        printf "\n"
         read -rp "$(printf "${CYAN}Enter choice [1-2]: ${NC}")" choice
 
         case $choice in
             1)
-                echo ""
+                printf "\n"
                 # Check Node.js again for Launcher mode
                 if ! check_nodejs; then
                     print_error "Launcher requires Node.js 18+"
-                    echo ""
+                    printf "\n"
                     print_info "Please install Node.js first, then choose:"
-                    echo ""
+                    printf "\n"
                     echo -e "  ${GREEN}[1]${NC} Exit to install Node.js"
                     echo -e "  ${GREEN}[2]${NC} Use Docker-only mode instead"
-                    echo ""
+                    printf "\n"
                     read -rp "$(printf "${CYAN}Enter choice [1-2]: ${NC}")" node_choice
                     case $node_choice in
                         1)
