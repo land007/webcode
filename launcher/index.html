@@ -508,8 +508,15 @@ document.addEventListener('click', function(e) {
   var newLang = getLang() === 'zh-CN' ? 'en' : 'zh-CN';
   setLang(newLang);
   applyTranslations();
-  // 语言切换后标记 Theia iframe 需重新加载（下次激活时带新 locale）
-  if (typeof iframeLoaded !== 'undefined') iframeLoaded['ide'] = false;
+  // 语言切换后重新加载 Theia（带新 locale 参数）
+  // 当前在 IDE 标签页：立即刷新；否则标记下次激活时重载
+  if (typeof iframeLoaded !== 'undefined') {
+    iframeLoaded['ide'] = false;
+    if (typeof currentTab !== 'undefined' && currentTab === 'ide') {
+      document.getElementById('iframe-ide').src = iframeUrl('ide');
+      iframeLoaded['ide'] = true;
+    }
+  }
 });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
