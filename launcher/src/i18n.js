@@ -102,6 +102,19 @@ const translations = {
     dyn_port_fixed:   '端口已自动调整，请保存配置以生效。',
     dyn_port_ok:      '所有端口均可用！',
     dyn_config_saved: '配置已保存。如需生效请重启容器。',
+    // 问题4: 重启反馈
+    dyn_restarting:   '重启中…',
+    // 问题1: 自定义挂载
+    label_volumes:    '自定义目录挂载',
+    btn_add_volume:   '+ 添加挂载',
+    ph_host_path:     '宿主机路径',
+    ph_container_path: '容器路径',
+    // 问题6: Supervisor 状态
+    h_supervisor_status: '进程状态',
+    // 问题7: Cloudflare 引导
+    cf_help_text:     '如何获取 Token？',
+    cf_help_link:     'Cloudflare Zero Trust 控制台',
+    cf_help_steps:    ' → Networks → Tunnels → 创建 Tunnel → 复制 token',
   },
 
   'en': {
@@ -203,6 +216,19 @@ const translations = {
     dyn_port_fixed:   'Ports adjusted. Save config to apply.',
     dyn_port_ok:      'All ports available!',
     dyn_config_saved: 'Config saved. Restart container to apply changes.',
+    // Issue 4: Restart feedback
+    dyn_restarting:   'Restarting…',
+    // Issue 1: Custom volumes
+    label_volumes:    'Custom volume mounts',
+    btn_add_volume:   '+ Add mount',
+    ph_host_path:     'Host path',
+    ph_container_path: 'Container path',
+    // Issue 6: Supervisor status
+    h_supervisor_status: 'Process status',
+    // Issue 7: Cloudflare guide
+    cf_help_text:     'How to get a Token?',
+    cf_help_link:     'Cloudflare Zero Trust dashboard',
+    cf_help_steps:    ' → Networks → Tunnels → Create Tunnel → Copy token',
   },
 };
 

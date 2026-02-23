@@ -333,19 +333,41 @@ details[open] > summary { margin-bottom: 10px; }
 
 /* ─ Status panel ─ */
 #panel-status {
+  position: absolute;
+  inset: 0;
   display: none;
   flex-direction: column;
   gap: 14px;
   padding: 20px;
-  overflow-y: auto;
-  height: 100%;
+  overflow-y: auto;   /* scrollbar only on this panel */
+  background: var(--bg);
 }
 #panel-status.visible { display: flex; }
 
+/* 状态面板顶部：左右并排 */
+.status-top-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.status-top-left {
+  min-width: 160px;
+  flex-shrink: 0;
+}
+.status-top-right {
+  flex: 1;
+  min-width: 0;
+}
+.status-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
 .status-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
 }
 
 .svc-card {
@@ -480,4 +502,24 @@ details[open] > summary { margin-bottom: 10px; }
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
+}
+
+/* 合并后的单按钮：主题/语言循环切换 */
+.theme-cycle-btn,
+.lang-cycle-btn {
+  padding: 3px 9px;
+  font-size: 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  cursor: pointer;
+  line-height: 1.5;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.theme-cycle-btn:hover,
+.lang-cycle-btn:hover {
+  background: var(--surface);
+  border-color: var(--accent);
 }

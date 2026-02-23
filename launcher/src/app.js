@@ -162,6 +162,11 @@ async function dockerUp(cfg, onData, onClose) {
   // 无论是否有冲突，始终将当前端口配置写入 docker-compose.yml
   updateComposePorts(getWorkDir(), ports);
 
+  // 注入自定义目录挂载
+  if (cfg.CUSTOM_VOLUMES && cfg.CUSTOM_VOLUMES.length > 0) {
+    updateComposeVolumes(getWorkDir(), cfg.CUSTOM_VOLUMES);
+  }
+
   return dockerSpawn(['compose', 'up', '-d'], cfg, onData, onClose);
 }
 
@@ -216,6 +221,68 @@ function checkDocker(callback) {
   setTimeout(() => ver.kill(), 5000);
 }
 
+// ─── Custom volume injection ─────────────────────────────────────────────────
+
+/**
+ * Inject custom bind-mount volumes into docker-compose.yml.
+ * Called after ensureComposeFile() so the file is always fresh from template.
+ * @param {string} workDir
+ * @param {Array<{host:string, container:string}>} customVolumes
+ */
+function updateComposeVolumes(workDir, customVolumes) {
+  const fs = require('fs');
+  const path = require('path');
+  const composePath = path.join(workDir, 'docker-compose.yml');
+  if (!fs.existsSync(composePath)) return;
+
+  const validVolumes = customVolumes.filter(v => v.host && v.container);
+  if (validVolumes.length === 0) return;
+
+  let content = fs.readFileSync(composePath, 'utf8');
+  // Insert custom volume lines just before "    environment:" in the service block
+  const customLines = validVolumes
+    .map(v => `      - ${v.host}:${v.container}`)
+    .join('\n');
+  content = content.replace('    environment:', customLines + '\n    environment:');
+  fs.writeFileSync(composePath, content, 'utf8');
+}
+
+// ─── Supervisor status ────────────────────────────────────────────────────────
+
+const SUPERVISOR_VALID_STATES = new Set(['RUNNING', 'STOPPED', 'STARTING', 'FATAL', 'EXITED', 'UNKNOWN', 'BACKOFF']);
+
+function parseSupervisorOutput(out) {
+  const services = [];
+  const lines = out.trim().split('\n');
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    // Format: "name   RUNNING   pid 123, uptime 0:01:02"
+    const match = line.match(/^(\S+)\s+(\S+)\s*(.*)/);
+    // Only accept lines where the second token is a known supervisor state
+    if (match && SUPERVISOR_VALID_STATES.has(match[2].toUpperCase())) {
+      services.push({ name: match[1], state: match[2].toUpperCase(), detail: match[3] || '' });
+    }
+  }
+  return services;
+}
+
+/**
+ * Run supervisorctl status inside the webcode container.
+ * @param {Object} cfg
+ * @param {Function} callback  (err, [{name, state, detail}])
+ */
+function supervisorStatus(cfg, callback) {
+  const proc = spawn('docker', ['exec', 'webcode', 'supervisorctl', 'status', 'all'], {
+    env: buildEnv(cfg)
+  });
+  let out = '';
+  proc.stdout.on('data', d => { out += d.toString(); });
+  proc.stderr.on('data', d => { out += d.toString(); });
+  proc.on('close', () => {
+    callback(null, parseSupervisorOutput(out));
+  });
+}
+
 // ─── Status polling ───────────────────────────────────────────────────────────
 
 let pollTimer = null;
@@ -250,6 +317,7 @@ module.exports = {
   checkDocker,
   startPolling,
   stopPolling,
+  supervisorStatus,
   readConfig,
   writeConfig,
   configExists,

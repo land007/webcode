@@ -20,7 +20,9 @@ const DEFAULT_CONFIG = {
   PORT_KANBAN: 20002,
   PORT_OPENCLAW: 20003,
   PORT_NOVNC: 20004,
-  PORT_VNC: 20005
+  PORT_VNC: 20005,
+  // 自定义目录挂载：[{ host: '/宿主机路径', container: '/容器路径' }, ...]
+  CUSTOM_VOLUMES: []
 };
 
 function getConfigPath() {

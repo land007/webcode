@@ -46,6 +46,14 @@ RUN cd /opt/theia \
     && npm prune --omit=dev \
     && chown -R ubuntu:ubuntu /opt/theia
 
+# ─── 4b. Theia language pack (separate layer — does NOT bust step 4 cache) ───
+# Download the Chinese (Simplified) language pack for Theia NLS support.
+# Theia loads plugins from the directory specified by --plugins= at startup.
+RUN mkdir -p /opt/theia/plugins \
+    && curl -fsSL -o /opt/theia/plugins/vscode-language-pack-zh-hans.vsix \
+       "https://open-vsx.org/api/MS-CEINTL/vscode-language-pack-zh-hans/1.108.0/file/MS-CEINTL.vscode-language-pack-zh-hans-1.108.0.vsix" \
+    && chown -R ubuntu:ubuntu /opt/theia/plugins
+
 # ─── 5. Supervisor ──────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends supervisor \
     && apt-get clean && rm -rf /var/lib/apt/lists/*

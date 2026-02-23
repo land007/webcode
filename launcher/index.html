@@ -18,15 +18,8 @@
     <div class="wizard-header">
       <h1 data-i18n="title">webcode 启动器</h1>
       <div class="header-controls">
-        <div class="theme-toggle">
-          <button class="theme-btn" data-theme-val="dark"   data-i18n="theme_dark">暗色</button>
-          <button class="theme-btn" data-theme-val="light"  data-i18n="theme_light">浅色</button>
-          <button class="theme-btn" data-theme-val="system" data-i18n="theme_system">系统</button>
-        </div>
-        <div class="lang-toggle">
-          <button class="lang-btn active" data-lang="zh-CN">中文</button>
-          <button class="lang-btn" data-lang="en">EN</button>
-        </div>
+        <button class="theme-cycle-btn" id="theme-cycle-btn-wizard" title="切换主题">🌙</button>
+        <button class="lang-cycle-btn"  id="lang-cycle-btn-wizard">EN</button>
       </div>
     </div>
     <p class="subtitle" data-i18n="subtitle">浏览器可访问的开发环境，由 Docker 驱动</p>
@@ -121,6 +114,10 @@
         <div class="form-group">
           <label data-i18n="label_cf_token">Cloudflare Tunnel Token（可选）</label>
           <input type="text" id="cfg-cf-token" placeholder="">
+          <p class="help-text" style="font-size:11px; color:var(--text-muted); margin-top:4px">
+            <span data-i18n="cf_help_text">如何获取 Token？</span>
+            <a class="link" id="cf-help-link-wizard" data-i18n="cf_help_link">Cloudflare Zero Trust 控制台</a><span data-i18n="cf_help_steps"> → Networks → Tunnels → 创建 Tunnel → 复制 token</span>
+          </p>
         </div>
         <div class="form-group">
           <label data-i18n="label_port_config">端口配置（自动检测冲突）</label>
@@ -152,6 +149,11 @@
             </div>
           </div>
           <button class="btn-secondary btn-sm" id="btn-check-ports" style="margin-top:8px" data-i18n="btn_check_ports">🔍 检测端口冲突</button>
+        </div>
+        <div class="form-group" id="volume-group">
+          <label data-i18n="label_volumes">自定义目录挂载</label>
+          <div id="volume-list"></div>
+          <button class="btn-secondary btn-sm" id="btn-add-volume" style="margin-top:6px" data-i18n="btn_add_volume">+ 添加挂载</button>
         </div>
       </details>
       <div class="action-row">
@@ -201,15 +203,8 @@
       <span class="dot dot-gray" id="status-dot"></span>
       <span id="status-text" data-i18n="status_detecting">检测中…</span>
     </div>
-    <div class="theme-toggle" style="margin-right:4px">
-      <button class="theme-btn" data-theme-val="dark"   data-i18n="theme_dark">暗色</button>
-      <button class="theme-btn" data-theme-val="light"  data-i18n="theme_light">浅色</button>
-      <button class="theme-btn" data-theme-val="system" data-i18n="theme_system">系统</button>
-    </div>
-    <div class="lang-toggle" style="margin-right:6px">
-      <button class="lang-btn active" data-lang="zh-CN">中文</button>
-      <button class="lang-btn" data-lang="en">EN</button>
-    </div>
+    <button class="theme-cycle-btn" id="theme-cycle-btn-ws" title="切换主题" style="margin-right:4px">🌙</button>
+    <button class="lang-cycle-btn"  id="lang-cycle-btn-ws" style="margin-right:6px">EN</button>
     <div class="topbar-actions">
       <button class="btn-secondary btn-sm" id="btn-restart" data-i18n="btn_restart">重启</button>
       <button class="btn-secondary btn-sm" id="btn-stop"    data-i18n="btn_stop">停止</button>
@@ -220,13 +215,20 @@
   <div class="iframe-area" id="iframe-area">
     <!-- Status panel (not an iframe) -->
     <div id="panel-status">
-      <div>
-        <h3 style="font-size:15px; font-weight:600; margin-bottom:12px" data-i18n="h_container_status">容器状态</h3>
-        <div class="status-grid" id="status-grid">
-          <div class="svc-card">
-            <div class="svc-name">webcode</div>
-            <div class="svc-state"><span class="dot dot-gray"></span> <span id="main-state" data-i18n="state_unknown">未知</span></div>
+      <!-- 顶部：容器状态（左）+ 进程状态（右）并排 -->
+      <div class="status-top-row">
+        <div class="status-top-left">
+          <h3 class="status-section-title" data-i18n="h_container_status">容器状态</h3>
+          <div class="status-grid" id="status-grid">
+            <div class="svc-card">
+              <div class="svc-name">webcode</div>
+              <div class="svc-state"><span class="dot dot-gray"></span> <span id="main-state" data-i18n="state_unknown">未知</span></div>
+            </div>
           </div>
+        </div>
+        <div id="supervisor-section" class="status-top-right" style="display:none">
+          <h3 class="status-section-title" data-i18n="h_supervisor_status">进程状态</h3>
+          <div class="status-grid" id="supervisor-grid"></div>
         </div>
       </div>
 
@@ -273,6 +275,10 @@
         <div class="form-group">
           <label data-i18n="label_cf_token">Cloudflare Tunnel Token（可选）</label>
           <input type="text" id="ws-cf-token">
+          <p class="help-text" style="font-size:11px; color:var(--text-muted); margin-top:4px">
+            <span data-i18n="cf_help_text">如何获取 Token？</span>
+            <a class="link" id="cf-help-link-ws" data-i18n="cf_help_link">Cloudflare Zero Trust 控制台</a><span data-i18n="cf_help_steps"> → Networks → Tunnels → 创建 Tunnel → 复制 token</span>
+          </p>
         </div>
         <div class="form-group">
           <label data-i18n="label_port_config_ws">端口配置</label>
@@ -299,6 +305,11 @@
             </div>
           </div>
           <button class="btn-secondary btn-sm" id="ws-btn-check-ports" style="margin-top:8px" data-i18n="btn_check_ports">🔍 检测端口冲突</button>
+        </div>
+        <div class="form-group">
+          <label data-i18n="label_volumes">自定义目录挂载</label>
+          <div id="ws-volume-list"></div>
+          <button class="btn-secondary btn-sm" id="ws-btn-add-volume" style="margin-top:6px" data-i18n="btn_add_volume">+ 添加挂载</button>
         </div>
         <div class="action-row" style="margin-top:0">
           <button class="btn-secondary btn-sm" id="btn-save-config"  data-i18n="btn_save_config">保存配置</button>
@@ -375,6 +386,13 @@ let t, setLang, getLang;
 
 if (!t) throw new Error('i18n module failed to load');
 
+// ─── Theme constants（在 applyTranslations 之前声明，避免 TDZ）──────────────────
+
+const THEME_KEY   = 'webcode-theme';
+const THEME_ORDER = ['dark', 'light', 'system'];
+const THEME_ICONS = { dark: '🌙', light: '☀️', system: '💻' };
+const THEME_I18N  = { dark: 'theme_dark', light: 'theme_light', system: 'theme_system' };
+
 // ─── applyTranslations：在页面上下文中运行，确保能访问 document ────────────────
 
 function applyTranslations() {
@@ -387,51 +405,62 @@ function applyTranslations() {
   document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
     el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
   });
-  // 同步语言按钮激活状态
+  // 同步语言循环按钮：🌐 + 当前语言名（让用户知道现在是什么语言，可以点击切换）
   var lang = getLang();
-  document.querySelectorAll('.lang-btn').forEach(function(btn) {
-    btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+  var langLabel = lang === 'zh-CN' ? '🌐\u00a0中文' : '🌐\u00a0EN';
+  document.querySelectorAll('.lang-cycle-btn').forEach(function(btn) {
+    btn.textContent = langLabel;
   });
   document.documentElement.lang = lang;
-  // 同步主题按钮激活状态（语言切换后文字更新，active 也要同步）
-  var theme = localStorage.getItem(THEME_KEY) || 'dark';
-  document.querySelectorAll('.theme-btn').forEach(function(btn) {
-    btn.classList.toggle('active', btn.getAttribute('data-theme-val') === theme);
+  // 语言切换后也更新主题按钮的文字（其中含翻译文本）
+  var currentTheme = localStorage.getItem(THEME_KEY) || 'dark';
+  var themeIcon  = THEME_ICONS[currentTheme] || '🌙';
+  var themeLabel = t(THEME_I18N[currentTheme] || 'theme_dark');
+  document.querySelectorAll('.theme-cycle-btn').forEach(function(btn) {
+    btn.textContent = themeIcon + '\u00a0' + themeLabel;
   });
 }
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
 
-const THEME_KEY = 'webcode-theme';
-
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   localStorage.setItem(THEME_KEY, theme);
-  document.querySelectorAll('.theme-btn').forEach(function(btn) {
-    btn.classList.toggle('active', btn.getAttribute('data-theme-val') === theme);
+  // 同步所有主题循环按钮：图标 + 当前语言下的文字
+  var icon  = THEME_ICONS[theme] || '🌙';
+  var label = t(THEME_I18N[theme] || 'theme_dark');
+  document.querySelectorAll('.theme-cycle-btn').forEach(function(btn) {
+    btn.textContent = icon + '\u00a0' + label;
   });
 }
 
 // 监听系统主题变化，当选择"系统"时实时响应
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
   if ((localStorage.getItem(THEME_KEY) || 'dark') === 'system') {
-    applyTheme('system'); // 重新触发（CSS @media 自动生效，这里只刷新按钮状态）
+    applyTheme('system');
   }
 });
 
+// 主题循环按钮点击
 document.addEventListener('click', function(e) {
-  var btn = e.target.closest('.theme-btn');
+  var btn = e.target.closest('.theme-cycle-btn');
   if (!btn) return;
-  applyTheme(btn.getAttribute('data-theme-val'));
+  var current = localStorage.getItem(THEME_KEY) || 'dark';
+  var idx = THEME_ORDER.indexOf(current);
+  var next = THEME_ORDER[(idx + 1) % THEME_ORDER.length];
+  applyTheme(next);
 });
 
-// ─── Language switcher（事件委托，挂在 document 上最可靠）────────────────────
+// ─── Language switcher（语言循环按钮）───────────────────────────────────────
 
 document.addEventListener('click', function(e) {
-  var btn = e.target.closest('.lang-btn');
+  var btn = e.target.closest('.lang-cycle-btn');
   if (!btn) return;
-  setLang(btn.getAttribute('data-lang'));
+  var newLang = getLang() === 'zh-CN' ? 'en' : 'zh-CN';
+  setLang(newLang);
   applyTranslations();
+  // 语言切换后标记 Theia iframe 需重新加载（下次激活时带新 locale）
+  if (typeof iframeLoaded !== 'undefined') iframeLoaded['ide'] = false;
 });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -467,11 +496,22 @@ function showWizard(step) {
   setStep(step);
 }
 
+function applyModeToTabs(mode) {
+  var vncTab = document.getElementById('tab-vnc');
+  if (mode === 'lite') {
+    vncTab.style.display = 'none';
+    if (currentTab === 'vnc') activateTab('status');
+  } else {
+    vncTab.style.display = '';
+  }
+}
+
 function showWorkspace() {
   document.getElementById('wizard').style.display = 'none';
   document.getElementById('workspace').style.display = 'flex';
-  activateTab('status');
   loadConfigIntoWorkspaceForm();
+  applyModeToTabs(cfg.MODE || 'desktop');
+  activateTab('status');
   startStatusPolling();
   startLogStream();
   if (!proxyStarted) {
@@ -541,6 +581,69 @@ document.getElementById('btn-step1-next').addEventListener('click', () => {
   });
 });
 
+// ─── Volume list helpers ─────────────────────────────────────────────────────
+
+function renderVolumeList(containerId, volumes) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  (volumes || []).forEach(function(v, i) {
+    const row = document.createElement('div');
+    row.className = 'volume-row';
+    row.style.cssText = 'display:flex;gap:6px;margin-bottom:5px;align-items:center';
+    row.innerHTML =
+      '<input type="text" class="vol-host" placeholder="' + t('ph_host_path') + '" value="' + escHtml(v.host || '') + '" style="flex:1">' +
+      '<span style="color:var(--text-muted);font-size:13px;flex-shrink:0">→</span>' +
+      '<input type="text" class="vol-container" placeholder="' + t('ph_container_path') + '" value="' + escHtml(v.container || '') + '" style="flex:1">' +
+      '<button class="btn-secondary btn-sm" style="flex-shrink:0;padding:4px 8px" data-vol-del="' + i + '">✕</button>';
+    container.appendChild(row);
+  });
+}
+
+function collectVolumeList(containerId) {
+  const rows = document.getElementById(containerId).querySelectorAll('.volume-row');
+  const result = [];
+  rows.forEach(function(row) {
+    const host = row.querySelector('.vol-host').value.trim();
+    const container = row.querySelector('.vol-container').value.trim();
+    if (host || container) result.push({ host: host, container: container });
+  });
+  return result;
+}
+
+// Volume add/delete event delegation (wizard)
+document.addEventListener('click', function(e) {
+  if (e.target.id === 'btn-add-volume') {
+    const vols = collectVolumeList('volume-list');
+    vols.push({ host: '', container: '' });
+    renderVolumeList('volume-list', vols);
+    return;
+  }
+  var delBtn = e.target.closest('[data-vol-del]');
+  if (delBtn && document.getElementById('volume-list').contains(delBtn)) {
+    const idx = parseInt(delBtn.getAttribute('data-vol-del'), 10);
+    const vols = collectVolumeList('volume-list');
+    vols.splice(idx, 1);
+    renderVolumeList('volume-list', vols);
+  }
+});
+
+// Volume add/delete event delegation (workspace)
+document.addEventListener('click', function(e) {
+  if (e.target.id === 'ws-btn-add-volume') {
+    const vols = collectVolumeList('ws-volume-list');
+    vols.push({ host: '', container: '' });
+    renderVolumeList('ws-volume-list', vols);
+    return;
+  }
+  var delBtn = e.target.closest('[data-vol-del]');
+  if (delBtn && document.getElementById('ws-volume-list').contains(delBtn)) {
+    const idx = parseInt(delBtn.getAttribute('data-vol-del'), 10);
+    const vols = collectVolumeList('ws-volume-list');
+    vols.splice(idx, 1);
+    renderVolumeList('ws-volume-list', vols);
+  }
+});
+
 // ─── Step 2: Config form ─────────────────────────────────────────────────────
 
 let selectedMode = cfg.MODE || 'desktop';
@@ -580,6 +683,8 @@ function loadConfigIntoWizardForm() {
   document.getElementById('mode-desktop').classList.toggle('active', selectedMode === 'desktop');
   document.getElementById('mode-lite').classList.toggle('active', selectedMode === 'lite');
   document.getElementById('vnc-group').style.display = selectedMode === 'desktop' ? '' : 'none';
+
+  renderVolumeList('volume-list', cfg.CUSTOM_VOLUMES || []);
 }
 
 function collectWizardForm() {
@@ -599,6 +704,8 @@ function collectWizardForm() {
   cfg.PORT_OPENCLAW = parseInt(document.getElementById('cfg-port-openclaw').value) || 20003;
   cfg.PORT_NOVNC    = parseInt(document.getElementById('cfg-port-novnc').value)    || 20004;
   cfg.PORT_VNC      = parseInt(document.getElementById('cfg-port-vnc').value)      || 20005;
+
+  cfg.CUSTOM_VOLUMES = collectVolumeList('volume-list');
 
   writeConfig(cfg);
 }
@@ -720,8 +827,10 @@ const IFRAME_IDS = { ide: 'iframe-ide', kanban: 'iframe-kanban', vnc: 'iframe-vn
 const iframeLoaded = {};
 
 function iframeUrl(tab) {
+  // Pass locale to Theia so it loads in the correct language (requires NLS packages in the container)
+  const theiaLocale = getLang() === 'zh-CN' ? 'zh-CN' : 'en';
   switch (tab) {
-    case 'ide':    return 'http://localhost:11001';
+    case 'ide':    return `http://localhost:11001/?locale=${theiaLocale}`;
     case 'kanban': return 'http://localhost:11002';
     case 'vnc':    return `http://localhost:11004/?autoconnect=true&resize=remote&password=${encodeURIComponent(cfg.VNC_PASSWORD)}`;
     case 'ai':     return 'http://localhost:11003/';
@@ -803,6 +912,7 @@ function updateStatusUI(containers) {
   const grid = document.getElementById('status-grid');
   if (containers.length === 0) {
     grid.innerHTML = `<div class="svc-card"><div class="svc-name">webcode</div><div class="svc-state"><span class="dot dot-gray"></span> ${t('dyn_not_running')}</div></div>`;
+    document.getElementById('supervisor-section').style.display = 'none';
     return;
   }
   grid.innerHTML = containers.map(c => {
@@ -814,6 +924,27 @@ function updateStatusUI(containers) {
       <div class="svc-state"><span class="dot ${dotClass}"></span> ${escHtml(state)}</div>
     </div>`;
   }).join('');
+
+  // Fetch supervisor process status when container is running
+  if (running) {
+    app.supervisorStatus(cfg, function(err, services) {
+      if (err || !services || services.length === 0) return;
+      const section = document.getElementById('supervisor-section');
+      const supGrid = document.getElementById('supervisor-grid');
+      section.style.display = '';
+      supGrid.innerHTML = services.map(function(svc) {
+        const state = (svc.state || '').toUpperCase();
+        const dotClass = state === 'RUNNING' ? 'dot-green' :
+                         state === 'STARTING' ? 'dot-yellow' : 'dot-red';
+        return `<div class="svc-card">
+          <div class="svc-name">${escHtml(svc.name)}</div>
+          <div class="svc-state"><span class="dot ${dotClass}"></span> ${escHtml(svc.state)}</div>
+        </div>`;
+      }).join('');
+    });
+  } else {
+    document.getElementById('supervisor-section').style.display = 'none';
+  }
 }
 
 function escHtml(s) {
@@ -860,6 +991,7 @@ document.querySelectorAll('#panel-status [data-mode]').forEach(btn => {
     wsMode = btn.dataset.mode;
     document.getElementById('ws-mode-desktop').classList.toggle('active', wsMode === 'desktop');
     document.getElementById('ws-mode-lite').classList.toggle('active', wsMode === 'lite');
+    applyModeToTabs(wsMode);
   });
 });
 
@@ -883,6 +1015,8 @@ function loadConfigIntoWorkspaceForm() {
   wsMode = cfg.MODE || 'desktop';
   document.getElementById('ws-mode-desktop').classList.toggle('active', wsMode === 'desktop');
   document.getElementById('ws-mode-lite').classList.toggle('active', wsMode === 'lite');
+
+  renderVolumeList('ws-volume-list', cfg.CUSTOM_VOLUMES || []);
 }
 
 function collectWorkspaceForm() {
@@ -902,6 +1036,8 @@ function collectWorkspaceForm() {
   cfg.PORT_OPENCLAW = parseInt(document.getElementById('ws-port-openclaw').value) || 20003;
   cfg.PORT_NOVNC    = parseInt(document.getElementById('ws-port-novnc').value)    || 20004;
   cfg.PORT_VNC      = parseInt(document.getElementById('ws-port-vnc').value)      || 20005;
+
+  cfg.CUSTOM_VOLUMES = collectVolumeList('ws-volume-list');
 
   writeConfig(cfg);
 }
@@ -958,6 +1094,9 @@ document.getElementById('btn-save-config').addEventListener('click', () => {
 });
 
 document.getElementById('btn-save-restart').addEventListener('click', () => {
+  const btn = document.getElementById('btn-save-restart');
+  btn.disabled = true;
+  btn.textContent = t('dyn_restarting');
   collectWorkspaceForm();
   app.startProxies(cfg);
   Object.keys(iframeLoaded).forEach(k => iframeLoaded[k] = false);
@@ -966,9 +1105,21 @@ document.getElementById('btn-save-restart').addEventListener('click', () => {
       document.getElementById('ws-log').textContent += data;
       document.getElementById('ws-log').scrollTop = document.getElementById('ws-log').scrollHeight;
     }, () => {
+      btn.disabled = false;
+      btn.textContent = t('btn_save_restart');
       if (currentTab !== 'status') activateTab(currentTab);
       startLogStream();
     });
+  });
+});
+
+// ─── Cloudflare help links ────────────────────────────────────────────────────
+
+['cf-help-link-wizard', 'cf-help-link-ws'].forEach(function(id) {
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('click', function(e) {
+    e.preventDefault();
+    nw.Shell.openExternal('https://one.dash.cloudflare.com/');
   });
 });
 
