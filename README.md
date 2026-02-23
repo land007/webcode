@@ -10,7 +10,7 @@
 ![Platforms](https://img.shields.io/badge/platform-amd64%20%7C%20arm64-blue)
 ![Image Size](https://img.shields.io/docker/image-size/land007/webcode/latest)
 
-[📦 Repository](https://github.com/land007/webcode) | [🐳 Docker Hub](https://hub.docker.com/r/land007/webcode) | [🐛 Issues](https://github.com/land007/webcode/issues) | [📖 Changelog](https://github.com/land007/webcode/releases)
+[📦 Repository](https://github.com/land007/webcode) | [🐳 Docker Hub](https://hub.docker.com/r/land007/webcode) | [🐛 Issues](https://github.com/land007/webcode/issues) | [📖 Releases](https://github.com/land007/webcode/releases)
 
 A Docker-based browser-accessible development environment with **Theia IDE**, **Vibe Kanban**, **noVNC Desktop**, and **OpenClaw AI**.
 
@@ -51,290 +51,193 @@ A Docker-based browser-accessible development environment with **Theia IDE**, **
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Installation
 
-### One-Command Install
+### Method 1: Desktop App — Download & Run (Easiest) ⭐
+
+No Git or Node.js needed. Just Docker Desktop + a download.
+
+**Step 1 — Install Docker Desktop** (if not already installed):
+
+| Platform | Download |
+|----------|----------|
+| macOS | [Docker Desktop for Mac](https://www.docker.com/products/docker-desktop/) |
+| Windows | [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/) |
+| Linux | [Docker Engine](https://docs.docker.com/engine/install/) |
+
+**Step 2 — Download the webcode Launcher app:**
+
+Go to the [**Releases page**](https://github.com/land007/webcode/releases/latest) and download the file for your platform:
+
+| Platform | File to download |
+|----------|-----------------|
+| macOS (Apple Silicon / M1+) | `webcode-launcher-osx-arm64-*.zip` |
+| macOS (Intel) | `webcode-launcher-osx-x64-*.zip` |
+| Windows | `webcode-launcher-win-x64-*.zip` |
+| Linux | `webcode-launcher-linux-x64-*.zip` |
+
+**Step 3 — Unzip and run:**
+
+- **macOS**: Unzip → right-click `webcode.app` → **Open** (required first time to bypass Gatekeeper)
+- **Windows**: Unzip → double-click `webcode.exe` → click "Run anyway" if SmartScreen appears
+- **Linux**: Unzip → run `./webcode`
+
+The app will guide you through setup with a step-by-step wizard.
+
+---
+
+### Method 2: One-Command Installer (Terminal)
 
 **macOS / Linux**:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/land007/webcode/main/install.sh | bash
 ```
 
-**Windows** (PowerShell - **Run as Administrator**):
+**Windows** (PowerShell — **Run as Administrator**):
 ```powershell
 irm https://raw.githubusercontent.com/land007/webcode/main/install.ps1 | iex
 ```
 
-> **Note**: Windows users must run PowerShell as Administrator for automatic Node.js installation. Alternatively, use WSL to run the bash script.
-
-This installer will:
-- Detect your environment (desktop vs server)
-- Offer Launcher GUI for desktop users (if Node.js 18+ is installed)
-- Or install directly using Docker
-
 ---
 
-### Method 1: Visual Launcher (Recommended for Desktop Users)
+### Method 3: Docker Only (Servers / Headless)
 
-![Launcher Setup](https://raw.githubusercontent.com/land007/webcode/main/images/screenshot-launcher-setup.png)
+No GUI needed. Requires [Docker](https://docs.docker.com/engine/install/).
 
-**Prerequisites**:
-- Docker Desktop (macOS / Windows) or Docker Engine (Linux)
-- [Git](https://git-scm.com/)
-- [Node.js 18+](https://nodejs.org/)
-
-**macOS / Linux**:
-
+**macOS / Linux / WSL / Git Bash:**
 ```bash
-git clone https://github.com/land007/webcode.git ~/webcode
-cd ~/webcode/launcher
-npm install
-npx nw .
-```
-
-> Linux requires a desktop environment (`$DISPLAY` or Wayland) to display the window.
-
-**Windows** (PowerShell or cmd):
-
-```bat
-git clone https://github.com/land007/webcode.git %USERPROFILE%\webcode
-cd %USERPROFILE%\webcode\launcher
-npm install
-npx nw .
-```
-
-A GUI window will appear where you can configure credentials, ports, and startup mode, then click **Start** to launch the container.
-
-![Launcher Status](https://raw.githubusercontent.com/land007/webcode/main/images/screenshot-launcher-status.png)
-
----
-
-### Method 2: Docker Only (For Servers)
-
-**Prerequisites**: Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) (macOS / Windows) or [Docker Engine](https://docs.docker.com/engine/install/) (Linux)
-
-**Steps (macOS / Linux / Windows WSL / Git Bash)**:
-
-```bash
-# Create working directory
 mkdir -p ~/webcode && cd ~/webcode
-
-# Download docker-compose.yml
 curl -fsSL https://raw.githubusercontent.com/land007/webcode/main/launcher/assets/docker-compose.yml -o docker-compose.yml
-
-# Start
 docker compose up -d
 ```
 
-> **Windows PowerShell alternative** (if curl is unavailable):
-> ```powershell
-> New-Item -ItemType Directory -Force "$env:USERPROFILE\webcode"
-> Set-Location "$env:USERPROFILE\webcode"
-> Invoke-WebRequest -Uri "https://raw.githubusercontent.com/land007/webcode/main/launcher/assets/docker-compose.yml" -OutFile docker-compose.yml
-> docker compose up -d
-> ```
-
-**Access**:
-
-| Service | URL |
-|---------|-----|
-| Theia IDE | http://localhost:20001 |
-| Vibe Kanban | http://localhost:20002 |
-| OpenClaw AI | http://localhost:20003 |
-| noVNC Desktop | http://localhost:20004 |
-| VNC Client | localhost:20005 (VNC protocol) |
-
-Default credentials: `admin` / `changeme`, VNC password: `changeme`
-
-**Stop**: `docker compose down`
-
-**Custom passwords** (via .env file):
-
-```bash
-cp .env.example .env   # edit .env to change passwords
+**Windows PowerShell:**
+```powershell
+New-Item -ItemType Directory -Force "$env:USERPROFILE\webcode"
+Set-Location "$env:USERPROFILE\webcode"
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/land007/webcode/main/launcher/assets/docker-compose.yml" -OutFile docker-compose.yml
 docker compose up -d
 ```
 
 ---
 
-## Advanced
+## 🌐 Access
 
-The image is published on Docker Hub: [`land007/webcode:latest`](https://hub.docker.com/r/land007/webcode), supporting `linux/amd64` and `linux/arm64`.
+After startup, open these URLs in your browser:
 
-```bash
-cp .env.example .env
-# Edit .env as needed (defaults work out of the box)
-docker compose up -d
-```
+| Service | URL | Login |
+|---------|-----|-------|
+| 💻 Theia IDE | http://localhost:20001 | `admin` / `changeme` |
+| 📊 Vibe Kanban | http://localhost:20002 | `admin` / `changeme` |
+| 🤖 OpenClaw AI | http://localhost:20003 | `admin` / `changeme` |
+| 🖥️ noVNC Desktop | http://localhost:20004 | VNC password: `changeme` |
+| VNC client app | localhost:20005 | VNC password: `changeme` |
 
-### Access Points
-
-| Service | URL | Auth |
-|---------|-----|------|
-| Theia IDE | http://localhost:20001 | Basic Auth |
-| Vibe Kanban | http://localhost:20002 | Basic Auth |
-| OpenClaw AI | http://localhost:20003 | Basic Auth |
-| noVNC Desktop | http://localhost:20004 | VNC password |
-| VNC Client | localhost:20005 | VNC password |
-
-**Port pattern:**
-- **20001–20004**: Caddy proxy ports (Basic Auth protected)
-- **20005**: VNC direct port (VNC password auth)
-
-Default Basic Auth: `admin` / `changeme`
-Default VNC password: `changeme`
+> Default credentials are `admin` / `changeme`. Change them via `.env` (see Configuration).
 
 ---
 
-## Security & Isolation
+## 🔒 Security & Isolation
 
-**🔒 Will AI break my computer? No!**
+**Will AI break my computer? No!**
 
-Everything runs inside a **sandboxed Docker container**. Your host computer is 100% safe.
+Everything runs inside a **sandboxed Docker container**. Your host computer is completely safe.
 
-- ✅ **OpenClaw AI can't touch your files** — It only sees files inside the container, not your documents, photos, or anything on your computer
-- ✅ **Go wild with experiments** — Run any code, install anything, break things inside — your computer stays untouched
-- ✅ **One-command reset** — Messed up? Run `docker compose down -v` and start fresh
+- ✅ **AI can't touch your files** — It only sees files inside the container, not your documents, photos, or anything on your real computer
+- ✅ **Experiment freely** — Run any code, install anything, break things inside — your computer stays untouched
+- ✅ **One-command reset** — Messed up? Run `docker compose down -v` and start fresh in seconds
 
-> 💡 **Think of it like this**: webcode is a safe "playground computer" inside your real computer. You can do anything inside the playground — it won't affect your real computer at all.
+> 💡 Think of it like a "sandbox computer" running inside your real computer. You can do anything inside the sandbox — it won't affect your real computer at all.
 
-**⚠️ Advanced: Docker socket (optional)**
+**⚠️ About Docker socket (optional)**
 
-By default, `docker-compose.yml` has `/var/run/docker.sock` enabled for Docker-in-Docker. This gives the container extra power to manage other containers.
-
-- **For most users**: Keep it enabled — you probably want this feature
-- **For production/security**: Comment it out if running untrusted code
+By default, `/var/run/docker.sock` is mounted for Docker-in-Docker capability.
+- **Most users**: Keep it — you'll want this feature
+- **Security-sensitive use**: Comment it out in `docker-compose.yml` if running untrusted code
 
 ---
 
-## Configuration (.env)
+## ⚙️ Configuration (.env)
+
+Create a `.env` file next to `docker-compose.yml` to customize settings:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MODE` | `desktop` | Run mode: `desktop` (with VNC) / `lite` (no desktop) |
-| `VNC_PASSWORD` | auto-generated | VNC login password (desktop mode only) |
+| `MODE` | `desktop` | `desktop` (with VNC desktop) or `lite` (no desktop, lighter) |
+| `AUTH_USER` | `admin` | Login username for Theia / Vibe Kanban / OpenClaw |
+| `AUTH_PASSWORD` | `changeme` | Login password |
+| `VNC_PASSWORD` | auto-generated | VNC desktop password (desktop mode only) |
 | `VNC_RESOLUTION` | `1920x1080` | Desktop resolution (desktop mode only) |
-| `AUTH_USER` | `admin` | Basic Auth username for Theia / Vibe Kanban / OpenClaw |
-| `AUTH_PASSWORD` | `changeme` | Basic Auth password |
-| `OPENCLAW_TOKEN` | `changeme` | OpenClaw gateway token (pass via `?token=<value>`) |
+| `OPENCLAW_TOKEN` | `changeme` | OpenClaw token (pass as `?token=<value>` in the URL) |
 | `GIT_USER_NAME` | — | Git commit username |
 | `GIT_USER_EMAIL` | — | Git commit email |
-| `CF_TUNNEL_TOKEN` | empty (disabled) | Cloudflare Tunnel token; enables tunnel when set |
+| `CF_TUNNEL_TOKEN` | empty | Cloudflare Tunnel token — enables remote access when set |
+
+```bash
+cp .env.example .env
+# Edit .env, then:
+docker compose up -d
+```
 
 ---
 
-## Run Modes
+## 🖥️ Run Modes
 
-### Desktop Mode (default)
-
-Full GNOME Flashback desktop, accessible via browser or VNC client, with Chinese input support (fcitx + Google Pinyin).
-
+**Desktop mode** (default) — Full GNOME Linux desktop in your browser, with Chinese input (fcitx + Google Pinyin):
 ```bash
 docker compose up -d
-# or explicitly
-MODE=desktop docker compose up -d
 ```
 
-### Lite Mode
-
-Runs only Theia + Vibe Kanban + OpenClaw — no VNC desktop, lower resource usage.
-
+**Lite mode** — Only Theia + Vibe Kanban + OpenClaw, no desktop (lower resource usage):
 ```bash
 MODE=lite docker compose up -d
 ```
 
-> noVNC / VNC are unavailable in lite mode.
-
 ---
 
-## Services
-
-### Theia IDE
-
-Browser-based VS Code. Working directory is `/home/ubuntu/projects` inside the container (mapped to the `projects` volume).
-
-![Theia IDE](https://raw.githubusercontent.com/land007/webcode/main/images/screenshot-theia.png)
-
-Access: http://localhost:20001 (Basic Auth required)
-
-### Vibe Kanban
-
-Kanban-style task management tool for tracking project progress.
-
-![Vibe Kanban](https://raw.githubusercontent.com/land007/webcode/main/images/screenshot-kanban.png)
-
-Access: http://localhost:20002
-
-### noVNC Desktop
-
-Full Linux desktop in your browser (desktop mode only).
-
-![noVNC Desktop](https://raw.githubusercontent.com/land007/webcode/main/images/screenshot-desktop.png)
-
-Access: http://localhost:20004 — enter the VNC password to log in.
-
-### OpenClaw AI Assistant
-
-Self-hosted AI assistant gateway supporting multiple AI services.
-
-![OpenClaw AI](https://raw.githubusercontent.com/land007/webcode/main/images/screenshot-openclaw.png)
-
-Access: http://localhost:20003
-
-**Two-step authentication:**
-1. Browser Basic Auth dialog → enter `AUTH_USER` / `AUTH_PASSWORD`
-2. OpenClaw login → pass token via `?token=<OPENCLAW_TOKEN>`
-
----
-
-## OpenClaw Initial Setup
-
-After first startup, run the onboard command to complete initialization:
+## 🔧 Common Commands
 
 ```bash
-docker exec -it -u ubuntu webcode openclaw onboard
-```
-
-Follow the prompts, then refresh http://localhost:20003.
-
----
-
-## Common Commands
-
-```bash
-# View running status
+# Check status
 docker compose ps
 
-# View logs (all services)
+# View logs
 docker compose logs -f
-
-# View logs for a specific service
-docker exec -it webcode supervisorctl tail -f theia
 
 # Stop
 docker compose down
 
-# Stop and delete volumes (caution: erases all data)
+# Stop and erase all data (caution!)
 docker compose down -v
 
-# Restart a single service (e.g. theia)
+# Restart a single service
 docker exec -it webcode supervisorctl restart theia
 ```
 
 ---
 
-## Data Persistence
+## 💾 Data Persistence
 
-The following data is stored in Docker volumes and survives container rebuilds:
+Your data survives container restarts and updates — stored in Docker volumes:
 
-| Volume | Contents |
-|--------|----------|
-| `projects` | User code (`/home/ubuntu/projects`) |
+| Volume | What's stored |
+|--------|---------------|
+| `projects` | Your code (`/home/ubuntu/projects`) |
 | `theia-data` | Theia plugins and settings |
 | `vibe-kanban-data` | Kanban task data |
-| `user-data` | bash history and other user data |
+| `user-data` | Bash history and user data |
 | `openclaw-data` | OpenClaw config and data |
 | `gitconfig` | Git identity (`.gitconfig`) |
+
+---
+
+## 🤖 OpenClaw First-Time Setup
+
+After first startup, run this once to complete initialization:
+```bash
+docker exec -it -u ubuntu webcode openclaw onboard
+```
+Follow the prompts, then refresh http://localhost:20003.
 
 ---
 ---
@@ -378,268 +281,165 @@ The following data is stored in Docker volumes and survives container rebuilds:
 | **Linux 桌面** | ✅ 内置 | ❌ 无 | ❌ 无 |
 | **费用** | 免费（自有硬件） | 免费 | 付费档位 |
 
-### 一键安装
+---
 
-**macOS / Linux**:
+## 🚀 安装方式
+
+### 方式一：下载桌面应用（最简单）⭐
+
+不需要安装 Git 或 Node.js，只需安装 Docker Desktop 后下载应用即可。
+
+**第一步 — 安装 Docker Desktop**（已安装可跳过）：
+
+| 平台 | 下载地址 |
+|------|---------|
+| macOS | [Docker Desktop for Mac](https://www.docker.com/products/docker-desktop/) |
+| Windows | [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/) |
+| Linux | [Docker Engine](https://docs.docker.com/engine/install/) |
+
+**第二步 — 下载 webcode 启动器应用**：
+
+前往 [**Releases 页面**](https://github.com/land007/webcode/releases/latest) 下载对应平台的文件：
+
+| 平台 | 下载文件 |
+|------|---------|
+| macOS（Apple Silicon / M1 及以上） | `webcode-launcher-osx-arm64-*.zip` |
+| macOS（Intel 芯片） | `webcode-launcher-osx-x64-*.zip` |
+| Windows | `webcode-launcher-win-x64-*.zip` |
+| Linux | `webcode-launcher-linux-x64-*.zip` |
+
+**第三步 — 解压并运行**：
+
+- **macOS**：解压后右键点击 `webcode.app` → 选择**打开**（首次运行需要这样操作以绕过系统安全提示）
+- **Windows**：解压后双击 `webcode.exe`，如弹出 SmartScreen 警告，点击"仍要运行"
+- **Linux**：解压后运行 `./webcode`
+
+应用会通过图形向导一步步引导你完成设置。
+
+---
+
+### 方式二：一键命令安装（终端）
+
+**macOS / Linux**：
 ```bash
 curl -fsSL https://raw.githubusercontent.com/land007/webcode/main/install.sh | bash
 ```
 
-**Windows** (PowerShell - **需以管理员身份运行**):
+**Windows**（PowerShell — **需以管理员身份运行**）：
 ```powershell
 irm https://raw.githubusercontent.com/land007/webcode/main/install.ps1 | iex
 ```
 
-> **Note**：Windows 用户必须以管理员身份运行 PowerShell 才能自动安装 Node.js。或者使用 WSL 运行 bash 脚本。
-
-安装程序将：
-- 自动检测环境（桌面 vs 服务器）
-- 为桌面用户提供 Launcher 图形界面（需 Node.js 18+）
-- 或直接使用 Docker 安装
-
 ---
 
-### 方法一：Launcher 图形界面（桌面用户推荐）
+### 方式三：纯 Docker（服务器 / 无图形界面）
 
-![Launcher 设置向导](https://raw.githubusercontent.com/land007/webcode/main/images/screenshot-launcher-setup.png)
+不需要图形界面。需要安装 [Docker](https://docs.docker.com/engine/install/)。
 
-**先决条件**：
-- Docker Desktop（macOS / Windows）或 Docker Engine（Linux）
-- [Git](https://git-scm.com/)
-- [Node.js 18+](https://nodejs.org/)
-
-**macOS / Linux**：
-
+**macOS / Linux / WSL / Git Bash：**
 ```bash
-git clone https://github.com/land007/webcode.git ~/webcode
-cd ~/webcode/launcher
-npm install
-npx nw .
-```
-
-> Linux 需要桌面环境（`$DISPLAY` 或 Wayland）才能显示窗口。
-
-**Windows**（PowerShell 或 cmd）：
-
-```bat
-git clone https://github.com/land007/webcode.git %USERPROFILE%\webcode
-cd %USERPROFILE%\webcode\launcher
-npm install
-npx nw .
-```
-
-弹出图形界面后，可配置账号密码、端口、启动模式，点击 **Start** 即可启动容器。
-
-![Launcher 状态页](https://raw.githubusercontent.com/land007/webcode/main/images/screenshot-launcher-status.png)
-
----
-
-### 方法二：仅 Docker（服务器场景）
-
-**先决条件**：安装 [Docker Desktop](https://www.docker.com/products/docker-desktop/)（macOS / Windows）或 [Docker Engine](https://docs.docker.com/engine/install/)（Linux）
-
-**步骤（macOS / Linux / Windows WSL / Git Bash 均适用）**：
-
-```bash
-# 创建工作目录
 mkdir -p ~/webcode && cd ~/webcode
-
-# 下载 docker-compose.yml
 curl -fsSL https://raw.githubusercontent.com/land007/webcode/main/launcher/assets/docker-compose.yml -o docker-compose.yml
-
-# 启动
 docker compose up -d
 ```
 
-> **Windows PowerShell 替代方案**（如果没有 curl）：
-> ```powershell
-> New-Item -ItemType Directory -Force "$env:USERPROFILE\webcode"
-> Set-Location "$env:USERPROFILE\webcode"
-> Invoke-WebRequest -Uri "https://raw.githubusercontent.com/land007/webcode/main/launcher/assets/docker-compose.yml" -OutFile docker-compose.yml
-> docker compose up -d
-> ```
-
-**访问地址**：
-
-| 服务 | 地址 |
-|------|------|
-| Theia IDE | http://localhost:20001 |
-| Vibe Kanban | http://localhost:20002 |
-| OpenClaw AI | http://localhost:20003 |
-| noVNC 桌面 | http://localhost:20004 |
-| VNC 客户端 | localhost:20005（VNC 协议） |
-
-默认账号：`admin` / `changeme`，VNC 密码：`changeme`
-
-**停止**：`docker compose down`
-
-**自定义密码**（通过 .env 文件）：
-
-```bash
-cp .env.example .env   # 编辑 .env 修改密码
+**Windows PowerShell：**
+```powershell
+New-Item -ItemType Directory -Force "$env:USERPROFILE\webcode"
+Set-Location "$env:USERPROFILE\webcode"
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/land007/webcode/main/launcher/assets/docker-compose.yml" -OutFile docker-compose.yml
 docker compose up -d
 ```
 
 ---
 
-## 高级用法
+## 🌐 访问地址
 
-镜像已发布至 Docker Hub：[`land007/webcode:latest`](https://hub.docker.com/r/land007/webcode)，支持 `linux/amd64` 和 `linux/arm64`。
+启动后，在浏览器中打开以下地址：
 
-```bash
-cp .env.example .env
-# 按需编辑 .env（可直接使用默认值）
-docker compose up -d
-```
+| 服务 | 地址 | 登录账号 |
+|------|------|---------|
+| 💻 Theia IDE | http://localhost:20001 | `admin` / `changeme` |
+| 📊 Vibe Kanban | http://localhost:20002 | `admin` / `changeme` |
+| 🤖 OpenClaw AI | http://localhost:20003 | `admin` / `changeme` |
+| 🖥️ noVNC 桌面 | http://localhost:20004 | VNC 密码：`changeme` |
+| VNC 客户端软件 | localhost:20005 | VNC 密码：`changeme` |
 
-### 访问地址
-
-| 服务 | 地址 | 认证 |
-|------|------|------|
-| Theia IDE | http://localhost:20001 | Basic Auth |
-| Vibe Kanban | http://localhost:20002 | Basic Auth |
-| OpenClaw AI | http://localhost:20003 | Basic Auth |
-| noVNC 桌面 | http://localhost:20004 | VNC 密码 |
-| VNC 客户端 | localhost:20005 | VNC 密码 |
-
-**端口规律：**
-- **20001–20004**: Caddy 代理端口（带 Basic Auth）
-- **20005**: VNC 直连端口（VNC 密码认证）
-
-默认 Basic Auth：`admin` / `changeme`
-默认 VNC 密码：`changeme`
+> 默认账号密码为 `admin` / `changeme`，可通过 `.env` 文件修改（见配置说明）。
 
 ---
 
-## 安全性与隔离
+## 🔒 安全性与隔离
 
-**🔒 AI 会弄坏我的电脑吗？不会！**
+**AI 会弄坏我的电脑吗？不会！**
 
-所有操作都在**沙箱化的 Docker 容器**里运行。你的电脑 100% 安全。
+所有操作都在**沙箱化的 Docker 容器**里运行，你的电脑完全安全。
 
-- ✅ **OpenClaw AI 碰不到你的文件** — 它只能看到容器里的文件，碰不到你的文档、照片或电脑上的任何东西
-- ✅ **随便折腾没关系** — 任何代码、任何操作、搞坏任何东西 — 你的电脑毫发无损
-- ✅ **一键恢复** — 搞乱了？运行 `docker compose down -v` 就能重新开始
+- ✅ **AI 碰不到你的文件** — 它只能看到容器里的文件，碰不到你的文档、照片或电脑上的任何东西
+- ✅ **随便折腾没关系** — 运行任何代码、安装任何东西、把容器弄坏 — 你的真实电脑毫发无损
+- ✅ **一键恢复** — 搞乱了？运行 `docker compose down -v` 几秒内即可重新开始
 
-> 💡 **打个比方**：webcode 就像你真实电脑里的一台"沙盒电脑"。你可以在沙盒里为所欲为 — 完全不会影响你的真实电脑。
+> 💡 打个比方：webcode 就像你真实电脑里的一台"沙盒电脑"。你可以在沙盒里为所欲为，完全不会影响你的真实电脑。
 
-**⚠️ 高级：Docker socket（可选）**
+**⚠️ 关于 Docker socket（可选）**
 
-默认情况下，`docker-compose.yml` 启用了 `/var/run/docker.sock` 以支持 Docker-in-Docker 功能，这会让容器获得管理其他容器的额外能力。
-
-- **大多数用户**：保持启用 — 你可能需要这个功能
-- **生产/安全场景**：如果运行不可信代码，可以注释掉这一行
+默认 `docker-compose.yml` 挂载了 `/var/run/docker.sock`，支持容器内管理其他容器（Docker-in-Docker）。
+- **大多数用户**：保持启用 — 通常需要这个功能
+- **安全敏感场景**：如果运行不可信代码，可在 `docker-compose.yml` 中注释掉该行
 
 ---
 
-## 配置说明（.env）
+## ⚙️ 配置说明（.env）
+
+在 `docker-compose.yml` 同目录下创建 `.env` 文件来自定义设置：
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
-| `MODE` | `desktop` | 运行模式：`desktop`（含 VNC 桌面）/ `lite`（无桌面） |
-| `VNC_PASSWORD` | 空（自动生成）| VNC 登录密码，仅 desktop 模式有效 |
-| `VNC_RESOLUTION` | `1920x1080` | 桌面分辨率，仅 desktop 模式有效 |
-| `AUTH_USER` | `admin` | Basic Auth 用户名，适用于 Theia / Vibe Kanban / OpenClaw |
-| `AUTH_PASSWORD` | `changeme` | Basic Auth 密码 |
-| `OPENCLAW_TOKEN` | `changeme` | OpenClaw 网关 token（访问时通过 `?token=<值>` 传入） |
+| `MODE` | `desktop` | 运行模式：`desktop`（含桌面）或 `lite`（无桌面，更轻量） |
+| `AUTH_USER` | `admin` | 登录用户名，适用于 Theia / Vibe Kanban / OpenClaw |
+| `AUTH_PASSWORD` | `changeme` | 登录密码 |
+| `VNC_PASSWORD` | 自动生成 | VNC 桌面密码（仅 desktop 模式有效） |
+| `VNC_RESOLUTION` | `1920x1080` | 桌面分辨率（仅 desktop 模式有效） |
+| `OPENCLAW_TOKEN` | `changeme` | OpenClaw token（访问时在 URL 末尾加 `?token=<值>`） |
 | `GIT_USER_NAME` | — | Git 提交用户名 |
 | `GIT_USER_EMAIL` | — | Git 提交邮箱 |
-| `CF_TUNNEL_TOKEN` | 空（不启用）| Cloudflare Tunnel token，设置后自动启用内网穿透 |
+| `CF_TUNNEL_TOKEN` | 空（不启用）| Cloudflare Tunnel token，设置后自动启用远程访问 |
+
+```bash
+cp .env.example .env
+# 按需修改 .env，然后：
+docker compose up -d
+```
 
 ---
 
-## 运行模式
+## 🖥️ 运行模式
 
-### Desktop 模式（默认）
-
-完整 GNOME Flashback 桌面，通过浏览器或 VNC 客户端访问，支持中文输入（fcitx + Google 拼音）。
-
+**Desktop 模式**（默认）— 完整 GNOME Linux 桌面，通过浏览器访问，支持中文输入（fcitx + Google 拼音）：
 ```bash
 docker compose up -d
-# 或显式指定
-MODE=desktop docker compose up -d
 ```
 
-### Lite 模式
-
-仅运行 Theia + Vibe Kanban + OpenClaw，无 VNC 桌面，资源占用更小。
-
+**Lite 模式** — 仅运行 Theia + Vibe Kanban + OpenClaw，无桌面，资源占用更小：
 ```bash
 MODE=lite docker compose up -d
 ```
 
-> Lite 模式下 noVNC / VNC 不可用。
-
 ---
 
-## 各服务说明
-
-### Theia IDE
-
-浏览器版 VS Code，工作目录为容器内 `/home/ubuntu/projects`（对应 `projects` 数据卷）。
-
-![Theia IDE](https://raw.githubusercontent.com/land007/webcode/main/images/screenshot-theia.png)
-
-访问：http://localhost:20001（需输入 Basic Auth 账号密码）
-
-### Vibe Kanban
-
-看板式任务管理工具，用于跟踪项目进度。
-
-![Vibe Kanban](https://raw.githubusercontent.com/land007/webcode/main/images/screenshot-kanban.png)
-
-访问：http://localhost:20002
-
-### noVNC 桌面
-
-在浏览器中操作完整 Linux 桌面（desktop 模式专属）。
-
-![noVNC 桌面](https://raw.githubusercontent.com/land007/webcode/main/images/screenshot-desktop.png)
-
-访问：http://localhost:20004，输入 VNC 密码登录。
-
-### OpenClaw AI 助手
-
-自托管 AI 助手网关，支持配置多个 AI 服务。
-
-![OpenClaw AI](https://raw.githubusercontent.com/land007/webcode/main/images/screenshot-openclaw.png)
-
-访问：http://localhost:20003
-
-**认证说明（两步）：**
-1. 浏览器弹出 Basic Auth 对话框 → 输入 `AUTH_USER` / `AUTH_PASSWORD`
-2. OpenClaw 内部登录页面 → 使用 `?token=<OPENCLAW_TOKEN>` 传入 token
-
----
-
-## OpenClaw 初始配置
-
-首次启动后，需运行 onboard 命令完成初始化：
-
-```bash
-docker exec -it -u ubuntu webcode openclaw onboard
-```
-
-按提示完成配置后，刷新 http://localhost:20003 即可使用。
-
----
-
-## 常用命令
+## 🔧 常用命令
 
 ```bash
 # 查看运行状态
 docker compose ps
 
-# 查看日志（所有服务）
+# 查看日志
 docker compose logs -f
-
-# 查看特定服务日志
-docker exec -it webcode supervisorctl tail -f theia
 
 # 停止
 docker compose down
 
-# 停止并删除数据卷（慎用，会清除所有数据）
+# 停止并清除所有数据（慎用！）
 docker compose down -v
 
 # 重启单个服务（以 theia 为例）
@@ -648,15 +448,25 @@ docker exec -it webcode supervisorctl restart theia
 
 ---
 
-## 数据持久化
+## 💾 数据持久化
 
 以下数据存储在 Docker 数据卷中，容器重建后不会丢失：
 
 | 数据卷 | 内容 |
 |--------|------|
-| `projects` | 用户代码（`/home/ubuntu/projects`） |
+| `projects` | 你的代码（`/home/ubuntu/projects`） |
 | `theia-data` | Theia 插件与设置 |
 | `vibe-kanban-data` | Kanban 任务数据 |
 | `user-data` | bash 历史记录等用户数据 |
 | `openclaw-data` | OpenClaw 配置与数据 |
 | `gitconfig` | Git 用户信息（`.gitconfig`） |
+
+---
+
+## 🤖 OpenClaw 首次初始化
+
+首次启动后，运行以下命令完成初始化（只需一次）：
+```bash
+docker exec -it -u ubuntu webcode openclaw onboard
+```
+按提示完成配置后，刷新 http://localhost:20003 即可使用。
