@@ -148,18 +148,30 @@ details[open] > summary { margin-bottom: 10px; }
 
 /* ── Log area ───────────────────────────────────────────────── */
 .log-area {
-  background: #0d1117;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 6px;
   font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
   font-size: 12px;
   line-height: 1.6;
-  color: #b0c4d8;
+  color: var(--text);
   padding: 10px 12px;
   overflow-y: auto;
   white-space: pre-wrap;
   word-break: break-all;
 }
+
+/* ── Named volume display ───────────────────────────────────── */
+.named-vols-block { margin-bottom: 8px; }
+.named-vol-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 3px 8px; font-size: 11px; color: var(--text-muted);
+  border-radius: 4px;
+}
+.named-vol-row:hover { background: var(--surface2); }
+.named-vol-name { font-family: monospace; min-width: 130px; }
+.named-vol-arrow { flex-shrink: 0; }
+.named-vol-path { font-family: monospace; color: var(--text); }
 
 /* ── WIZARD ─────────────────────────────────────────────────── */
 #wizard {

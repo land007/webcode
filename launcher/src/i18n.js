@@ -107,8 +107,10 @@ const translations = {
     // 问题1: 自定义挂载
     label_volumes:    '自定义目录挂载',
     btn_add_volume:   '+ 添加挂载',
-    ph_host_path:     '宿主机路径',
+    ph_host_path:     '宿主机路径或命名卷',
     ph_container_path: '容器路径',
+    btn_pick_dir:     '选择文件夹',
+    label_named_volumes: '已挂载命名卷',
     // 问题6: Supervisor 状态
     h_supervisor_status: '进程状态',
     // 问题7: Cloudflare 引导
@@ -221,8 +223,10 @@ const translations = {
     // Issue 1: Custom volumes
     label_volumes:    'Custom volume mounts',
     btn_add_volume:   '+ Add mount',
-    ph_host_path:     'Host path',
+    ph_host_path:     'Host path or volume name',
     ph_container_path: 'Container path',
+    btn_pick_dir:     'Pick folder',
+    label_named_volumes: 'Named volumes',
     // Issue 6: Supervisor status
     h_supervisor_status: 'Process status',
     // Issue 7: Cloudflare guide

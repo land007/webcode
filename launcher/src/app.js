@@ -240,10 +240,19 @@ function updateComposeVolumes(workDir, customVolumes) {
 
   let content = fs.readFileSync(composePath, 'utf8');
   // Insert custom volume lines just before "    environment:" in the service block
-  const customLines = validVolumes
+  const mountLines = validVolumes
     .map(v => `      - ${v.host}:${v.container}`)
     .join('\n');
-  content = content.replace('    environment:', customLines + '\n    environment:');
+  content = content.replace('    environment:', mountLines + '\n    environment:');
+  // Append new named volume declarations (host without '/' = named volume)
+  const namedVols = validVolumes
+    .filter(v => !v.host.includes('/'))
+    .map(v => v.host);
+  namedVols.forEach(vol => {
+    if (!content.includes(`\n  ${vol}:`)) {
+      content = content.trimEnd() + `\n  ${vol}:\n`;
+    }
+  });
   fs.writeFileSync(composePath, content, 'utf8');
 }
 

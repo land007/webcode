@@ -152,6 +152,7 @@
         </div>
         <div class="form-group" id="volume-group">
           <label data-i18n="label_volumes">自定义目录挂载</label>
+          <div id="named-vols-display" class="named-vols-block"></div>
           <div id="volume-list"></div>
           <button class="btn-secondary btn-sm" id="btn-add-volume" style="margin-top:6px" data-i18n="btn_add_volume">+ 添加挂载</button>
         </div>
@@ -308,6 +309,7 @@
         </div>
         <div class="form-group">
           <label data-i18n="label_volumes">自定义目录挂载</label>
+          <div id="ws-named-vols-display" class="named-vols-block"></div>
           <div id="ws-volume-list"></div>
           <button class="btn-secondary btn-sm" id="ws-btn-add-volume" style="margin-top:6px" data-i18n="btn_add_volume">+ 添加挂载</button>
         </div>
@@ -331,6 +333,28 @@
     <iframe id="iframe-ai"     sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"></iframe>
   </div>
 </div>
+
+<!-- 宿主机路径：建议选已有命名卷名称 -->
+<datalist id="host-paths-list">
+  <option value="dna-data">
+  <option value="projects">
+  <option value="vibe-kanban-data">
+  <option value="theia-data">
+  <option value="user-data">
+  <option value="openclaw-data">
+  <option value="gitconfig">
+</datalist>
+
+<!-- 容器路径：建议常用容器内路径 -->
+<datalist id="container-paths-list">
+  <option value="/home/ubuntu/projects">
+  <option value="/home/ubuntu/dna">
+  <option value="/home/ubuntu/.theia">
+  <option value="/home/ubuntu/.local/share/vibe-kanban">
+  <option value="/home/ubuntu/.local/share">
+  <option value="/home/ubuntu/.openclaw">
+  <option value="/home/ubuntu/.gitconfig-vol">
+</datalist>
 
 <!-- ═══════════════════════ SCRIPTS ══════════════════════════════ -->
 
@@ -583,6 +607,28 @@ document.getElementById('btn-step1-next').addEventListener('click', () => {
 
 // ─── Volume list helpers ─────────────────────────────────────────────────────
 
+const NAMED_VOLUMES = [
+  { name: 'projects',          container: '/home/ubuntu/projects' },
+  { name: 'dna-data',          container: '/home/ubuntu/dna' },
+  { name: 'theia-data',        container: '/home/ubuntu/.theia' },
+  { name: 'vibe-kanban-data',  container: '/home/ubuntu/.local/share/vibe-kanban' },
+  { name: 'user-data',         container: '/home/ubuntu/.local/share' },
+  { name: 'openclaw-data',     container: '/home/ubuntu/.openclaw' },
+  { name: 'gitconfig',         container: '/home/ubuntu/.gitconfig-vol' },
+];
+
+function renderNamedVolumes(containerId) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = NAMED_VOLUMES.map(function(v) {
+    return '<div class="named-vol-row">' +
+      '<span class="named-vol-name">' + escHtml(v.name) + '</span>' +
+      '<span class="named-vol-arrow">→</span>' +
+      '<span class="named-vol-path">' + escHtml(v.container) + '</span>' +
+      '</div>';
+  }).join('');
+}
+
 function renderVolumeList(containerId, volumes) {
   const container = document.getElementById(containerId);
   container.innerHTML = '';
@@ -591,11 +637,26 @@ function renderVolumeList(containerId, volumes) {
     row.className = 'volume-row';
     row.style.cssText = 'display:flex;gap:6px;margin-bottom:5px;align-items:center';
     row.innerHTML =
-      '<input type="text" class="vol-host" placeholder="' + t('ph_host_path') + '" value="' + escHtml(v.host || '') + '" style="flex:1">' +
+      '<div style="flex:1;display:flex;gap:4px">' +
+        '<input type="text" class="vol-host" list="host-paths-list" placeholder="' + t('ph_host_path') + '" value="' + escHtml(v.host || '') + '" style="flex:1">' +
+        '<button class="btn-secondary btn-sm vol-pick-btn" title="' + t('btn_pick_dir') + '" style="flex-shrink:0;padding:4px 8px">📂</button>' +
+        '<input type="file" nwdirectory style="display:none" class="vol-dir-picker">' +
+      '</div>' +
       '<span style="color:var(--text-muted);font-size:13px;flex-shrink:0">→</span>' +
-      '<input type="text" class="vol-container" placeholder="' + t('ph_container_path') + '" value="' + escHtml(v.container || '') + '" style="flex:1">' +
+      '<input type="text" class="vol-container" list="container-paths-list" placeholder="' + t('ph_container_path') + '" value="' + escHtml(v.container || '') + '" style="flex:1">' +
       '<button class="btn-secondary btn-sm" style="flex-shrink:0;padding:4px 8px" data-vol-del="' + i + '">✕</button>';
     container.appendChild(row);
+
+    // 📂 按钮触发文件夹选择，选中后填入 host input
+    const hostInput = row.querySelector('.vol-host');
+    const pickBtn   = row.querySelector('.vol-pick-btn');
+    const dirPicker = row.querySelector('.vol-dir-picker');
+    pickBtn.addEventListener('click', function() { dirPicker.click(); });
+    dirPicker.addEventListener('change', function() {
+      if (dirPicker.files && dirPicker.files[0]) {
+        hostInput.value = dirPicker.files[0].path;
+      }
+    });
   });
 }
 
@@ -684,6 +745,7 @@ function loadConfigIntoWizardForm() {
   document.getElementById('mode-lite').classList.toggle('active', selectedMode === 'lite');
   document.getElementById('vnc-group').style.display = selectedMode === 'desktop' ? '' : 'none';
 
+  renderNamedVolumes('named-vols-display');
   renderVolumeList('volume-list', cfg.CUSTOM_VOLUMES || []);
 }
 
@@ -1016,6 +1078,7 @@ function loadConfigIntoWorkspaceForm() {
   document.getElementById('ws-mode-desktop').classList.toggle('active', wsMode === 'desktop');
   document.getElementById('ws-mode-lite').classList.toggle('active', wsMode === 'lite');
 
+  renderNamedVolumes('ws-named-vols-display');
   renderVolumeList('ws-volume-list', cfg.CUSTOM_VOLUMES || []);
 }
 
