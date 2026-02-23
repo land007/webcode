@@ -14,9 +14,11 @@ const argPlatform = process.argv[2];
 const argArch     = process.argv[3];
 
 const ALL_TARGETS = [
-  { platform: 'osx', arch: 'arm64' },
-  { platform: 'osx', arch: 'x64'   },
-  { platform: 'win', arch: 'x64'   },
+  { platform: 'osx',   arch: 'arm64' },
+  { platform: 'osx',   arch: 'x64'   },
+  { platform: 'win',   arch: 'x64'   },
+  { platform: 'linux', arch: 'x64'   },
+  { platform: 'linux', arch: 'arm64' },
 ];
 
 const targets = (argPlatform && argArch)
@@ -45,29 +47,39 @@ async function build(nwbuild, platform, arch) {
   const outDir = path.join(BUILDDIR, `${platform}-${arch}`);
   console.log(`\n==> Building ${platform}-${arch} → ${outDir}`);
 
-  const appOptions = platform === 'win'
-    ? {
-        name: 'webcode',
-        version: '1.0.0',
-        fileDescription: 'webcode Launcher',
-        fileVersion: '1.0.0.0',
-        productVersion: '1.0.0.0',
-        productName: 'webcode',
-        languageCode: 1033,
-        icon: path.join(ROOT, 'assets', 'icon.ico'),
-      }
-    : {
-        name: 'webcode',
-        CFBundleIdentifier: 'io.github.land007.webcode',
-        CFBundleName: 'webcode',
-        CFBundleDisplayName: 'webcode',
-        CFBundleSpokenName: 'webcode',
-        CFBundleVersion: '1.0.0',
-        CFBundleShortVersionString: '1.0.0',
-        LSApplicationCategoryType: 'public.app-category.developer-tools',
-        NSHumanReadableCopyright: 'Copyright © 2024 land007',
-        icon: path.join(ROOT, 'assets', 'icon.icns'),
-      };
+  const appOptions =
+    platform === 'win'
+      ? {
+          name: 'webcode',
+          version: '1.0.0',
+          fileDescription: 'webcode Launcher',
+          fileVersion: '1.0.0.0',
+          productVersion: '1.0.0.0',
+          productName: 'webcode',
+          languageCode: 1033,
+          icon: path.join(ROOT, 'assets', 'icon.ico'),
+        }
+      : platform === 'linux'
+        ? {
+            name: 'webcode',
+            genericName: 'webcode Launcher',
+            comment: 'Browser-accessible dev environment, powered by Docker',
+            icon: path.join(ROOT, 'assets', 'icon.png'),
+            categories: ['Development', 'Utility'],
+            startupNotify: true,
+          }
+        : /* osx */ {
+            name: 'webcode',
+            CFBundleIdentifier: 'io.github.land007.webcode',
+            CFBundleName: 'webcode',
+            CFBundleDisplayName: 'webcode',
+            CFBundleSpokenName: 'webcode',
+            CFBundleVersion: '1.0.0',
+            CFBundleShortVersionString: '1.0.0',
+            LSApplicationCategoryType: 'public.app-category.developer-tools',
+            NSHumanReadableCopyright: 'Copyright © 2024 land007',
+            icon: path.join(ROOT, 'assets', 'icon.icns'),
+          };
 
   await nwbuild({
     mode: 'build',

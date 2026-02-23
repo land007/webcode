@@ -82,8 +82,24 @@ function startProxies(cfg) {
 
 // ─── Docker helpers ──────────────────────────────────────────────────────────
 
+/** macOS GUI apps get a minimal PATH; prepend all common Docker locations. */
+function buildDockerPath() {
+  const extra = [
+    '/usr/local/bin',
+    '/opt/homebrew/bin',
+    '/opt/homebrew/sbin',
+    '/Applications/Docker.app/Contents/Resources/bin',
+  ];
+  const current = process.env.PATH || '';
+  const parts = current ? current.split(':') : [];
+  // prepend extras that aren't already present
+  const merged = [...extra.filter(p => !parts.includes(p)), ...parts];
+  return merged.join(':');
+}
+
 function buildEnv(cfg) {
   return Object.assign({}, process.env, {
+    PATH: buildDockerPath(),
     MODE: cfg.MODE || 'desktop',
     AUTH_USER: cfg.AUTH_USER,
     AUTH_PASSWORD: cfg.AUTH_PASSWORD,
@@ -181,14 +197,15 @@ function dockerPs(cfg, callback) {
 // Check docker is installed and running
 function checkDocker(callback) {
   const result = { installed: false, running: false, version: '' };
-  const ver = spawn('docker', ['--version']);
+  const env = Object.assign({}, process.env, { PATH: buildDockerPath() });
+  const ver = spawn('docker', ['--version'], { env });
   let verOut = '';
   ver.stdout.on('data', d => { verOut += d.toString(); });
   ver.on('close', (code) => {
     if (code !== 0) { callback(result); return; }
     result.installed = true;
     result.version = verOut.trim();
-    const info = spawn('docker', ['info']);
+    const info = spawn('docker', ['info'], { env });
     info.on('close', (c) => {
       result.running = (c === 0);
       callback(result);
