@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/land007/webcode/main/launcher/assets/icon-source.png" width="120" alt="webcode">
+</p>
+
 # webcode
 
 ![GitHub Stars](https://img.shields.io/github/stars/land007/webcode?style=social)

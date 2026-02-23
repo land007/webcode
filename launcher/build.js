@@ -4,14 +4,17 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 
-const ROOT     = __dirname;
-const DISTDIR  = path.join(ROOT, '..', 'dist');  // webcode/dist/ — outside srcDir
-const STAGEDIR = path.join(os.tmpdir(), 'webcode-launcher-stage');  // prod-only sources
-const BUILDDIR = path.join(os.tmpdir(), 'webcode-launcher-build');  // nwbuild output
-const CACHE    = path.join(ROOT, '.nw-cache');
+const ROOT        = __dirname;
+const DISTDIR     = path.join(ROOT, '..', 'dist');  // webcode/dist/ — outside srcDir
+const CACHE       = path.join(ROOT, '.nw-cache');
 
 const argPlatform = process.argv[2];
 const argArch     = process.argv[3];
+
+// Use platform+arch suffix so parallel builds don't share the same stage/build dirs
+const _suffix  = (argPlatform && argArch) ? `${argPlatform}-${argArch}` : 'all';
+const STAGEDIR = path.join(os.tmpdir(), `webcode-launcher-stage-${_suffix}`);
+const BUILDDIR = path.join(os.tmpdir(), `webcode-launcher-build-${_suffix}`);
 
 const ALL_TARGETS = [
   { platform: 'osx',   arch: 'arm64' },

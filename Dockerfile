@@ -1,5 +1,13 @@
 FROM ubuntu:24.04
 
+LABEL org.opencontainers.image.title="webcode" \
+      org.opencontainers.image.description="Browser-accessible dev environment with Theia IDE, Vibe Kanban, noVNC Desktop and OpenClaw AI" \
+      org.opencontainers.image.url="https://github.com/land007/webcode" \
+      org.opencontainers.image.source="https://github.com/land007/webcode" \
+      org.opencontainers.image.vendor="land007" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.logo="https://raw.githubusercontent.com/land007/webcode/main/launcher/assets/icon-source.png"
+
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG=zh_CN.UTF-8
 ENV LANGUAGE=zh_CN:zh
