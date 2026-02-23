@@ -276,6 +276,25 @@ function parseSupervisorOutput(out) {
 }
 
 /**
+ * Update Theia's color theme by writing to ~/.theia/settings.json inside the container.
+ * @param {Object} cfg
+ * @param {string} themeName  e.g. 'Dark (Theia)' or 'Light (Theia)'
+ * @param {Function} [callback]  (exitCode)
+ */
+function setTheiaTheme(cfg, themeName, callback) {
+  const script =
+    "const fs=require('fs'),f='/home/ubuntu/.theia/settings.json';" +
+    "let s={};try{s=JSON.parse(fs.readFileSync(f,'utf8'));}catch(e){}" +
+    "s['workbench.colorTheme']=" + JSON.stringify(themeName) + ";" +
+    "fs.mkdirSync('/home/ubuntu/.theia',{recursive:true});" +
+    "fs.writeFileSync(f,JSON.stringify(s,null,2));";
+  const proc = spawn('docker', ['exec', '-u', 'ubuntu', 'webcode', 'node', '-e', script], {
+    env: buildEnv(cfg)
+  });
+  proc.on('close', (code) => { if (callback) callback(code); });
+}
+
+/**
  * Run supervisorctl status inside the webcode container.
  * @param {Object} cfg
  * @param {Function} callback  (err, [{name, state, detail}])
