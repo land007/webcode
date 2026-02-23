@@ -13,5 +13,15 @@
   "chromium-args": "--disable-web-security --allow-running-insecure-content",
   "dependencies": {
     "http-proxy": "^1.18.1"
+  },
+  "devDependencies": {
+    "nw-builder": "^4.17.0"
+  },
+  "scripts": {
+    "build": "node build.js",
+    "build:osx-arm64": "node build.js osx arm64",
+    "build:osx-x64": "node build.js osx x64",
+    "build:win-x64": "node build.js win x64",
+    "start": "nw ."
   }
 }

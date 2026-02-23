@@ -1,1 +1,5 @@
 node_modules/
+.nw-cache/
+assets/icon.iconset/
+assets/icon.icns
+assets/icon.ico

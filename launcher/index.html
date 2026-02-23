@@ -47,9 +47,29 @@
         <span class="label" data-i18n="docker_running">Docker 正在运行</span>
         <span class="badge badge-checking" data-i18n="badge_checking">检测中</span>
       </div>
-      <div id="docker-help" style="display:none; margin-top:12px; font-size:12px; color:var(--text-muted)">
-        <span data-i18n="docker_help_prefix">请先安装并启动</span>
-        <a class="link" id="docker-dl-link">Docker Desktop</a><span data-i18n="docker_help_suffix">，然后刷新检测。</span>
+      <div id="docker-help" style="display:none; margin-top:16px; padding:12px 14px;
+           border-left:3px solid var(--accent); background:var(--card-bg);
+           border-radius:6px; font-size:12px; line-height:1.7">
+        <div id="docker-help-mac" style="display:none">
+          <strong data-i18n="docker_help_mac_title">macOS：安装 Docker Desktop</strong>
+          <ol style="margin:8px 0 8px 16px; padding:0">
+            <li><a class="link" id="docker-dl-link" data-i18n="docker_help_mac_dl">下载 Docker Desktop for Mac</a></li>
+            <li data-i18n="docker_help_mac_step2">打开 .dmg，将 Docker 拖入应用程序文件夹</li>
+            <li data-i18n="docker_help_mac_step3">启动 Docker Desktop，等待菜单栏图标稳定</li>
+          </ol>
+        </div>
+        <div id="docker-help-win" style="display:none">
+          <strong data-i18n="docker_help_win_title">Windows：安装 Docker Desktop</strong>
+          <ol style="margin:8px 0 8px 16px; padding:0">
+            <li><a class="link" id="docker-dl-link-win" data-i18n="docker_help_win_dl">下载 Docker Desktop for Windows</a></li>
+            <li data-i18n="docker_help_win_step2">运行安装程序，启用 WSL2 后端</li>
+            <li data-i18n="docker_help_win_step3">安装完成重启后，启动 Docker Desktop</li>
+          </ol>
+        </div>
+        <div id="docker-help-notrunning" style="display:none">
+          <strong data-i18n="docker_help_notrunning_title">Docker 已安装但未运行</strong>
+          <p style="margin:6px 0" data-i18n="docker_help_notrunning_body">请打开 Docker Desktop，等待图标稳定后重新检测。</p>
+        </div>
       </div>
       <div class="action-row">
         <button class="btn-secondary btn-sm" id="btn-recheck" data-i18n="btn_recheck">重新检测</button>
@@ -462,6 +482,18 @@ function showWorkspace() {
 
 // ─── Step 1: Docker check ────────────────────────────────────────────────────
 
+function showDockerHelp(installed) {
+  document.getElementById('docker-help').style.display = '';
+  const isMac = typeof process !== 'undefined' && process.platform === 'darwin';
+  const isWin = typeof process !== 'undefined' && process.platform === 'win32';
+  document.getElementById('docker-help-mac').style.display =
+    (!installed && isMac) ? '' : 'none';
+  document.getElementById('docker-help-win').style.display =
+    (!installed && isWin) ? '' : 'none';
+  document.getElementById('docker-help-notrunning').style.display =
+    installed ? '' : 'none';
+}
+
 function runDockerCheck() {
   setCheckState('check-docker-installed', 'checking', t('badge_checking'));
   setCheckState('check-docker-running',   'checking', t('badge_checking'));
@@ -474,7 +506,7 @@ function runDockerCheck() {
     } else {
       setCheckState('check-docker-installed', 'fail', t('dyn_not_found'));
       setCheckState('check-docker-running',   'fail', '—');
-      document.getElementById('docker-help').style.display = '';
+      showDockerHelp(false);
       return;
     }
     if (result.running) {
@@ -482,7 +514,7 @@ function runDockerCheck() {
       document.getElementById('btn-step1-next').disabled = false;
     } else {
       setCheckState('check-docker-running', 'fail', t('dyn_not_running'));
-      document.getElementById('docker-help').style.display = '';
+      showDockerHelp(true);
     }
   });
 }
@@ -501,9 +533,12 @@ document.getElementById('btn-step1-next').addEventListener('click', () => {
   setStep(2);
 });
 
-// Docker Desktop download link
-document.getElementById('docker-dl-link').addEventListener('click', () => {
-  nw.Shell.openExternal('https://www.docker.com/products/docker-desktop/');
+// Docker Desktop download links
+['docker-dl-link', 'docker-dl-link-win'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('click', () => {
+    nw.Shell.openExternal('https://www.docker.com/products/docker-desktop/');
+  });
 });
 
 // ─── Step 2: Config form ─────────────────────────────────────────────────────

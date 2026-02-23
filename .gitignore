@@ -1,2 +1,3 @@
 .env
 launcher/package-lock.json
+dist/

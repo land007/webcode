@@ -1,0 +1,77 @@
+name: Build Launcher
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create icon.icns
+        run: |
+          mkdir -p launcher/assets/icon.iconset
+          for SIZE in 16 32 64 128 256 512; do
+            sips -z $SIZE $SIZE launcher/assets/icon.png --out "launcher/assets/icon.iconset/icon_${SIZE}x${SIZE}.png"
+            sips -z $((SIZE*2)) $((SIZE*2)) launcher/assets/icon.png --out "launcher/assets/icon.iconset/icon_${SIZE}x${SIZE}@2x.png"
+          done
+          iconutil -c icns launcher/assets/icon.iconset -o launcher/assets/icon.icns
+          rm -rf launcher/assets/icon.iconset
+
+      - name: Create icon.ico
+        run: magick launcher/assets/icon.png -define icon:auto-resize=256,128,64,48,32,16 launcher/assets/icon.ico
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: launcher/package-lock.json
+
+      - name: Install dependencies
+        working-directory: launcher
+        run: npm install
+
+      - name: Cache NW.js binaries
+        uses: actions/cache@v4
+        with:
+          path: launcher/.nw-cache
+          key: nwjs-stable-${{ runner.os }}
+
+      - name: Build osx-arm64
+        working-directory: launcher
+        run: node build.js osx arm64
+
+      - name: Build osx-x64
+        working-directory: launcher
+        run: node build.js osx x64
+
+      - name: Build win-x64
+        working-directory: launcher
+        run: node build.js win x64
+
+      - name: Rename zips with version tag
+        run: |
+          TAG="${{ github.ref_name }}"
+          for f in dist/*.zip; do
+            base=$(basename "$f" .zip)
+            mv "$f" "dist/${base}-${TAG}.zip"
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: launcher-${{ github.ref_name }}
+          path: dist/*.zip
+          retention-days: 30
+
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: dist/*.zip
+          generate_release_notes: true
