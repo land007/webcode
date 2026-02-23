@@ -61,10 +61,6 @@ jobs:
         working-directory: launcher
         run: node build.js linux x64
 
-      - name: Build linux-arm64
-        working-directory: launcher
-        run: node build.js linux arm64
-
       - name: Rename zips with version tag
         run: |
           TAG="${{ github.ref_name }}"

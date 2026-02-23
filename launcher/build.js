@@ -18,7 +18,6 @@ const ALL_TARGETS = [
   { platform: 'osx',   arch: 'x64'   },
   { platform: 'win',   arch: 'x64'   },
   { platform: 'linux', arch: 'x64'   },
-  { platform: 'linux', arch: 'arm64' },
 ];
 
 const targets = (argPlatform && argArch)
