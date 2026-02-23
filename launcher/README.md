@@ -18,12 +18,23 @@ npm install
 npx nw .
 ```
 
-## 打包分发（可选）
+## 打包分发
 
 ```bash
-npm install -g nw-builder
-nwbuild -p win64,osx64,linux64 .
+cd launcher
+npm install
+
+# 打包指定平台
+node build.js osx arm64
+node build.js osx x64
+node build.js win x64
+node build.js linux x64
+
+# 一次打包所有平台
+node build.js
 ```
+
+输出文件位于项目根目录的 `dist/` 下，格式为 `webcode-launcher-{platform}-{arch}.zip`。
 
 ## 架构
 
