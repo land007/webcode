@@ -104,6 +104,14 @@ const translations = {
     dyn_config_saved: '配置已保存。如需生效请重启容器。',
     // 问题4: 重启反馈
     dyn_restarting:   '重启中…',
+    dyn_stopping:     '停止中…',
+    // 进程重启相关
+    title_restart_process:     '重启进程',
+    title_view_logs:           '查看日志',
+    dyn_confirm_restart_process: '确定要重启进程 {name} 吗？',
+    dyn_restart_failed:        '重启失败 (exit {code})',
+    dyn_loading_logs:          '加载日志中…',
+    dyn_logs_for_process:      '{name} 日志：',
     // 问题1: 自定义挂载
     label_volumes:    '自定义目录挂载',
     btn_add_volume:   '+ 添加挂载',
@@ -220,6 +228,14 @@ const translations = {
     dyn_config_saved: 'Config saved. Restart container to apply changes.',
     // Issue 4: Restart feedback
     dyn_restarting:   'Restarting…',
+    dyn_stopping:     'Stopping…',
+    // Process restart related
+    title_restart_process:     'Restart process',
+    title_view_logs:           'View logs',
+    dyn_confirm_restart_process: 'Restart process {name}?',
+    dyn_restart_failed:        'Restart failed (exit {code})',
+    dyn_loading_logs:          'Loading logs…',
+    dyn_logs_for_process:      '{name} logs:',
     // Issue 1: Custom volumes
     label_volumes:    'Custom volume mounts',
     btn_add_volume:   '+ Add mount',

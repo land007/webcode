@@ -18,8 +18,14 @@
     <div class="wizard-header">
       <h1 data-i18n="title">webcode 启动器</h1>
       <div class="header-controls">
-        <button class="theme-cycle-btn" id="theme-cycle-btn-wizard" title="切换主题">🌙</button>
-        <button class="lang-cycle-btn"  id="lang-cycle-btn-wizard">EN</button>
+        <button class="theme-cycle-btn" id="theme-cycle-btn-wizard" title="切换主题">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
+          <span>暗色</span>
+        </button>
+        <button class="lang-cycle-btn"  id="lang-cycle-btn-wizard">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" x2="22" y1="12" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+          <span>EN</span>
+        </button>
       </div>
     </div>
     <p class="subtitle" data-i18n="subtitle">浏览器可访问的开发环境，由 Docker 驱动</p>
@@ -190,25 +196,56 @@
 <div id="workspace">
   <!-- Top bar -->
   <div class="topbar">
-    <button class="tab-btn" id="tab-status" data-tab="status" data-i18n="tab_status">● 状态</button>
-    <button class="tab-btn" id="tab-vnc"    data-tab="vnc"    data-i18n="tab_vnc">🖥 桌面</button>
-    <button class="tab-btn" id="tab-ide"    data-tab="ide"    data-i18n="tab_ide">💻 IDE</button>
-    <button class="tab-btn" id="tab-kanban" data-tab="kanban" data-i18n="tab_kanban">📋 看板</button>
-    <button class="tab-btn" id="tab-ai"     data-tab="ai"     data-i18n="tab_ai">🤖 AI</button>
+    <button class="tab-btn" id="tab-status" data-tab="status" data-i18n="tab_status">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+      <span data-i18n="tab_status">状态</span>
+    </button>
+    <button class="tab-btn" id="tab-vnc"    data-tab="vnc"    data-i18n="tab_vnc">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+      <span data-i18n="tab_vnc">桌面</span>
+    </button>
+    <button class="tab-btn" id="tab-ide"    data-tab="ide"    data-i18n="tab_ide">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+      <span data-i18n="tab_ide">IDE</span>
+    </button>
+    <button class="tab-btn" id="tab-kanban" data-tab="kanban" data-i18n="tab_kanban">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="18" rx="1"></rect><rect x="10" y="3" width="5" height="18" rx="1"></rect><rect x="17" y="3" width="5" height="18" rx="1"></rect></svg>
+      <span data-i18n="tab_kanban">看板</span>
+    </button>
+    <button class="tab-btn" id="tab-ai"     data-tab="ai"     data-i18n="tab_ai">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"></path><path d="M3 12h2"></path><path d="M19 12h2"></path><path d="M12 3v2"></path><path d="M12 19v2"></path><path d="m5.6 5.6 1.4 1.4"></path><path d="m16.9 16.9 1.4 1.4"></path><path d="m5.6 18.4 1.4-1.4"></path><path d="m16.9 7.1 1.4-1.4"></path><circle cx="12" cy="12" r="3"></circle></svg>
+      <span data-i18n="tab_ai">AI</span>
+    </button>
     <span class="topbar-spacer"></span>
     <div class="tab-actions" id="tab-actions" style="display:none">
-      <button class="btn-icon" id="btn-refresh"      data-i18n-title="title_refresh"      title="刷新">🔄</button>
-      <button class="btn-icon" id="btn-open-browser" data-i18n-title="title_open_browser" title="在浏览器中打开">🌐</button>
+      <button class="btn-icon" id="btn-refresh"      data-i18n-title="title_refresh"      title="刷新">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path><path d="M16 21h5v-5"></path></svg>
+      </button>
+      <button class="btn-icon" id="btn-open-browser" data-i18n-title="title_open_browser" title="在浏览器中打开">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+      </button>
     </div>
     <div class="status-pill">
       <span class="dot dot-gray" id="status-dot"></span>
       <span id="status-text" data-i18n="status_detecting">检测中…</span>
     </div>
-    <button class="theme-cycle-btn" id="theme-cycle-btn-ws" title="切换主题" style="margin-right:4px">🌙</button>
-    <button class="lang-cycle-btn"  id="lang-cycle-btn-ws" style="margin-right:6px">EN</button>
+    <button class="theme-cycle-btn" id="theme-cycle-btn-ws" title="切换主题" style="margin-right:4px">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
+      <span>暗色</span>
+    </button>
+    <button class="lang-cycle-btn"  id="lang-cycle-btn-ws" style="margin-right:6px">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" x2="22" y1="12" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+      <span>EN</span>
+    </button>
     <div class="topbar-actions">
-      <button class="btn-secondary btn-sm" id="btn-restart" data-i18n="btn_restart">重启</button>
-      <button class="btn-secondary btn-sm" id="btn-stop"    data-i18n="btn_stop">停止</button>
+      <button class="btn-secondary btn-sm" id="btn-restart" data-i18n="btn_restart">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 21H3v-5"></path></svg>
+        <span data-i18n="btn_restart">重启</span>
+      </button>
+      <button class="btn-secondary btn-sm" id="btn-stop"    data-i18n="btn_stop">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
+        <span data-i18n="btn_stop">停止</span>
+      </button>
     </div>
   </div>
 
@@ -345,6 +382,26 @@
   </div>
 </div>
 
+<!-- Process Logs Modal -->
+<div id="process-logs-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:10000;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;width:90vw;max-width:800px;max-height:80vh;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 id="process-logs-title" style="font-size:16px;font-weight:600;margin:0">进程日志</h3>
+      <button id="close-logs-modal" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    <div id="process-logs-content" class="log-area" style="flex:1;overflow:auto;font-family:monospace;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all"></div>
+    <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+      <button class="btn-secondary btn-sm" id="refresh-logs-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path><path d="M16 21h5v-5"></path></svg>
+        <span>刷新</span>
+      </button>
+      <button class="btn-primary btn-sm" id="close-logs-btn">关闭</button>
+    </div>
+  </div>
+</div>
+
 <!-- 宿主机路径：建议选已有命名卷名称 -->
 <datalist id="host-paths-list">
   <option value="dna-data">
@@ -396,12 +453,14 @@ window.onerror = function(msg, src, line, col, err) {
 // ─── Load modules (with visible error if require fails) ───────────────────────
 let app, readConfig, writeConfig, configExists, ensureComposeFile;
 let t, setLang, getLang;
+let icons;
 
 (function loadModules() {
   try {
     app = require('./src/app.js');
     ({ readConfig, writeConfig, configExists, ensureComposeFile } = require('./src/config.js'));
     ({ t, setLang, getLang } = require('./src/i18n.js'));
+    icons = require('./src/icons.js');
   } catch (err) {
     var d = document.getElementById('_err_overlay');
     if (!d) {
@@ -425,10 +484,55 @@ if (!t) throw new Error('i18n module failed to load');
 
 const THEME_KEY   = 'webcode-theme';
 const THEME_ORDER = ['dark', 'light', 'system'];
-const THEME_ICONS = { dark: '🌙', light: '☀️', system: '💻' };
 const THEME_I18N  = { dark: 'theme_dark', light: 'theme_light', system: 'theme_system' };
 
 // ─── applyTranslations：在页面上下文中运行，确保能访问 document ────────────────
+
+// 辅助函数：更新主题按钮的 SVG 图标和文字
+function updateThemeButtons(theme) {
+  var iconHtml = theme === 'dark' ? icons.themeDark :
+                  theme === 'light' ? icons.themeLight :
+                  icons.themeSystem;
+  var label = t(THEME_I18N[theme] || 'theme_dark');
+
+  document.querySelectorAll('.theme-cycle-btn').forEach(function(btn) {
+    // 创建临时容器来解析 SVG
+    var temp = document.createElement('div');
+    temp.innerHTML = iconHtml;
+    var svgIcon = temp.firstChild;
+
+    // 清空按钮并重新构建
+    btn.innerHTML = '';
+    if (svgIcon && svgIcon.nodeType === 1) { // 确保是元素节点
+      btn.appendChild(svgIcon.cloneNode(true));
+    }
+    var textSpan = document.createElement('span');
+    textSpan.textContent = '\u00a0' + label;
+    btn.appendChild(textSpan);
+  });
+}
+
+// 辅助函数：更新语言按钮的 SVG 图标和文字
+function updateLangButtons() {
+  var lang = getLang();
+  var langLabel = lang === 'zh-CN' ? '中文' : 'EN';
+
+  document.querySelectorAll('.lang-cycle-btn').forEach(function(btn) {
+    // 创建临时容器来解析 SVG
+    var temp = document.createElement('div');
+    temp.innerHTML = icons.language;
+    var svgIcon = temp.firstChild;
+
+    // 清空按钮并重新构建
+    btn.innerHTML = '';
+    if (svgIcon && svgIcon.nodeType === 1) {
+      btn.appendChild(svgIcon.cloneNode(true));
+    }
+    var textSpan = document.createElement('span');
+    textSpan.textContent = '\u00a0' + langLabel;
+    btn.appendChild(textSpan);
+  });
+}
 
 function applyTranslations() {
   document.querySelectorAll('[data-i18n]').forEach(function(el) {
@@ -440,20 +544,13 @@ function applyTranslations() {
   document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
     el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
   });
-  // 同步语言循环按钮：🌐 + 当前语言名（让用户知道现在是什么语言，可以点击切换）
-  var lang = getLang();
-  var langLabel = lang === 'zh-CN' ? '🌐\u00a0中文' : '🌐\u00a0EN';
-  document.querySelectorAll('.lang-cycle-btn').forEach(function(btn) {
-    btn.textContent = langLabel;
-  });
-  document.documentElement.lang = lang;
-  // 语言切换后也更新主题按钮的文字（其中含翻译文本）
+
+  document.documentElement.lang = getLang();
+
+  // 更新主题按钮和语言按钮
   var currentTheme = localStorage.getItem(THEME_KEY) || 'dark';
-  var themeIcon  = THEME_ICONS[currentTheme] || '🌙';
-  var themeLabel = t(THEME_I18N[currentTheme] || 'theme_dark');
-  document.querySelectorAll('.theme-cycle-btn').forEach(function(btn) {
-    btn.textContent = themeIcon + '\u00a0' + themeLabel;
-  });
+  updateThemeButtons(currentTheme);
+  updateLangButtons();
 }
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
@@ -484,12 +581,8 @@ function syncTheiaTheme(theme) {
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   localStorage.setItem(THEME_KEY, theme);
-  // 同步所有主题循环按钮：图标 + 当前语言下的文字
-  var icon  = THEME_ICONS[theme] || '🌙';
-  var label = t(THEME_I18N[theme] || 'theme_dark');
-  document.querySelectorAll('.theme-cycle-btn').forEach(function(btn) {
-    btn.textContent = icon + '\u00a0' + label;
-  });
+  // 使用统一的辅助函数更新主题按钮
+  updateThemeButtons(theme);
   // 同步 Theia 主题
   syncTheiaTheme(theme);
 }
@@ -1046,6 +1139,16 @@ function updateStatusUI(containers) {
         return `<div class="svc-card">
           <div class="svc-name">${escHtml(svc.name)}</div>
           <div class="svc-state"><span class="dot ${dotClass}"></span> ${escHtml(svc.state)}</div>
+          <div class="svc-actions">
+            <button class="svc-logs-btn" data-process="${escHtml(svc.name)}"
+                    data-i18n-title="title_view_logs" title="查看日志">
+              ${icons.processLogs}
+            </button>
+            <button class="svc-restart-btn" data-process="${escHtml(svc.name)}"
+                    data-i18n-title="title_restart_process" title="重启进程">
+              ${icons.processRestart}
+            </button>
+          </div>
         </div>`;
       }).join('');
     });
@@ -1053,6 +1156,129 @@ function updateStatusUI(containers) {
     document.getElementById('supervisor-section').style.display = 'none';
   }
 }
+
+// ─── Process logs modal ─────────────────────────────────────────────────────────────
+
+let currentLogProcess = null;
+
+function showProcessLogs(processName) {
+  currentLogProcess = processName;
+  const modal = document.getElementById('process-logs-modal');
+  const title = document.getElementById('process-logs-title');
+  const content = document.getElementById('process-logs-content');
+
+  title.textContent = t('dyn_logs_for_process', { name: processName });
+  content.textContent = t('dyn_loading_logs');
+  modal.style.display = 'flex';
+
+  loadProcessLogs(processName);
+}
+
+function loadProcessLogs(processName) {
+  const content = document.getElementById('process-logs-content');
+  app.supervisorProcessLog(cfg, processName, function(logs) {
+    if (!logs || logs.trim() === '') {
+      content.textContent = '(无日志输出)';
+    } else {
+      // 将日志按行分割并格式化显示
+      const lines = logs.split('\n');
+      content.innerHTML = lines.map(line => {
+        if (!line.trim()) return '';
+        const isError = line.startsWith('[ERROR]');
+        const cssClass = isError ? 'log-error-line' : '';
+        return `<div class="${cssClass}">${escHtml(line)}</div>`;
+      }).join('');
+    }
+    content.scrollTop = content.scrollHeight;
+  });
+}
+
+// Close modal handlers
+document.getElementById('close-logs-modal').addEventListener('click', function() {
+  document.getElementById('process-logs-modal').style.display = 'none';
+  currentLogProcess = null;
+});
+
+document.getElementById('close-logs-btn').addEventListener('click', function() {
+  document.getElementById('process-logs-modal').style.display = 'none';
+  currentLogProcess = null;
+});
+
+document.getElementById('refresh-logs-btn').addEventListener('click', function() {
+  if (currentLogProcess) {
+    loadProcessLogs(currentLogProcess);
+  }
+});
+
+// Close on backdrop click
+document.getElementById('process-logs-modal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    this.style.display = 'none';
+    currentLogProcess = null;
+  }
+});
+
+// ─── Process restart/logs button event delegation ───────────────────────────────────
+
+document.addEventListener('click', function(e) {
+  // Handle restart button
+  var restartBtn = e.target.closest('.svc-restart-btn');
+  if (restartBtn) {
+    var processName = restartBtn.getAttribute('data-process');
+    if (!confirm(t('dyn_confirm_restart_process', { name: processName }))) return;
+
+    // 显示加载状态
+    restartBtn.disabled = true;
+    restartBtn.innerHTML = '<span class="loading-spinner" style="width:12px;height:12px;border-width:1.5px"></span>';
+
+    app.supervisorRestart(cfg, processName, function(code) {
+      restartBtn.disabled = false;
+      restartBtn.innerHTML = icons.processRestart;
+      if (code === 0) {
+        // 刷新 supervisor 状态
+        setTimeout(function() {
+          app.supervisorStatus(cfg, function(err, services) {
+            if (!err && services) {
+              const supGrid = document.getElementById('supervisor-grid');
+              if (supGrid) {
+                supGrid.innerHTML = services.map(function(svc) {
+                  const state = (svc.state || '').toUpperCase();
+                  const dotClass = state === 'RUNNING' ? 'dot-green' :
+                                   state === 'STARTING' ? 'dot-yellow' : 'dot-red';
+                  return `<div class="svc-card">
+                    <div class="svc-name">${escHtml(svc.name)}</div>
+                    <div class="svc-state"><span class="dot ${dotClass}"></span> ${escHtml(svc.state)}</div>
+                    <div class="svc-actions">
+                      <button class="svc-logs-btn" data-process="${escHtml(svc.name)}"
+                              data-i18n-title="title_view_logs" title="查看日志">
+                        ${icons.processLogs}
+                      </button>
+                      <button class="svc-restart-btn" data-process="${escHtml(svc.name)}"
+                              data-i18n-title="title_restart_process" title="重启进程">
+                        ${icons.processRestart}
+                      </button>
+                    </div>
+                  </div>`;
+                }).join('');
+              }
+            }
+          });
+        }, 1000);
+      } else {
+        alert(t('dyn_restart_failed', { code: code }));
+      }
+    });
+    return;
+  }
+
+  // Handle logs button
+  var logsBtn = e.target.closest('.svc-logs-btn');
+  if (logsBtn) {
+    var processName = logsBtn.getAttribute('data-process');
+    showProcessLogs(processName);
+    return;
+  }
+});
 
 function escHtml(s) {
   return String(s)
@@ -1075,18 +1301,31 @@ function startLogStream() {
 
 document.getElementById('btn-restart').addEventListener('click', () => {
   if (!confirm(t('dyn_confirm_restart'))) return;
+  const btn = document.getElementById('btn-restart');
+  const originalContent = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading-spinner" style="width:14px;height:14px;border-width:1.5px"></span>\u00a0<span>' + t('dyn_restarting') + '</span>';
   app.dockerDown(cfg, null, () => {
     app.dockerUp(cfg, null, () => {
       iframeLoaded['ide'] = iframeLoaded['kanban'] = iframeLoaded['vnc'] = iframeLoaded['ai'] = false;
       if (currentTab !== 'status') activateTab(currentTab);
       startLogStream();
+      btn.disabled = false;
+      btn.innerHTML = originalContent;
     });
   });
 });
 
 document.getElementById('btn-stop').addEventListener('click', () => {
   if (!confirm(t('dyn_confirm_stop'))) return;
-  app.dockerDown(cfg, null, null);
+  const btn = document.getElementById('btn-stop');
+  const originalContent = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading-spinner" style="width:14px;height:14px;border-width:1.5px"></span>\u00a0<span>' + t('dyn_stopping') + '</span>';
+  app.dockerDown(cfg, null, () => {
+    btn.disabled = false;
+    btn.innerHTML = originalContent;
+  });
 });
 
 // ─── Workspace: config form ───────────────────────────────────────────────────
@@ -1203,8 +1442,9 @@ document.getElementById('btn-save-config').addEventListener('click', () => {
 
 document.getElementById('btn-save-restart').addEventListener('click', () => {
   const btn = document.getElementById('btn-save-restart');
+  const originalContent = btn.innerHTML;
   btn.disabled = true;
-  btn.textContent = t('dyn_restarting');
+  btn.innerHTML = '<span class="loading-spinner" style="width:14px;height:14px;border-width:1.5px"></span>\u00a0<span>' + t('dyn_restarting') + '</span>';
   collectWorkspaceForm();
   app.startProxies(cfg);
   Object.keys(iframeLoaded).forEach(k => iframeLoaded[k] = false);
@@ -1214,7 +1454,7 @@ document.getElementById('btn-save-restart').addEventListener('click', () => {
       document.getElementById('ws-log').scrollTop = document.getElementById('ws-log').scrollHeight;
     }, () => {
       btn.disabled = false;
-      btn.textContent = t('btn_save_restart');
+      btn.innerHTML = originalContent;
       if (currentTab !== 'status') activateTab(currentTab);
       startLogStream();
     });

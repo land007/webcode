@@ -311,6 +311,49 @@ function supervisorStatus(cfg, callback) {
   });
 }
 
+/**
+ * Restart the specified supervisor-managed process.
+ * @param {Object} cfg
+ * @param {string} processName  Process name, e.g. 'theia', 'vibe-kanban', 'openclaw'
+ * @param {Function} callback  (exitCode)
+ */
+function supervisorRestart(cfg, processName, callback) {
+  const proc = spawn('docker', ['exec', 'webcode', 'supervisorctl', 'restart', processName], {
+    env: buildEnv(cfg)
+  });
+  proc.on('close', (code) => { if (callback) callback(code); });
+}
+
+/**
+ * Get logs for a specific supervisor-managed process.
+ * Uses 'tail -1000' to get more lines, and formats output to distinguish stderr.
+ * @param {Object} cfg
+ * @param {string} processName  Process name
+ * @param {Function} callback  (formatted log string with error markers)
+ */
+function supervisorProcessLog(cfg, processName, callback) {
+  // Get more log lines (1000 instead of 100)
+  const proc = spawn('docker', ['exec', 'webcode', 'supervisorctl', 'tail', '-1000', processName], {
+    env: buildEnv(cfg)
+  });
+  let out = '';
+  proc.stdout.on('data', d => { out += d.toString(); });
+  proc.stderr.on('data', d => { out += d.toString(); });
+  proc.on('close', () => {
+    if (callback) {
+      // Format the output: add [ERROR] prefix for lines that appear to be errors
+      const lines = out.split('\n');
+      const formatted = lines.map(line => {
+        if (!line.trim()) return line;
+        // Detect error patterns
+        const isError = /[Ee]rror|[Ee]xception|[Ff]ail|[Ww]arn|Traceback|at\s+<|undefined|TypeError|ReferenceError|SyntaxError/.test(line);
+        return isError ? `[ERROR] ${line}` : line;
+      }).join('\n');
+      callback(formatted);
+    }
+  });
+}
+
 // ─── Status polling ───────────────────────────────────────────────────────────
 
 let pollTimer = null;
@@ -346,6 +389,8 @@ module.exports = {
   startPolling,
   stopPolling,
   supervisorStatus,
+  supervisorRestart,
+  supervisorProcessLog,
   readConfig,
   writeConfig,
   configExists,
