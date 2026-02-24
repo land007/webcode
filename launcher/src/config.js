@@ -73,11 +73,190 @@ function ensureComposeFile() {
   fs.copyFileSync(src, dest);
 }
 
+// ─── Multi-instance support ───────────────────────────────────────────────────
+
+function getGlobalConfigPath() {
+  return path.join(nw.App.dataPath, 'global.json');
+}
+
+function readGlobalConfig() {
+  const p = getGlobalConfigPath();
+  if (!fs.existsSync(p)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(p, 'utf8'));
+  } catch (e) {
+    return null;
+  }
+}
+
+function writeGlobalConfig(global) {
+  const p = getGlobalConfigPath();
+  fs.writeFileSync(p, JSON.stringify(global, null, 2), 'utf8');
+}
+
+function getInstanceDir(id) {
+  return path.join(nw.App.dataPath, 'instances', id);
+}
+
+function getInstanceConfigPath(id) {
+  return path.join(getInstanceDir(id), 'config.json');
+}
+
+function getInstanceWorkDir(id) {
+  return path.join(getInstanceDir(id), 'webcode');
+}
+
+function readInstanceConfig(id) {
+  const p = getInstanceConfigPath(id);
+  if (!fs.existsSync(p)) return null;
+  try {
+    return Object.assign({}, DEFAULT_CONFIG, JSON.parse(fs.readFileSync(p, 'utf8')));
+  } catch (e) {
+    return Object.assign({}, DEFAULT_CONFIG);
+  }
+}
+
+function writeInstanceConfig(id, cfg) {
+  const dir = getInstanceDir(id);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(getInstanceConfigPath(id), JSON.stringify(cfg, null, 2), 'utf8');
+}
+
+function getDefaultPortsForIndex(index) {
+  const base = 20001 + index * 100;
+  return {
+    PORT_THEIA:    base,
+    PORT_KANBAN:   base + 1,
+    PORT_OPENCLAW: base + 2,
+    PORT_NOVNC:    base + 3,
+    PORT_VNC:      base + 4
+  };
+}
+
+function listInstances() {
+  const global = readGlobalConfig();
+  if (!global) return [];
+  return global.instances || [];
+}
+
+function ensureInstanceComposeFile(id) {
+  const workDir = getInstanceWorkDir(id);
+  if (!fs.existsSync(workDir)) {
+    fs.mkdirSync(workDir, { recursive: true });
+  }
+  const dest = path.join(workDir, 'docker-compose.yml');
+  const src = path.join(__dirname, '..', 'assets', 'docker-compose.yml');
+  fs.copyFileSync(src, dest);
+}
+
+function createInstance(name) {
+  let global = readGlobalConfig();
+  if (!global) {
+    global = { version: 1, activeInstanceId: null, instances: [] };
+  }
+
+  const index = global.instances.length;
+  const id = 'inst-' + Date.now();
+  const projectName = 'webcode-' + id;
+  const containerName = 'webcode-' + id;
+  const workDir = getInstanceWorkDir(id);
+  const ports = getDefaultPortsForIndex(index);
+
+  const cfg = Object.assign({}, DEFAULT_CONFIG, ports, {
+    INSTANCE_ID:    id,
+    PROJECT_NAME:   projectName,
+    CONTAINER_NAME: containerName,
+    WORK_DIR:       workDir
+  });
+
+  const instanceDir = getInstanceDir(id);
+  if (!fs.existsSync(instanceDir)) fs.mkdirSync(instanceDir, { recursive: true });
+  writeInstanceConfig(id, cfg);
+  ensureInstanceComposeFile(id);
+
+  global.instances.push({ id, name: name || 'New Instance', createdAt: new Date().toISOString() });
+  if (!global.activeInstanceId) global.activeInstanceId = id;
+  writeGlobalConfig(global);
+
+  return { id, cfg };
+}
+
+function removeInstance(id) {
+  let global = readGlobalConfig();
+  if (!global) return;
+
+  global.instances = global.instances.filter(inst => inst.id !== id);
+  if (global.activeInstanceId === id) {
+    global.activeInstanceId = global.instances.length > 0 ? global.instances[0].id : null;
+  }
+  writeGlobalConfig(global);
+
+  const dir = getInstanceDir(id);
+  if (fs.existsSync(dir)) {
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch (e) {}
+  }
+}
+
+function migrateFromSingleInstance() {
+  const globalPath = getGlobalConfigPath();
+  const oldConfigPath = getConfigPath();
+
+  if (fs.existsSync(globalPath)) return false;
+  if (!fs.existsSync(oldConfigPath)) return false;
+
+  let oldCfg;
+  try {
+    oldCfg = Object.assign({}, DEFAULT_CONFIG, JSON.parse(fs.readFileSync(oldConfigPath, 'utf8')));
+  } catch (e) {
+    oldCfg = Object.assign({}, DEFAULT_CONFIG);
+  }
+
+  const id = 'inst-1';
+  const instanceDir = getInstanceDir(id);
+  if (!fs.existsSync(instanceDir)) fs.mkdirSync(instanceDir, { recursive: true });
+
+  const migratedCfg = Object.assign({}, oldCfg, {
+    INSTANCE_ID:    id,
+    PROJECT_NAME:   'webcode',
+    CONTAINER_NAME: 'webcode',
+    WORK_DIR:       getInstanceWorkDir(id)
+  });
+
+  writeInstanceConfig(id, migratedCfg);
+  ensureInstanceComposeFile(id);
+
+  const global = {
+    version: 1,
+    activeInstanceId: id,
+    instances: [{ id, name: 'Default', createdAt: new Date().toISOString() }]
+  };
+  writeGlobalConfig(global);
+
+  try { fs.renameSync(oldConfigPath, oldConfigPath + '.bak'); } catch (e) {}
+
+  return true;
+}
+
 module.exports = {
   DEFAULT_CONFIG,
   configExists,
   readConfig,
   writeConfig,
   getWorkDir,
-  ensureComposeFile
+  ensureComposeFile,
+  // Multi-instance
+  getGlobalConfigPath,
+  readGlobalConfig,
+  writeGlobalConfig,
+  getInstanceDir,
+  getInstanceConfigPath,
+  getInstanceWorkDir,
+  readInstanceConfig,
+  writeInstanceConfig,
+  getDefaultPortsForIndex,
+  listInstances,
+  ensureInstanceComposeFile,
+  createInstance,
+  removeInstance,
+  migrateFromSingleInstance,
 };

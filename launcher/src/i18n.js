@@ -140,6 +140,16 @@ const translations = {
     // 清空卷
     btn_clear_vol:    '清空',
     dyn_confirm_clear_vol: '确定要清空卷 {name}？\n将永久删除其中所有数据，且不可恢复。\n\n操作将自动停止容器，完成后需手动重启。',
+    // 侧边栏 & 多实例
+    sidebar_title:              '实例',
+    btn_add_instance:           '新实例',
+    modal_add_instance_title:   '添加实例',
+    label_instance_name:        '实例名称',
+    ph_instance_name:           '我的项目',
+    btn_cancel:                 '取消',
+    btn_confirm:                '确定',
+    dyn_cannot_remove_last:     '至少保留一个实例',
+    dyn_confirm_remove_instance: '确定要删除实例 "{name}"？\n其配置和工作目录将被永久删除。',
   },
 
   'en': {
@@ -279,6 +289,16 @@ const translations = {
     // Clear volume
     btn_clear_vol:    'Clear',
     dyn_confirm_clear_vol: 'Clear volume {name}?\nThis will permanently delete all data and cannot be undone.\n\nThe container will be stopped automatically. You will need to restart it afterwards.',
+    // Sidebar & multi-instance
+    sidebar_title:              'Instances',
+    btn_add_instance:           'New instance',
+    modal_add_instance_title:   'Add instance',
+    label_instance_name:        'Instance name',
+    ph_instance_name:           'My Project',
+    btn_cancel:                 'Cancel',
+    btn_confirm:                'Confirm',
+    dyn_cannot_remove_last:     'At least one instance must remain',
+    dyn_confirm_remove_instance: 'Delete instance "{name}"?\nIts config and work directory will be permanently removed.',
   },
 };
 

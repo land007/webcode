@@ -12,6 +12,27 @@
 </head>
 <body>
 
+<div id="app-layout">
+
+<!-- ═══════════════════════ SIDEBAR ══════════════════════════════ -->
+<div id="sidebar" class="sidebar-collapsed">
+  <div class="sidebar-header">
+    <button class="sidebar-toggle" id="sidebar-toggle" title="切换侧边栏">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <span class="sidebar-title" data-i18n="sidebar_title">实例</span>
+  </div>
+  <div class="instance-list" id="instance-list"></div>
+  <div class="sidebar-footer">
+    <button class="sidebar-add-btn" id="sidebar-add-btn">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <span class="sidebar-add-label" data-i18n="btn_add_instance">新实例</span>
+    </button>
+  </div>
+</div>
+
+<div id="main-content">
+
 <!-- ═══════════════════════ WIZARD ═══════════════════════════════ -->
 <div id="wizard">
   <div class="wizard-card">
@@ -453,6 +474,24 @@
   </div>
 </div>
 
+</div><!-- #main-content -->
+</div><!-- #app-layout -->
+
+<!-- ═══════════════════════ ADD-INSTANCE MODAL ════════════════════ -->
+<div id="add-instance-modal">
+  <div class="modal-card">
+    <h3 data-i18n="modal_add_instance_title">添加实例</h3>
+    <div class="form-group" style="margin-bottom:0">
+      <label data-i18n="label_instance_name">实例名称</label>
+      <input type="text" id="new-instance-name" data-i18n-placeholder="ph_instance_name" placeholder="我的项目">
+    </div>
+    <div class="action-row" style="margin-top:0">
+      <button class="btn-secondary btn-sm" id="modal-cancel" data-i18n="btn_cancel">取消</button>
+      <button class="btn-primary btn-sm"   id="modal-confirm" data-i18n="btn_confirm">确定</button>
+    </div>
+  </div>
+</div>
+
 <!-- Process Logs Modal -->
 <div id="process-logs-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:10000;align-items:center;justify-content:center">
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;width:90vw;max-width:800px;max-height:80vh;display:flex;flex-direction:column">
@@ -519,13 +558,21 @@ window.onerror = function(msg, src, line, col, err) {
 <script>
 // ─── Load modules (with visible error if require fails) ───────────────────────
 let app, readConfig, writeConfig, configExists, ensureComposeFile;
+let readGlobalConfig, writeGlobalConfig, listInstances, createInstance, removeInstance;
+let readInstanceConfig, writeInstanceConfig, ensureInstanceComposeFile, migrateFromSingleInstance;
+let getInstanceConfigPath, getInstanceWorkDir, DEFAULT_CONFIG;
 let t, setLang, getLang;
 let icons;
 
 (function loadModules() {
   try {
     app = require('./src/app.js');
-    ({ readConfig, writeConfig, configExists, ensureComposeFile } = require('./src/config.js'));
+    ({
+      readConfig, writeConfig, configExists, ensureComposeFile,
+      readGlobalConfig, writeGlobalConfig, listInstances, createInstance, removeInstance,
+      readInstanceConfig, writeInstanceConfig, ensureInstanceComposeFile, migrateFromSingleInstance,
+      getInstanceConfigPath, getInstanceWorkDir, DEFAULT_CONFIG
+    } = require('./src/config.js'));
     ({ t, setLang, getLang } = require('./src/i18n.js'));
     icons = require('./src/icons.js');
   } catch (err) {
@@ -691,7 +738,7 @@ document.addEventListener('click', function(e) {
   applyTranslations();
 
   // 语言切换后重新渲染动态内容（端口映射和目录挂载列表）
-  cfg = readConfig();
+  cfg = readInstanceConfig(activeInstanceId) || cfg;
   // 重新渲染向导中的列表
   if (typeof renderVolumeList === 'function' && typeof renderPortMapList === 'function') {
     renderVolumeList('volume-list', cfg.CUSTOM_VOLUMES || []);
@@ -723,7 +770,7 @@ document.addEventListener('click', function(e) {
 
 let currentStep = 1;
 let currentTab  = 'status';
-let cfg = readConfig();
+let globalCfg, activeInstanceId, cfg;
 let proxyStarted = false;
 let logsProc = null;
 
@@ -1036,7 +1083,7 @@ document.addEventListener('click', function(e) {
 
 // ─── Step 2: Config form ─────────────────────────────────────────────────────
 
-let selectedMode = cfg.MODE || 'desktop';
+let selectedMode = (cfg && cfg.MODE) || 'desktop';
 
 document.querySelectorAll('[data-mode]').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1100,7 +1147,7 @@ function collectWizardForm() {
   cfg.CUSTOM_VOLUMES = collectVolumeList('volume-list');
   cfg.CUSTOM_PORTS = collectPortMapList('port-map-list');
 
-  writeConfig(cfg);
+  writeInstanceConfig(activeInstanceId, cfg);
 }
 
 document.getElementById('btn-step2-back').addEventListener('click', () => setStep(1));
@@ -1163,7 +1210,7 @@ function startLaunch(logId, nextBtn, backBtn) {
   document.getElementById(nextBtn).disabled = true;
   document.getElementById(backBtn).disabled = true;
 
-  ensureComposeFile();
+  ensureInstanceComposeFile(activeInstanceId);
 
   app.dockerUp(cfg,
     (data) => appendLog(logId, data),
@@ -1532,7 +1579,7 @@ document.getElementById('btn-stop').addEventListener('click', () => {
 
 // ─── Workspace: config form ───────────────────────────────────────────────────
 
-let wsMode = cfg.MODE || 'desktop';
+let wsMode = (cfg && cfg.MODE) || 'desktop';
 
 document.querySelectorAll('#panel-status [data-mode]').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1590,7 +1637,7 @@ function collectWorkspaceForm() {
   cfg.CUSTOM_VOLUMES = collectVolumeList('ws-volume-list');
   cfg.CUSTOM_PORTS = collectPortMapList('ws-port-map-list');
 
-  writeConfig(cfg);
+  writeInstanceConfig(activeInstanceId, cfg);
 }
 
 // 工作区端口检测按钮
@@ -1675,23 +1722,236 @@ document.getElementById('btn-save-restart').addEventListener('click', () => {
   });
 });
 
+// ─── Multi-instance: init, sidebar, switch ────────────────────────────────────
+
+function initInstances() {
+  migrateFromSingleInstance();
+  globalCfg = readGlobalConfig();
+
+  if (!globalCfg) {
+    // Fresh install: create global.json with one pending entry (no instance config yet)
+    const id = 'inst-1';
+    globalCfg = {
+      version: 1,
+      activeInstanceId: id,
+      instances: [{ id, name: 'Default', createdAt: new Date().toISOString() }]
+    };
+    writeGlobalConfig(globalCfg);
+    activeInstanceId = id;
+    // cfg with multi-instance fields but no persisted config yet (wizard will create it)
+    cfg = Object.assign({}, DEFAULT_CONFIG, {
+      INSTANCE_ID:    id,
+      PROJECT_NAME:   'webcode',
+      CONTAINER_NAME: 'webcode',
+      WORK_DIR:       getInstanceWorkDir(id)
+    });
+  } else {
+    activeInstanceId = globalCfg.activeInstanceId || globalCfg.instances[0].id;
+    cfg = readInstanceConfig(activeInstanceId);
+    if (!cfg) {
+      // Instance registered but config not yet created (shouldn't happen after migration)
+      cfg = Object.assign({}, DEFAULT_CONFIG, {
+        INSTANCE_ID:    activeInstanceId,
+        PROJECT_NAME:   'webcode-' + activeInstanceId,
+        CONTAINER_NAME: 'webcode-' + activeInstanceId,
+        WORK_DIR:       getInstanceWorkDir(activeInstanceId)
+      });
+    }
+  }
+}
+
+function renderSidebar() {
+  const list = document.getElementById('instance-list');
+  const instances = globalCfg ? (globalCfg.instances || []) : [];
+  list.innerHTML = instances.map(function(inst) {
+    const isActive = inst.id === activeInstanceId;
+    const canRemove = instances.length > 1;
+    return '<div class="instance-item' + (isActive ? ' active' : '') + '" data-instance-id="' + escHtml(inst.id) + '">' +
+      '<span class="instance-status-dot dot dot-gray" id="dot-' + escHtml(inst.id) + '"></span>' +
+      '<span class="instance-name">' + escHtml(inst.name) + '</span>' +
+      (canRemove ? '<button class="instance-remove-btn" data-remove-id="' + escHtml(inst.id) + '" title="删除">✕</button>' : '') +
+      '</div>';
+  }).join('');
+}
+
+function switchToInstance(id) {
+  if (id === activeInstanceId) return;
+
+  app.stopProxies();
+  app.stopPolling();
+  if (logsProc) { try { logsProc.kill(); } catch(e) {} logsProc = null; }
+
+  activeInstanceId = id;
+  cfg = readInstanceConfig(id);
+  if (!cfg) {
+    cfg = Object.assign({}, DEFAULT_CONFIG, {
+      INSTANCE_ID:    id,
+      PROJECT_NAME:   'webcode-' + id,
+      CONTAINER_NAME: 'webcode-' + id,
+      WORK_DIR:       getInstanceWorkDir(id)
+    });
+  }
+
+  globalCfg.activeInstanceId = id;
+  writeGlobalConfig(globalCfg);
+
+  proxyStarted = false;
+
+  // Reset iframes
+  Object.keys(iframeLoaded).forEach(function(k) { iframeLoaded[k] = false; });
+  Object.keys(IFRAME_IDS).forEach(function(tab) {
+    document.getElementById(IFRAME_IDS[tab]).src = '';
+  });
+
+  renderSidebar();
+
+  app.dockerPs(cfg, function(err, containers) {
+    if (!err && containerRunning(containers)) {
+      showWorkspace();
+    } else {
+      ensureInstanceComposeFile(id);
+      showWizard(4);
+    }
+  });
+}
+
+function handleCreateInstance(name) {
+  const result = createInstance(name || t('btn_add_instance'));
+  globalCfg = readGlobalConfig();
+  renderSidebar();
+  switchToInstance(result.id);
+}
+
+function handleRemoveInstance(id) {
+  const instances = globalCfg.instances || [];
+  if (instances.length <= 1) {
+    alert(t('dyn_cannot_remove_last'));
+    return;
+  }
+  const inst = instances.find(function(i) { return i.id === id; });
+  if (!confirm(t('dyn_confirm_remove_instance', { name: inst ? inst.name : id }))) return;
+
+  const wasActive = (id === activeInstanceId);
+  removeInstance(id);
+  globalCfg = readGlobalConfig();
+
+  if (wasActive) {
+    activeInstanceId = globalCfg.activeInstanceId;
+    cfg = readInstanceConfig(activeInstanceId) || Object.assign({}, DEFAULT_CONFIG, {
+      INSTANCE_ID: activeInstanceId,
+      PROJECT_NAME: 'webcode-' + activeInstanceId,
+      CONTAINER_NAME: 'webcode-' + activeInstanceId,
+      WORK_DIR: getInstanceWorkDir(activeInstanceId)
+    });
+    proxyStarted = false;
+    if (logsProc) { try { logsProc.kill(); } catch(e) {} logsProc = null; }
+    renderSidebar();
+    app.dockerPs(cfg, function(err, containers) {
+      if (!err && containerRunning(containers)) {
+        showWorkspace();
+      } else {
+        showWizard(4);
+      }
+    });
+  } else {
+    renderSidebar();
+  }
+}
+
+let sidebarPollTimer = null;
+
+function startSidebarPolling() {
+  if (sidebarPollTimer) clearInterval(sidebarPollTimer);
+  sidebarPollTimer = setInterval(function() {
+    const instances = globalCfg ? (globalCfg.instances || []) : [];
+    instances.forEach(function(inst) {
+      const instCfg = readInstanceConfig(inst.id);
+      if (!instCfg) return;
+      app.dockerPs(instCfg, function(err, containers) {
+        const dot = document.getElementById('dot-' + inst.id);
+        if (!dot) return;
+        const running = containerRunning(containers);
+        dot.className = 'instance-status-dot dot ' + (running ? 'dot-green' : 'dot-gray');
+      });
+    });
+  }, 10000);
+}
+
+// Sidebar toggle
+document.getElementById('sidebar-toggle').addEventListener('click', function() {
+  const sidebar = document.getElementById('sidebar');
+  const isCollapsed = sidebar.classList.contains('sidebar-collapsed');
+  sidebar.classList.toggle('sidebar-collapsed', !isCollapsed);
+  sidebar.classList.toggle('sidebar-expanded', isCollapsed);
+});
+
+// Instance list click delegation
+document.getElementById('instance-list').addEventListener('click', function(e) {
+  const removeBtn = e.target.closest('[data-remove-id]');
+  if (removeBtn) {
+    e.stopPropagation();
+    handleRemoveInstance(removeBtn.getAttribute('data-remove-id'));
+    return;
+  }
+  const item = e.target.closest('[data-instance-id]');
+  if (item) {
+    switchToInstance(item.getAttribute('data-instance-id'));
+  }
+});
+
+// Add instance button
+document.getElementById('sidebar-add-btn').addEventListener('click', function() {
+  document.getElementById('new-instance-name').value = '';
+  document.getElementById('add-instance-modal').style.display = 'flex';
+  setTimeout(function() { document.getElementById('new-instance-name').focus(); }, 50);
+});
+
+// Modal cancel
+document.getElementById('modal-cancel').addEventListener('click', function() {
+  document.getElementById('add-instance-modal').style.display = 'none';
+});
+
+// Modal confirm
+document.getElementById('modal-confirm').addEventListener('click', function() {
+  const name = document.getElementById('new-instance-name').value.trim() || 'New Instance';
+  document.getElementById('add-instance-modal').style.display = 'none';
+  handleCreateInstance(name);
+});
+
+// Modal: Enter key confirms, Escape cancels
+document.getElementById('new-instance-name').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') document.getElementById('modal-confirm').click();
+  if (e.key === 'Escape') document.getElementById('modal-cancel').click();
+});
+
+// Modal: click backdrop to cancel
+document.getElementById('add-instance-modal').addEventListener('click', function(e) {
+  if (e.target === this) document.getElementById('modal-cancel').click();
+});
+
 // ─── Boot logic ───────────────────────────────────────────────────────────────
 
 function boot() {
+  // 初始化多实例状态
+  initInstances();
+
   // 初始化主题（head 脚本已设 data-theme，这里同步按钮状态）
   applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
   // 渲染标签页图标
   renderTabIcons();
   // Apply translations to all annotated elements
   applyTranslations();
+  // 渲染侧边栏
+  renderSidebar();
 
-  if (!configExists()) {
-    // First run: wizard from step 1
+  const fs = require('fs');
+  if (!fs.existsSync(getInstanceConfigPath(activeInstanceId))) {
+    // First run for this instance: wizard from step 1
     showWizard(1);
     runDockerCheck();
   } else {
     // Config exists: check if container is running
-    ensureComposeFile();
+    ensureInstanceComposeFile(activeInstanceId);
     app.dockerPs(cfg, (err, containers) => {
       if (!err && containerRunning(containers)) {
         // Already running → go straight to workspace
@@ -1702,6 +1962,8 @@ function boot() {
       }
     });
   }
+
+  startSidebarPolling();
 }
 
 boot();

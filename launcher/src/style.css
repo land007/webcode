@@ -735,3 +735,207 @@ button .btn-icon svg {
   width: 16px;
   height: 16px;
 }
+
+/* ── App layout (sidebar + main) ────────────────────────────── */
+#app-layout {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
+
+#main-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Ensure wizard and workspace fill main-content height */
+#wizard, #workspace {
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────── */
+#sidebar {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+  transition: width 0.2s ease;
+  overflow: hidden;
+}
+
+#sidebar.sidebar-expanded { width: 200px; }
+#sidebar.sidebar-collapsed { width: 48px; }
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.sidebar-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.sidebar-toggle {
+  background: transparent;
+  border: none;
+  padding: 5px;
+  border-radius: 5px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+}
+.sidebar-toggle:hover { background: var(--surface2); color: var(--text); }
+
+.instance-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 0;
+}
+
+.instance-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 8px;
+  cursor: pointer;
+  border-radius: 5px;
+  margin: 0 4px;
+  position: relative;
+  min-height: 34px;
+}
+.instance-item:hover { background: var(--surface2); }
+.instance-item.active { background: var(--surface2); }
+.instance-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+.instance-status-dot {
+  flex-shrink: 0;
+  margin-right: 0;
+}
+
+.instance-name {
+  flex: 1;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text);
+}
+
+.instance-remove-btn {
+  background: transparent;
+  border: none;
+  padding: 2px 4px;
+  border-radius: 3px;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1;
+  opacity: 0;
+  flex-shrink: 0;
+  transition: opacity 0.1s;
+}
+.instance-item:hover .instance-remove-btn { opacity: 1; }
+.instance-remove-btn:hover { color: var(--danger); background: rgba(224,82,82,.12); }
+
+.sidebar-footer {
+  border-top: 1px solid var(--border);
+  padding: 6px 4px;
+  flex-shrink: 0;
+}
+
+.sidebar-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 6px 8px;
+  border-radius: 5px;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: left;
+}
+.sidebar-add-btn:hover { background: var(--surface2); color: var(--text); }
+.sidebar-add-btn svg { flex-shrink: 0; }
+
+.sidebar-add-label {
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Collapsed sidebar: hide text elements */
+#sidebar.sidebar-collapsed .sidebar-title,
+#sidebar.sidebar-collapsed .instance-name,
+#sidebar.sidebar-collapsed .instance-remove-btn,
+#sidebar.sidebar-collapsed .sidebar-add-label {
+  display: none;
+}
+
+#sidebar.sidebar-collapsed .instance-item {
+  justify-content: center;
+  padding: 7px 0;
+  margin: 0 6px;
+}
+#sidebar.sidebar-collapsed .instance-item::before { display: none; }
+
+#sidebar.sidebar-collapsed .sidebar-add-btn {
+  justify-content: center;
+  padding: 6px 0;
+}
+
+/* ── Add-instance modal ──────────────────────────────────────── */
+#add-instance-modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 10000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal-card h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}

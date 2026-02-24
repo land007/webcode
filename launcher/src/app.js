@@ -5,7 +5,8 @@ const http = require('http');
 const httpProxy = require('http-proxy');
 const {
   configExists, readConfig, writeConfig,
-  getWorkDir, ensureComposeFile
+  getWorkDir, ensureComposeFile,
+  ensureInstanceComposeFile, writeInstanceConfig
 } = require('./config.js');
 const {
   checkPorts, autoFixPorts, getPortsFromConfig,
@@ -101,6 +102,7 @@ function buildDockerPath() {
 function buildEnv(cfg) {
   return Object.assign({}, process.env, {
     PATH: buildDockerPath(),
+    COMPOSE_PROJECT_NAME: cfg.PROJECT_NAME || 'webcode',
     MODE: cfg.MODE || 'desktop',
     AUTH_USER: cfg.AUTH_USER,
     AUTH_PASSWORD: cfg.AUTH_PASSWORD,
@@ -116,7 +118,7 @@ function buildEnv(cfg) {
 
 function dockerSpawn(args, cfg, onData, onClose) {
   const proc = spawn('docker', args, {
-    cwd: getWorkDir(),
+    cwd: cfg.WORK_DIR || getWorkDir(),
     env: buildEnv(cfg)
   });
   proc.stdout.on('data', (d) => onData && onData(d.toString()));
@@ -127,7 +129,13 @@ function dockerSpawn(args, cfg, onData, onClose) {
 
 async function dockerUp(cfg, onData, onClose) {
   // 始终用最新模板覆盖 docker-compose.yml
-  ensureComposeFile();
+  if (cfg.INSTANCE_ID) {
+    ensureInstanceComposeFile(cfg.INSTANCE_ID);
+  } else {
+    ensureComposeFile();
+  }
+
+  const workDir = cfg.WORK_DIR || getWorkDir();
 
   // 检查端口冲突并自动修复
   let ports = getPortsFromConfig(cfg);
@@ -149,7 +157,11 @@ async function dockerUp(cfg, onData, onClose) {
     ports = fixedPorts;
 
     // 保存配置
-    writeConfig(cfg);
+    if (cfg.INSTANCE_ID) {
+      writeInstanceConfig(cfg.INSTANCE_ID, cfg);
+    } else {
+      writeConfig(cfg);
+    }
 
     onData && onData('端口已自动调整：\n');
     for (const [key, result] of Object.entries(checkResults)) {
@@ -161,16 +173,16 @@ async function dockerUp(cfg, onData, onClose) {
   }
 
   // 无论是否有冲突，始终将当前端口配置写入 docker-compose.yml
-  updateComposePorts(getWorkDir(), ports);
+  updateComposePorts(workDir, ports);
 
   // 注入自定义端口映射
   if (cfg.CUSTOM_PORTS && cfg.CUSTOM_PORTS.length > 0) {
-    updateComposeCustomPorts(getWorkDir(), cfg.CUSTOM_PORTS);
+    updateComposeCustomPorts(workDir, cfg.CUSTOM_PORTS);
   }
 
   // 注入自定义目录挂载
   if (cfg.CUSTOM_VOLUMES && cfg.CUSTOM_VOLUMES.length > 0) {
-    updateComposeVolumes(getWorkDir(), cfg.CUSTOM_VOLUMES);
+    updateComposeVolumes(workDir, cfg.CUSTOM_VOLUMES);
   }
 
   return dockerSpawn(['compose', 'up', '-d'], cfg, onData, onClose);
@@ -186,7 +198,7 @@ function dockerLogs(cfg, onData) {
 
 function dockerPs(cfg, callback) {
   const proc = spawn('docker', ['compose', 'ps', '--format', 'json'], {
-    cwd: getWorkDir(),
+    cwd: cfg.WORK_DIR || getWorkDir(),
     env: buildEnv(cfg)
   });
   let out = '';
@@ -294,7 +306,7 @@ function setTheiaTheme(cfg, themeName, callback) {
     "s['workbench.colorTheme']=" + JSON.stringify(themeName) + ";" +
     "fs.mkdirSync('/home/ubuntu/.theia',{recursive:true});" +
     "fs.writeFileSync(f,JSON.stringify(s,null,2));";
-  const proc = spawn('docker', ['exec', '-u', 'ubuntu', 'webcode', 'node', '-e', script], {
+  const proc = spawn('docker', ['exec', '-u', 'ubuntu', cfg.CONTAINER_NAME || 'webcode', 'node', '-e', script], {
     env: buildEnv(cfg)
   });
   proc.on('close', (code) => { if (callback) callback(code); });
@@ -306,7 +318,7 @@ function setTheiaTheme(cfg, themeName, callback) {
  * @param {Function} callback  (err, [{name, state, detail}])
  */
 function supervisorStatus(cfg, callback) {
-  const proc = spawn('docker', ['exec', 'webcode', 'supervisorctl', 'status', 'all'], {
+  const proc = spawn('docker', ['exec', cfg.CONTAINER_NAME || 'webcode', 'supervisorctl', 'status', 'all'], {
     env: buildEnv(cfg)
   });
   let out = '';
@@ -324,7 +336,7 @@ function supervisorStatus(cfg, callback) {
  * @param {Function} callback  (exitCode)
  */
 function supervisorRestart(cfg, processName, callback) {
-  const proc = spawn('docker', ['exec', 'webcode', 'supervisorctl', 'restart', processName], {
+  const proc = spawn('docker', ['exec', cfg.CONTAINER_NAME || 'webcode', 'supervisorctl', 'restart', processName], {
     env: buildEnv(cfg)
   });
   proc.on('close', (code) => { if (callback) callback(code); });
@@ -338,7 +350,7 @@ function supervisorRestart(cfg, processName, callback) {
  * @param {Function} callback  (formatted log string with error markers)
  */
 function supervisorProcessLog(cfg, processName, callback) {
-  const dockerArgs = (extra) => ['exec', 'webcode', 'supervisorctl', 'tail', '-1000', processName].concat(extra);
+  const dockerArgs = (extra) => ['exec', cfg.CONTAINER_NAME || 'webcode', 'supervisorctl', 'tail', '-1000', processName].concat(extra);
   let stdoutOut = '', stderrOut = '', done = 0;
 
   function finish() {
@@ -440,4 +452,5 @@ module.exports = {
   getPortsFromConfig,
   getPortSummary,
   dockerVolumeRm,
+  setTheiaTheme,
 };
