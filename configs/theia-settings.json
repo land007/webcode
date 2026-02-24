@@ -19,5 +19,8 @@
   "files.exclude": {
     "**/node_modules": true,
     "**/.git": true
-  }
+  },
+  "workbench.colorTheme": "Dark (Theia)",
+  "terminal.integrated.shell.linux": "/bin/bash",
+  "terminal.integrated.shellArgs.linux": []
 }

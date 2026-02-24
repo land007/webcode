@@ -296,7 +296,7 @@ function parseSupervisorOutput(out) {
 /**
  * Update Theia's color theme by writing to ~/.theia/settings.json inside the container.
  * @param {Object} cfg
- * @param {string} themeName  e.g. 'Dark (Theia)' or 'Light (Theia)'
+ * @param {string} themeName  e.g. 'dark' or 'light'
  * @param {Function} [callback]  (exitCode)
  */
 function setTheiaTheme(cfg, themeName, callback) {
