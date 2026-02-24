@@ -453,6 +453,149 @@
   </div>
 </div>
 
+<!-- ═══════════════════════ MULTI-CONTAINER APP ═══════════════════════ -->
+<div id="app-container" style="display:none; height:100%; flex-direction:column;">
+  <!-- App header -->
+  <div class="app-header">
+    <h1 data-i18n="title">webcode 启动器</h1>
+    <div style="display:flex; gap:8px;">
+      <button class="theme-cycle-btn" id="theme-cycle-btn-app" title="切换主题">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
+        <span>暗色</span>
+      </button>
+      <button class="lang-cycle-btn" id="lang-cycle-btn-app">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" x2="22" y1="12" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+        <span>EN</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main app content -->
+  <div class="app-main">
+    <!-- Left sidebar: container list -->
+    <div class="container-sidebar">
+      <div class="container-sidebar-header">
+        <span data-i18n="h_container_list">容器列表</span>
+      </div>
+      <div class="container-list" id="container-list">
+        <!-- Container items will be dynamically added here -->
+        <div class="container-empty" id="container-empty-state">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+          <p data-i18n="no_containers">暂无容器</p>
+          <p class="text-sm text-muted" data-i18n="no_containers_hint">点击下方按钮创建第一个容器</p>
+        </div>
+      </div>
+      <button class="btn-primary btn-create-container-sidebar" id="btn-create-container">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        <span data-i18n="btn_create_container">+ 创建容器</span>
+      </button>
+    </div>
+
+    <!-- Right: workspace area -->
+    <div class="workspace-area">
+      <div class="workspace-header">
+        <div class="workspace-title" id="current-container-name">
+          <span data-i18n="h_workspace">工作区</span>
+        </div>
+        <div class="workspace-tabs">
+          <button class="tab-btn" id="app-tab-status" data-tab="status">
+            <span class="tab-icon" data-icon="tabStatus"></span>
+            <span data-i18n="tab_status">状态</span>
+          </button>
+          <button class="tab-btn" id="app-tab-vnc" data-tab="vnc">
+            <span class="tab-icon" data-icon="tabVnc"></span>
+            <span data-i18n="tab_vnc">桌面</span>
+          </button>
+          <button class="tab-btn" id="app-tab-ide" data-tab="ide">
+            <span class="tab-icon" data-icon="tabIde"></span>
+            <span data-i18n="tab_ide">IDE</span>
+          </button>
+          <button class="tab-btn" id="app-tab-kanban" data-tab="kanban">
+            <span class="tab-icon" data-icon="tabKanban"></span>
+            <span data-i18n="tab_kanban">看板</span>
+          </button>
+          <button class="tab-btn" id="app-tab-ai" data-tab="ai">
+            <span class="tab-icon" data-icon="tabAi"></span>
+            <span data-i18n="tab_ai">AI</span>
+          </button>
+          <span style="flex:1"></span>
+          <div class="status-pill" id="app-status-pill">
+            <span class="dot dot-gray" id="app-status-dot"></span>
+            <span id="app-status-text" data-i18n="status_detecting">检测中…</span>
+          </div>
+        </div>
+      </div>
+      <div class="workspace-content">
+        <iframe id="app-tab-frame" src="about:blank"></iframe>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create Container Modal -->
+<div id="create-container-modal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 data-i18n="wizard_create_title">创建新容器</h2>
+      <button class="modal-close" id="close-create-modal">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+
+    <!-- Step 1: Basic Info -->
+    <div id="create-step-1">
+      <div class="form-group">
+        <label data-i18n="label_container_name">容器名称</label>
+        <input type="text" id="new-container-name" data-i18n-placeholder="ph_container_name" placeholder="例如：主项目、测试环境">
+      </div>
+      <div class="form-group">
+        <label data-i18n="label_container_desc">描述（可选）</label>
+        <input type="text" id="new-container-desc" data-i18n-placeholder="ph_container_desc" placeholder="例如：前端开发环境">
+      </div>
+
+      <details>
+        <summary data-i18n="summary_advanced">高级选项</summary>
+        <div class="form-group mt-3">
+          <label data-i18n="label_clone_container">克隆已有容器</label>
+          <div id="clone-container-list" class="clone-select-container">
+            <!-- Clone options will be added dynamically -->
+          </div>
+        </div>
+      </details>
+
+      <div class="action-row">
+        <button class="btn-primary" id="btn-create-next">
+          <span data-i18n="btn_step2_next">下一步：启动容器</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: Confirm -->
+    <div id="create-step-2" style="display:none">
+      <div class="confirm-summary">
+        <div class="confirm-summary-row">
+          <span class="confirm-summary-label" data-i18n="wizard_confirm_name">名称</span>
+          <span class="confirm-summary-value" id="confirm-container-name">-</span>
+        </div>
+        <div class="confirm-summary-row">
+          <span class="confirm-summary-label" data-i18n="label_run_mode">运行模式</span>
+          <span class="confirm-summary-value" id="confirm-container-mode">Desktop</span>
+        </div>
+        <div class="confirm-summary-row">
+          <span class="confirm-summary-label" data-i18n="wizard_confirm_ports">端口范围</span>
+          <span class="confirm-summary-value" id="confirm-container-ports">-</span>
+        </div>
+      </div>
+      <div class="action-row">
+        <button class="btn-secondary" id="btn-create-back" data-i18n="btn_step2_back">上一步</button>
+        <button class="btn-primary" id="btn-create-confirm">
+          <span data-i18n="btn_create_and_start">创建并启动</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Process Logs Modal -->
 <div id="process-logs-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:10000;align-items:center;justify-content:center">
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;width:90vw;max-width:800px;max-height:80vh;display:flex;flex-direction:column">
@@ -521,6 +664,7 @@ window.onerror = function(msg, src, line, col, err) {
 let app, readConfig, writeConfig, configExists, ensureComposeFile;
 let t, setLang, getLang;
 let icons;
+let ContainerRegistry, ContainerManager;
 
 (function loadModules() {
   try {
@@ -528,6 +672,9 @@ let icons;
     ({ readConfig, writeConfig, configExists, ensureComposeFile } = require('./src/config.js'));
     ({ t, setLang, getLang } = require('./src/i18n.js'));
     icons = require('./src/icons.js');
+    // Multi-container support
+    ({ ContainerRegistry } = require('./src/container-registry.js'));
+    ContainerManager = require('./src/container-manager.js');
   } catch (err) {
     var d = document.getElementById('_err_overlay');
     if (!d) {
@@ -1675,6 +1822,387 @@ document.getElementById('btn-save-restart').addEventListener('click', () => {
   });
 });
 
+// ─── Multi-Container Support ───────────────────────────────────────────────────
+
+// Global state for multi-container mode
+let containerRegistry;
+let containerManager;
+let currentContainerId = null;
+let isMultiContainerMode = false;
+
+// Initialize multi-container mode
+function initMultiContainerMode() {
+  try {
+    containerRegistry = new ContainerRegistry();
+    containerManager = new ContainerManager(containerRegistry);
+
+    // Check if we should migrate legacy config
+    if (configExists()) {
+      const legacyConfig = readConfig();
+      containerRegistry.migrateLegacyConfig(legacyConfig);
+    }
+
+    // Check if there are any containers
+    const containers = containerRegistry.listContainers();
+    if (containers.length === 0) {
+      // No containers yet, show create container wizard
+      showCreateContainerWizard();
+      return false;
+    }
+
+    // Enter multi-container mode
+    isMultiContainerMode = true;
+    showAppContainer();
+    renderContainerList();
+
+    // Select first container or last used
+    const lastUsed = containers.sort((a, b) =>
+      new Date(b.lastUsed) - new Date(a.lastUsed))[0];
+    selectContainer(lastUsed.id);
+
+    return true;
+  } catch (err) {
+    console.error('Failed to initialize multi-container mode:', err);
+    // Fall back to legacy mode
+    return false;
+  }
+}
+
+// Render container list in sidebar
+function renderContainerList() {
+  const listEl = document.getElementById('container-list');
+  const emptyState = document.getElementById('container-empty-state');
+
+  // Clear existing items (except empty state)
+  const existingItems = listEl.querySelectorAll('.container-item');
+  existingItems.forEach(item => item.remove());
+
+  const containers = containerRegistry.listContainers();
+
+  if (containers.length === 0) {
+    emptyState.style.display = 'flex';
+    return;
+  }
+
+  emptyState.style.display = 'none';
+
+  containers.forEach(container => {
+    const item = document.createElement('div');
+    item.className = 'container-item';
+    if (container.id === currentContainerId) {
+      item.classList.add('active');
+    }
+    item.dataset.containerId = container.id;
+
+    item.innerHTML = `
+      <div class="container-status ${container.status}"></div>
+      <div class="container-info">
+        <div class="container-name">${escapeHtml(container.name)}</div>
+        <div class="container-ports">${container.ports.theia}-${container.ports.novnc}</div>
+      </div>
+      <div class="container-actions">
+        ${container.status === 'running' ?
+          `<button class="container-action-btn" data-action="stop" data-container-id="${container.id}" title="${t('title_stop_container')}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
+          </button>` :
+          `<button class="container-action-btn" data-action="start" data-container-id="${container.id}" title="${t('title_start_container')}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          </button>`
+        }
+        <button class="container-action-btn" data-action="delete" data-container-id="${container.id}" title="${t('title_delete_container')}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        </button>
+      </div>
+    `;
+
+    item.addEventListener('click', (e) => {
+      if (!e.target.closest('.container-action-btn')) {
+        selectContainer(container.id);
+      }
+    });
+
+    listEl.appendChild(item);
+  });
+
+  // Attach event listeners to action buttons
+  listEl.querySelectorAll('.container-action-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const action = btn.dataset.action;
+      const containerId = btn.dataset.containerId;
+      handleContainerAction(action, containerId);
+    });
+  });
+}
+
+// Select a container
+function selectContainer(containerId) {
+  currentContainerId = containerId;
+  const container = containerRegistry.getContainer(containerId);
+
+  if (!container) return;
+
+  // Update UI
+  document.getElementById('current-container-name').textContent = container.name;
+  renderContainerList();
+
+  // Update status pill
+  updateContainerStatus(container);
+
+  // Load app tab with default content (status)
+  activateAppTab('status');
+}
+
+// Handle container action buttons
+function handleContainerAction(action, containerId) {
+  switch (action) {
+    case 'start':
+      startContainer(containerId);
+      break;
+    case 'stop':
+      stopContainer(containerId);
+      break;
+    case 'delete':
+      if (confirm(t('dyn_confirm_delete_container', { name: containerRegistry.getContainer(containerId).name }))) {
+        deleteContainer(containerId);
+      }
+      break;
+  }
+}
+
+// Start a container
+function startContainer(containerId) {
+  const container = containerRegistry.getContainer(containerId);
+  if (!container) return;
+
+  containerRegistry.updateStatus(containerId, 'starting');
+  renderContainerList();
+
+  const cfg = containerRegistry.loadContainerConfig(containerId);
+
+  containerManager.startContainer(containerId,
+    (data) => {
+      // onData - show progress
+      console.log('Starting container:', data.trim());
+    },
+    (code) => {
+      // onClose
+      if (code === 0) {
+        containerRegistry.updateStatus(containerId, 'running');
+        // Start proxies for this container
+        startContainerProxies(containerId, cfg);
+        if (currentContainerId === containerId) {
+          selectContainer(containerId);
+        }
+      } else {
+        containerRegistry.updateStatus(containerId, 'error');
+      }
+      renderContainerList();
+    }
+  );
+}
+
+// Stop a container
+function stopContainer(containerId) {
+  const container = containerRegistry.getContainer(containerId);
+  if (!container) return;
+
+  containerRegistry.updateStatus(containerId, 'stopping');
+  renderContainerList();
+
+  containerManager.stopContainer(containerId,
+    (data) => {
+      console.log('Stopping container:', data.trim());
+    },
+    (code) => {
+      containerRegistry.updateStatus(containerId, 'stopped');
+      stopContainerProxies(containerId);
+      if (currentContainerId === containerId) {
+        selectContainer(containerId);
+      }
+      renderContainerList();
+    }
+  );
+}
+
+// Delete a container
+function deleteContainer(containerId) {
+  const container = containerRegistry.getContainer(containerId);
+  if (!container) return;
+
+  // Stop if running
+  if (container.status === 'running') {
+    stopContainer(containerId);
+    // Wait for stop to complete
+    setTimeout(() => {
+      containerRegistry.deleteContainer(containerId);
+      if (currentContainerId === containerId) {
+        const containers = containerRegistry.listContainers();
+        if (containers.length > 0) {
+          selectContainer(containers[0].id);
+        } else {
+          currentContainerId = null;
+          showCreateContainerWizard();
+        }
+      } else {
+        renderContainerList();
+      }
+    }, 2000);
+  } else {
+    containerRegistry.deleteContainer(containerId);
+    if (currentContainerId === containerId) {
+      const containers = containerRegistry.listContainers();
+      if (containers.length > 0) {
+        selectContainer(containers[0].id);
+      } else {
+        currentContainerId = null;
+        showCreateContainerWizard();
+      }
+    } else {
+      renderContainerList();
+    }
+  }
+}
+
+// Update container status display
+function updateContainerStatus(container) {
+  const statusDot = document.getElementById('app-status-dot');
+  const statusText = document.getElementById('app-status-text');
+
+  statusDot.className = 'dot';
+  switch (container.status) {
+    case 'running':
+      statusDot.classList.add('dot-green');
+      statusText.textContent = t('dyn_running');
+      break;
+    case 'stopped':
+      statusDot.classList.add('dot-gray');
+      statusText.textContent = t('dyn_stopped');
+      break;
+    case 'error':
+      statusDot.classList.add('dot-red');
+      statusText.textContent = t('state_unknown');
+      break;
+    default:
+      statusDot.classList.add('dot-yellow');
+      statusText.textContent = t('status_detecting');
+  }
+}
+
+// Proxy management for containers
+const containerProxies = new Map();
+
+function startContainerProxies(containerId, cfg) {
+  const container = containerRegistry.getContainer(containerId);
+  if (!container) return;
+
+  // Stop existing proxies for this container
+  stopContainerProxies(containerId);
+
+  const basicAuth = 'Basic ' + Buffer.from(`${cfg.AUTH_USER}:${cfg.AUTH_PASSWORD}`).toString('base64');
+  const servers = [];
+
+  servers.push(app.startProxy(container.proxyPorts.theia, container.ports.theia, basicAuth));
+  servers.push(app.startProxy(container.proxyPorts.kanban, container.ports.kanban, basicAuth));
+  servers.push(app.startProxy(container.proxyPorts.openclaw, container.ports.openclaw, 'Bearer ' + cfg.OPENCLAW_TOKEN));
+  servers.push(app.startProxy(container.proxyPorts.novnc, container.ports.novnc, basicAuth));
+
+  containerProxies.set(containerId, servers);
+}
+
+function stopContainerProxies(containerId) {
+  const servers = containerProxies.get(containerId);
+  if (servers) {
+    servers.forEach(s => s.close());
+    containerProxies.delete(containerId);
+  }
+}
+
+// Activate app tab
+function activateAppTab(tab) {
+  const iframe = document.getElementById('app-tab-frame');
+  const container = containerRegistry.getContainer(currentContainerId);
+
+  if (!container) {
+    iframe.src = 'about:blank';
+    return;
+  }
+
+  const cfg = containerRegistry.loadContainerConfig(currentContainerId);
+
+  // Update tab buttons
+  document.querySelectorAll('.workspace-tabs .tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
+  });
+
+  switch (tab) {
+    case 'status':
+      // Show inline status
+      iframe.src = 'about:blank';
+      // TODO: Render inline status
+      break;
+    case 'vnc':
+      iframe.src = `http://localhost:${container.proxyPorts.novnc}/`;
+      break;
+    case 'ide':
+      iframe.src = `http://localhost:${container.proxyPorts.theia}/`;
+      break;
+    case 'kanban':
+      iframe.src = `http://localhost:${container.proxyPorts.kanban}/`;
+      break;
+    case 'ai':
+      iframe.src = `http://localhost:${container.proxyPorts.openclaw}/`;
+      break;
+  }
+}
+
+// Show app container
+function showAppContainer() {
+  document.getElementById('wizard').style.display = 'none';
+  document.getElementById('workspace').style.display = 'none';
+  document.getElementById('app-container').style.display = 'flex';
+}
+
+// Show create container wizard
+function showCreateContainerWizard() {
+  document.getElementById('wizard').style.display = 'none';
+  document.getElementById('workspace').style.display = 'none';
+  document.getElementById('app-container').style.display = 'flex';
+  document.getElementById('create-container-modal').classList.add('visible');
+  document.getElementById('create-step-1').style.display = 'block';
+  document.getElementById('create-step-2').style.display = 'none';
+
+  // Populate clone options
+  const cloneList = document.getElementById('clone-container-list');
+  cloneList.innerHTML = '<div class="clone-container-option" data-clone=""><span class="clone-option-name">空白配置</span></div>';
+  containerRegistry.listContainers().forEach(container => {
+    const option = document.createElement('div');
+    option.className = 'clone-container-option';
+    option.dataset.clone = container.id;
+    option.innerHTML = `
+      <div class="clone-option-name">${escapeHtml(container.name)}</div>
+      <div class="clone-option-desc">${escapeHtml(container.description || t('ph_optional'))}</div>
+    `;
+    option.addEventListener('click', () => {
+      cloneList.querySelectorAll('.clone-container-option').forEach(o => o.classList.remove('selected'));
+      option.classList.add('selected');
+    });
+    cloneList.appendChild(option);
+  });
+}
+
+// Hide create container modal
+function hideCreateContainerModal() {
+  document.getElementById('create-container-modal').classList.remove('visible');
+}
+
+// Escape HTML
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 // ─── Boot logic ───────────────────────────────────────────────────────────────
 
 function boot() {
@@ -1685,6 +2213,34 @@ function boot() {
   // Apply translations to all annotated elements
   applyTranslations();
 
+  // Always try to use multi-container mode first
+  // If registry doesn't exist but legacy config exists, migrate it
+  const path = require('path');
+  const fs = require('fs');
+  const registryPath = path.join(nw.App.dataPath, 'registry.json');
+  const registryExists = fs.existsSync(registryPath);
+
+  // If legacy config exists but no registry, migrate to multi-container mode
+  if (!registryExists && configExists()) {
+    // Migrate existing config to multi-container mode
+    try {
+      const legacyConfig = readConfig();
+      // Create temporary registry to migrate
+      const { ContainerRegistry } = require('./src/container-registry.js');
+      const tempRegistry = new ContainerRegistry();
+      tempRegistry.migrateLegacyConfig(legacyConfig);
+    } catch (err) {
+      console.error('Migration failed, using legacy mode:', err);
+    }
+  }
+
+  // Now initialize multi-container mode
+  if (initMultiContainerMode()) {
+    // Multi-container mode initialized successfully
+    return;
+  }
+
+  // Fall back to legacy mode if multi-container init failed
   if (!configExists()) {
     // First run: wizard from step 1
     showWizard(1);
@@ -1703,6 +2259,104 @@ function boot() {
     });
   }
 }
+
+// ─── Multi-Container Event Listeners ─────────────────────────────────────────────
+
+// Theme and language toggle buttons for app container
+document.getElementById('theme-cycle-btn-app').addEventListener('click', function() {
+  var current = localStorage.getItem(THEME_KEY) || 'dark';
+  var idx = THEME_ORDER.indexOf(current);
+  var next = THEME_ORDER[(idx + 1) % THEME_ORDER.length];
+  localStorage.setItem(THEME_KEY, next);
+  applyTheme(next);
+});
+
+document.getElementById('lang-cycle-btn-app').addEventListener('click', function() {
+  var current = getLang();
+  var next = current === 'zh-CN' ? 'en' : 'zh-CN';
+  setLang(next);
+  updateLangButtons();
+  applyTranslations();
+});
+
+// App tab buttons
+['app-tab-status', 'app-tab-vnc', 'app-tab-ide', 'app-tab-kanban', 'app-tab-ai'].forEach(function(id) {
+  var el = document.getElementById(id);
+  if (el) {
+    el.addEventListener('click', function() {
+      activateAppTab(el.dataset.tab);
+    });
+  }
+});
+
+// Create container button
+document.getElementById('btn-create-container').addEventListener('click', showCreateContainerWizard);
+
+// Close create container modal
+document.getElementById('close-create-modal').addEventListener('click', hideCreateContainerModal);
+
+// Create container wizard - next button
+document.getElementById('btn-create-next').addEventListener('click', function() {
+  var name = document.getElementById('new-container-name').value.trim();
+  if (!name) {
+    alert('请输入容器名称');
+    return;
+  }
+
+  var desc = document.getElementById('new-container-desc').value.trim();
+  var cloneId = document.querySelector('.clone-container-option.selected')?.dataset.clone || '';
+
+  // Show confirmation step
+  document.getElementById('create-step-1').style.display = 'none';
+  document.getElementById('create-step-2').style.display = 'block';
+
+  document.getElementById('confirm-container-name').textContent = name;
+  document.getElementById('confirm-container-mode').textContent = 'Desktop';
+
+  // Calculate port range for new container
+  const containers = containerRegistry.listContainers();
+  const portIndex = containers.length;
+  const portBase = 21001 + (portIndex * 100);
+  document.getElementById('confirm-container-ports').textContent =
+    portBase + '-' + (portBase + 4);
+});
+
+// Create container wizard - back button
+document.getElementById('btn-create-back').addEventListener('click', function() {
+  document.getElementById('create-step-1').style.display = 'block';
+  document.getElementById('create-step-2').style.display = 'none';
+});
+
+// Create container wizard - confirm button
+document.getElementById('btn-create-confirm').addEventListener('click', function() {
+  var name = document.getElementById('new-container-name').value.trim();
+  var desc = document.getElementById('new-container-desc').value.trim();
+  var cloneId = document.querySelector('.clone-container-option.selected')?.dataset.clone || '';
+
+  let config = {};
+  if (cloneId) {
+    const sourceContainer = containerRegistry.getContainer(cloneId);
+    if (sourceContainer) {
+      config = Object.assign({}, sourceContainer.config);
+    }
+  }
+
+  const container = containerRegistry.createContainer(name, desc, config);
+
+  hideCreateContainerModal();
+
+  // Clear form
+  document.getElementById('new-container-name').value = '';
+  document.getElementById('new-container-desc').value = '';
+  document.querySelectorAll('.clone-container-option').forEach(o => o.classList.remove('selected'));
+
+  // Refresh list and select new container
+  renderContainerList();
+  selectContainer(container.id);
+
+  // Auto-start the container
+  startContainer(container.id);
+});
 
 boot();
 </script>

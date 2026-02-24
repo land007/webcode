@@ -420,6 +420,7 @@ function dockerVolumeRm(volumeName, callback) {
 // ─── Exports ─────────────────────────────────────────────────────────────────
 
 module.exports = {
+  startProxy,
   startProxies,
   stopProxies,
   dockerUp,

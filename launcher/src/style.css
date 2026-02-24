@@ -735,3 +735,349 @@ button .btn-icon svg {
   width: 16px;
   height: 16px;
 }
+
+/* ── MULTI-CONTAINER LAYOUT ───────────────────────────────────────── */
+
+/* App header */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 50px;
+  padding: 0 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.app-header h1 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Main app layout */
+.app-main {
+  display: flex;
+  height: calc(100% - 50px);
+  overflow: hidden;
+}
+
+/* Container sidebar */
+.container-sidebar {
+  width: 260px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.container-sidebar-header {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.container-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.container-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  background: var(--surface2);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.container-item:hover {
+  background: var(--bg);
+  border-color: var(--border);
+}
+
+.container-item.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.container-item.active .container-name,
+.container-item.active .container-ports,
+.container-item.active .container-status {
+  color: #fff;
+}
+
+.container-status {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.container-status.running { background: var(--success); }
+.container-status.stopped { background: var(--text-muted); }
+.container-status.error { background: var(--danger); }
+.container-status.starting,
+.container-status.stopping {
+  background: var(--warn);
+  animation: pulse 1s infinite;
+}
+
+.container-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.container-name {
+  font-weight: 500;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.container-ports {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.container-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.container-item:hover .container-actions {
+  opacity: 1;
+}
+
+.container-action-btn {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+}
+
+.container-action-btn:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.container-item.active .container-action-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Empty state */
+.container-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.container-empty svg {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+/* Workspace area */
+.workspace-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.workspace-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+
+.workspace-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.workspace-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.workspace-content {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+#tab-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: var(--bg);
+}
+
+/* Create container button in sidebar */
+.btn-create-container-sidebar {
+  margin: 8px;
+  width: calc(100% - 16px);
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-create-container-sidebar svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Modal for create container wizard */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-overlay.visible {
+  display: flex;
+}
+
+.modal-content {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.modal-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.modal-close {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+/* Confirm container summary */
+.confirm-summary {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.confirm-summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.confirm-summary-row:last-child {
+  border-bottom: none;
+}
+
+.confirm-summary-label {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.confirm-summary-value {
+  font-weight: 500;
+  font-size: 13px;
+}
+
+/* Clone container selector */
+.clone-select-container {
+  margin-bottom: 12px;
+}
+
+.clone-select-container label {
+  margin-bottom: 6px;
+}
+
+.clone-container-option {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+
+.clone-container-option:hover {
+  border-color: var(--accent);
+}
+
+.clone-container-option.selected {
+  background: rgba(79, 142, 247, 0.1);
+  border-color: var(--accent);
+}
+
+.clone-option-name {
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.clone-option-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
