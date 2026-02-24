@@ -757,13 +757,9 @@ function syncTheiaTheme(theme) {
   var effective = effectiveThemeName(theme);
   var theiaTheme = effective === 'dark' ? 'dark' : 'light';
   app.setTheiaTheme(cfg, theiaTheme, function(code) {
-    if (code === 0 && iframeLoaded['ide']) {
-      // 当前在 IDE 标签页时自动刷新，否则下次打开自动生效
-      if (currentTab === 'ide') {
-        iframeLoaded['ide'] = false;
-        document.getElementById('iframe-ide').src = iframeUrl('ide');
-        iframeLoaded['ide'] = true;
-      }
+    // Theia 自动检测 settings.json 变化并应用主题，无需刷新
+    if (code !== 0) {
+      console.warn('Failed to update Theia theme, exit code:', code);
     }
   });
   // 同步桌面主题
