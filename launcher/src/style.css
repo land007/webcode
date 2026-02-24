@@ -373,6 +373,48 @@ button .btn-icon svg {
 }
 .iframe-area iframe.visible { display: block; }
 
+/* ── Container stopped overlay ─ */
+#container-stopped-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  z-index: 10;
+}
+#container-stopped-overlay.visible { display: flex; }
+
+.overlay-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 32px 28px;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.overlay-icon {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.overlay-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.overlay-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+
 /* ─ Status panel ─ */
 #panel-status {
   position: absolute;

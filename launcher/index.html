@@ -253,9 +253,13 @@
           <span data-i18n="btn_step4_start">启动容器</span>
         </button>
         <button class="btn-secondary btn-sm" id="btn-step4-config" data-i18n="btn_step4_config">修改配置</button>
-        <button class="btn-secondary btn-sm" id="btn-step4-enter" data-i18n="btn_step4_enter">直接进入工作区</button>
+        <button class="btn-secondary btn-sm" id="btn-step4-enter" data-i18n="btn_step4_view_status">查看状态</button>
       </div>
       <div class="log-area mt-3" id="relaunch-log" style="height:200px; display:none"></div>
+      <div class="text-muted text-sm" style="margin-top:12px">
+        <span data-i18n="step4_docker_trouble">Docker 未运行或遇到问题？</span>
+        <a href="#" id="link-redetect-docker" data-i18n="step4_redetect">[重新检测]</a>
+      </div>
     </div>
   </div>
 </div>
@@ -478,6 +482,31 @@
       <div>
         <h3 style="font-size:14px; font-weight:600; margin-bottom:8px" data-i18n="h_container_logs">容器日志</h3>
         <div class="log-area" id="ws-log" style="height:260px"></div>
+      </div>
+    </div>
+
+    <!-- Container not running overlay (shown for non-status tabs when container stopped) -->
+    <div id="container-stopped-overlay" style="display:none">
+      <div class="overlay-card">
+        <div class="overlay-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+          </svg>
+        </div>
+        <h3 data-i18n="overlay_stopped_title">容器未运行</h3>
+        <p class="text-muted" data-i18n="overlay_stopped_desc">容器当前未运行，无法访问此功能。</p>
+        <div class="overlay-actions">
+          <button class="btn-secondary" id="overlay-btn-start">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+              <path d="M21 3v5h-5"></path>
+            </svg>
+            <span data-i18n="btn_start_container">启动容器</span>
+          </button>
+          <button class="btn-secondary btn-sm" id="overlay-btn-status" data-i18n="btn_view_status">查看状态</button>
+        </div>
       </div>
     </div>
 
@@ -1316,9 +1345,20 @@ document.getElementById('btn-step4-config').addEventListener('click', () => {
 
 document.getElementById('btn-step4-enter').addEventListener('click', () => {
   showWorkspace();
+  activateTab('status'); // Force to status tab
+});
+
+// Step 4: Redetect Docker link
+document.getElementById('link-redetect-docker').addEventListener('click', (e) => {
+  e.preventDefault();
+  showWizard(1);
+  runDockerCheck();
 });
 
 // ─── Workspace: tab switching ─────────────────────────────────────────────────
+
+// Track latest container status for overlay check
+let lastKnownContainers = null;
 
 const IFRAME_IDS = { ide: 'iframe-ide', kanban: 'iframe-kanban', vnc: 'iframe-vnc', ai: 'iframe-ai' };
 const iframeLoaded = {};
@@ -1336,6 +1376,31 @@ function iframeUrl(tab) {
 
 function activateTab(tab) {
   currentTab = tab;
+
+  // Check container status for non-status tabs
+  if (tab !== 'status') {
+    const overlay = document.getElementById('container-stopped-overlay');
+    const running = lastKnownContainers && containerRunning(lastKnownContainers);
+
+    if (!running) {
+      overlay.classList.add('visible');
+      // Hide all iframes when overlay is shown
+      Object.values(IFRAME_IDS).forEach(id => {
+        document.getElementById(id).classList.remove('visible');
+      });
+      // Update tab buttons
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tab);
+      });
+      // Hide tab actions for non-running state
+      document.getElementById('tab-actions').style.display = 'none';
+      // Hide status panel
+      document.getElementById('panel-status').classList.remove('visible');
+      return;
+    } else {
+      overlay.classList.remove('visible');
+    }
+  }
 
   // Update tab buttons
   document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -1381,6 +1446,19 @@ document.getElementById('btn-open-browser').addEventListener('click', () => {
 
 // ─── Workspace: status polling ────────────────────────────────────────────────
 
+// Overlay: Start container button
+document.getElementById('overlay-btn-start').addEventListener('click', () => {
+  showWizard(4);
+  // Trigger start logic
+  const btn = document.getElementById('btn-step4-start');
+  if (btn) btn.click();
+});
+
+// Overlay: View status button
+document.getElementById('overlay-btn-status').addEventListener('click', () => {
+  activateTab('status');
+});
+
 function startStatusPolling() {
   app.startPolling(cfg, (containers) => {
     updateStatusUI(containers);
@@ -1392,7 +1470,16 @@ function containerRunning(containers) {
   return containers.some(c => (c.State || c.status || '').toLowerCase().includes('running'));
 }
 
+// Get instance name from global config
+function getInstanceNameForCurrent() {
+  const global = globalCfg || {};
+  const instances = global.instances || [];
+  const current = instances.find(i => i.id === activeInstanceId);
+  return current ? current.name : null;
+}
+
 function updateStatusUI(containers) {
+  lastKnownContainers = containers; // Save for overlay check
   const running = containerRunning(containers);
   const dot  = document.getElementById('status-dot');
   const text = document.getElementById('status-text');
@@ -1408,7 +1495,10 @@ function updateStatusUI(containers) {
   // Status grid
   const grid = document.getElementById('status-grid');
   if (containers.length === 0) {
-    grid.innerHTML = `<div class="svc-card"><div class="svc-name">webcode</div><div class="svc-state"><span class="dot dot-gray"></span> ${t('dyn_not_running')}</div></div>`;
+    // Try instance name first, fallback to service name
+    const instanceName = getInstanceNameForCurrent();
+    const displayName = instanceName || 'webcode';
+    grid.innerHTML = `<div class="svc-card"><div class="svc-name">${escHtml(displayName)}</div><div class="svc-state"><span class="dot dot-gray"></span> ${t('dyn_not_running')}</div></div>`;
     document.getElementById('supervisor-section').style.display = 'none';
     return;
   }
@@ -1416,8 +1506,11 @@ function updateStatusUI(containers) {
     const state = (c.State || c.Status || 'unknown').toLowerCase();
     const dotClass = state.includes('running') ? 'dot-green' :
                      state.includes('starting') ? 'dot-yellow' : 'dot-red';
+    // Try instance name first, fallback to service name
+    const instanceName = getInstanceNameForCurrent();
+    const displayName = instanceName || (c.Service || c.Name || 'webcode');
     return `<div class="svc-card">
-      <div class="svc-name">${escHtml(c.Service || c.Name || 'webcode')}</div>
+      <div class="svc-name">${escHtml(displayName)}</div>
       <div class="svc-state"><span class="dot ${dotClass}"></span> ${escHtml(state)}</div>
     </div>`;
   }).join('');

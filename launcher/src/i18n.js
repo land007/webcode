@@ -57,6 +57,15 @@ const translations = {
     btn_step4_start:  '启动容器',
     btn_step4_config: '修改配置',
     btn_step4_enter:  '直接进入工作区',
+    btn_step4_view_status: '查看状态',
+    step4_docker_trouble: 'Docker 未运行或遇到问题？',
+    step4_redetect: '[重新检测]',
+
+    // Overlay strings
+    overlay_stopped_title: '容器未运行',
+    overlay_stopped_desc: '容器当前未运行，无法访问此功能。',
+    btn_start_container: '启动容器',
+    btn_view_status: '查看状态',
 
     // Workspace tabs
     tab_status:       '状态',
@@ -206,6 +215,15 @@ const translations = {
     btn_step4_start:  'Start container',
     btn_step4_config: 'Edit config',
     btn_step4_enter:  'Enter workspace',
+    btn_step4_view_status: 'View status',
+    step4_docker_trouble: 'Docker not running or having issues?',
+    step4_redetect: '[Re-check]',
+
+    // Overlay strings
+    overlay_stopped_title: 'Container not running',
+    overlay_stopped_desc: 'The container is not running. This feature is unavailable.',
+    btn_start_container: 'Start container',
+    btn_view_status: 'View status',
 
     // Workspace tabs
     tab_status:       'Status',
