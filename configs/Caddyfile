@@ -18,12 +18,3 @@
 	reverse_proxy 127.0.0.1:10002
 }
 
-# OpenClaw (has its own --auth token, no Caddy basicauth needed)
-:20003 {
-	reverse_proxy 127.0.0.1:10003
-}
-
-# noVNC (Web VNC client)
-:20004 {
-	reverse_proxy 127.0.0.1:10004
-}

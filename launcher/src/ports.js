@@ -155,8 +155,8 @@ function updateComposePorts(workDir, ports) {
   // 替换端口映射
   content = content.replace(/"(\d+):20001"/, `"${ports.theia}:20001"`);
   content = content.replace(/"(\d+):20002"/, `"${ports.kanban}:20002"`);
-  content = content.replace(/"(\d+):20003"/, `"${ports.openclaw}:20003"`);
-  content = content.replace(/"(\d+):20004"/, `"${ports.novnc}:20004"`);
+  content = content.replace(/"(\d+):10003"/, `"${ports.openclaw}:10003"`);
+  content = content.replace(/"(\d+):10004"/, `"${ports.novnc}:10004"`);
   content = content.replace(/"(\d+):10005"/, `"${ports.vnc}:10005"`);
 
   fs.writeFileSync(composePath, content, 'utf8');
