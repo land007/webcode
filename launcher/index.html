@@ -327,10 +327,21 @@
     </div>
 
     <!-- iframes (lazy – src set when first activated) -->
-    <iframe id="iframe-ide"    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads"></iframe>
-    <iframe id="iframe-kanban" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"></iframe>
-    <iframe id="iframe-vnc"    sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
-    <iframe id="iframe-ai"     sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"></iframe>
+    <iframe id="iframe-ide"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads"
+      allow="clipboard-read; clipboard-write; fullscreen"></iframe>
+
+    <iframe id="iframe-kanban"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+      allow="clipboard-read; clipboard-write"></iframe>
+
+    <iframe id="iframe-vnc"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-pointer-lock"
+      allow="autoplay; fullscreen; clipboard-read; clipboard-write; pointer-lock"></iframe>
+
+    <iframe id="iframe-ai"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+      allow="clipboard-read; clipboard-write"></iframe>
   </div>
 </div>
 
