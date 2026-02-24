@@ -9,7 +9,8 @@ const {
 } = require('./config.js');
 const {
   checkPorts, autoFixPorts, getPortsFromConfig,
-  updateComposePorts, getPortSummary
+  updateComposePorts, updateComposeCustomPorts,
+  getPortSummary
 } = require('./ports.js');
 
 // ─── Proxy servers ───────────────────────────────────────────────────────────
@@ -162,6 +163,11 @@ async function dockerUp(cfg, onData, onClose) {
   // 无论是否有冲突，始终将当前端口配置写入 docker-compose.yml
   updateComposePorts(getWorkDir(), ports);
 
+  // 注入自定义端口映射
+  if (cfg.CUSTOM_PORTS && cfg.CUSTOM_PORTS.length > 0) {
+    updateComposeCustomPorts(getWorkDir(), cfg.CUSTOM_PORTS);
+  }
+
   // 注入自定义目录挂载
   if (cfg.CUSTOM_VOLUMES && cfg.CUSTOM_VOLUMES.length > 0) {
     updateComposeVolumes(getWorkDir(), cfg.CUSTOM_VOLUMES);
@@ -269,7 +275,7 @@ function parseSupervisorOutput(out) {
     const match = line.match(/^(\S+)\s+(\S+)\s*(.*)/);
     // Only accept lines where the second token is a known supervisor state
     if (match && SUPERVISOR_VALID_STATES.has(match[2].toUpperCase())) {
-      services.push({ name: match[1], state: match[2].toUpperCase(), detail: match[3] || '' });
+      services.push({ name: match[1], state: match[2].toLowerCase(), detail: match[3] || '' });
     }
   }
   return services;
@@ -332,26 +338,33 @@ function supervisorRestart(cfg, processName, callback) {
  * @param {Function} callback  (formatted log string with error markers)
  */
 function supervisorProcessLog(cfg, processName, callback) {
-  // Get more log lines (1000 instead of 100)
-  const proc = spawn('docker', ['exec', 'webcode', 'supervisorctl', 'tail', '-1000', processName], {
-    env: buildEnv(cfg)
-  });
-  let out = '';
-  proc.stdout.on('data', d => { out += d.toString(); });
-  proc.stderr.on('data', d => { out += d.toString(); });
-  proc.on('close', () => {
-    if (callback) {
-      // Format the output: add [ERROR] prefix for lines that appear to be errors
-      const lines = out.split('\n');
-      const formatted = lines.map(line => {
-        if (!line.trim()) return line;
-        // Detect error patterns
-        const isError = /[Ee]rror|[Ee]xception|[Ff]ail|[Ww]arn|Traceback|at\s+<|undefined|TypeError|ReferenceError|SyntaxError/.test(line);
-        return isError ? `[ERROR] ${line}` : line;
-      }).join('\n');
-      callback(formatted);
-    }
-  });
+  const dockerArgs = (extra) => ['exec', 'webcode', 'supervisorctl', 'tail', '-1000', processName].concat(extra);
+  let stdoutOut = '', stderrOut = '', done = 0;
+
+  function finish() {
+    if (++done < 2) return;
+    const parts = [];
+    if (stdoutOut.trim()) parts.push(stdoutOut);
+    if (stderrOut.trim()) parts.push('=== stderr ===\n' + stderrOut);
+    const out = parts.join('\n');
+    const lines = out.split('\n');
+    const formatted = lines.map(line => {
+      if (!line.trim()) return line;
+      const isError = /[Ee]rror|[Ee]xception|[Ff]ail|[Ww]arn|Traceback|at\s+<|undefined|TypeError|ReferenceError|SyntaxError/.test(line);
+      return isError ? `[ERROR] ${line}` : line;
+    }).join('\n');
+    if (callback) callback(formatted);
+  }
+
+  const pStdout = spawn('docker', dockerArgs([]), { env: buildEnv(cfg) });
+  pStdout.stdout.on('data', d => { stdoutOut += d.toString(); });
+  pStdout.stderr.on('data', d => { stdoutOut += d.toString(); });
+  pStdout.on('close', finish);
+
+  const pStderr = spawn('docker', dockerArgs(['stderr']), { env: buildEnv(cfg) });
+  pStderr.stdout.on('data', d => { stderrOut += d.toString(); });
+  pStderr.stderr.on('data', d => { stderrOut += d.toString(); });
+  pStderr.on('close', finish);
 }
 
 // ─── Status polling ───────────────────────────────────────────────────────────
@@ -376,6 +389,34 @@ function stopPolling() {
   }
 }
 
+// ─── Volume helpers ───────────────────────────────────────────────────────────
+
+/**
+ * Remove a named Docker volume (compose-managed).
+ * Finds the actual volume name via the compose label, then calls `docker volume rm`.
+ * @param {string} volumeName  Logical volume name from docker-compose.yml, e.g. 'projects'
+ * @param {Function} callback  (exitCode, output)
+ */
+function dockerVolumeRm(volumeName, callback) {
+  const env = Object.assign({}, process.env, { PATH: buildDockerPath() });
+  // Find the actual full volume name using the label Docker Compose attaches
+  const ls = spawn('docker', ['volume', 'ls', '--filter', 'label=com.docker.compose.volume=' + volumeName, '-q'], { env });
+  let found = '';
+  ls.stdout.on('data', d => { found += d.toString(); });
+  ls.on('close', () => {
+    const actual = found.trim();
+    if (!actual) {
+      callback(1, 'Volume not found: ' + volumeName);
+      return;
+    }
+    const rm = spawn('docker', ['volume', 'rm', actual], { env });
+    let out = '';
+    rm.stdout.on('data', d => { out += d.toString(); });
+    rm.stderr.on('data', d => { out += d.toString(); });
+    rm.on('close', (code) => { callback(code, out.trim() || actual); });
+  });
+}
+
 // ─── Exports ─────────────────────────────────────────────────────────────────
 
 module.exports = {
@@ -397,5 +438,6 @@ module.exports = {
   checkPorts,
   autoFixPorts,
   getPortsFromConfig,
-  getPortSummary
+  getPortSummary,
+  dockerVolumeRm,
 };

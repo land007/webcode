@@ -20,7 +20,16 @@
 
 # OpenClaw (has its own --auth token, no Caddy basicauth needed)
 :20003 {
-	reverse_proxy 127.0.0.1:10003
+	reverse_proxy 127.0.0.1:10003 {
+		flush_interval -1
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+		transport http {
+			read_timeout 86400s
+			write_timeout 86400s
+		}
+	}
 }
 
 # noVNC (Web VNC client)

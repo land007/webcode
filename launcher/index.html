@@ -78,55 +78,70 @@
 
     <!-- Step 2: Config -->
     <div id="step-2" style="display:none">
-      <div class="form-group">
-        <label data-i18n="label_run_mode">运行模式</label>
-        <div class="toggle-row">
-          <button class="toggle-btn active" data-mode="desktop" id="mode-desktop" data-i18n="mode_desktop">🖥 Desktop（完整桌面）</button>
-          <button class="toggle-btn" data-mode="lite" id="mode-lite" data-i18n="mode_lite">⚡ Lite（仅 IDE + 看板）</button>
+      <div class="adv-block">
+        <div class="adv-block-title" data-i18n="adv_title_run_mode">运行模式</div>
+        <div class="adv-inline-row">
+          <div style="flex:1">
+            <div class="toggle-row">
+              <button class="toggle-btn active" data-mode="desktop" id="mode-desktop" data-i18n="mode_desktop_short">🖥 Desktop</button>
+              <button class="toggle-btn" data-mode="lite" id="mode-lite" data-i18n="mode_lite_short">⚡ Lite</button>
+            </div>
+          </div>
+          <div class="form-group" style="flex:1;margin-bottom:0">
+            <label data-i18n="label_vnc_resolution">VNC 分辨率</label>
+            <input type="text" id="cfg-vnc-resolution" placeholder="1920x1080">
+          </div>
         </div>
       </div>
-      <div class="form-group">
-        <label data-i18n="label_auth_password">Basic Auth 密码</label>
-        <input type="password" id="cfg-auth-password" placeholder="changeme">
-      </div>
-      <div id="vnc-group" class="form-group">
-        <label data-i18n="label_vnc_password">VNC 密码</label>
-        <input type="password" id="cfg-vnc-password" placeholder="changeme">
-      </div>
-      <div class="form-group">
-        <label data-i18n="label_openclaw_token">OpenClaw Token</label>
-        <input type="text" id="cfg-openclaw-token" placeholder="changeme">
-      </div>
-      <details>
-        <summary data-i18n="summary_advanced">高级选项</summary>
-        <div class="config-grid" style="margin-top:10px">
+      <div class="adv-block">
+        <div class="adv-block-title" data-i18n="adv_title_auth">访问认证</div>
+        <div class="config-grid">
           <div class="form-group">
             <label data-i18n="label_auth_user">Basic Auth 用户名</label>
             <input type="text" id="cfg-auth-user" placeholder="admin">
           </div>
           <div class="form-group">
-            <label data-i18n="label_vnc_resolution">VNC 分辨率</label>
-            <input type="text" id="cfg-vnc-resolution" placeholder="1920x1080">
+            <label data-i18n="label_auth_password">Basic Auth 密码</label>
+            <input type="password" id="cfg-auth-password" placeholder="changeme">
+          </div>
+          <div id="vnc-group" class="form-group">
+            <label data-i18n="label_vnc_password">VNC 密码</label>
+            <input type="password" id="cfg-vnc-password" placeholder="changeme">
           </div>
           <div class="form-group">
-            <label data-i18n="label_git_name">Git 用户名</label>
-            <input type="text" id="cfg-git-name" data-i18n-placeholder="ph_optional" placeholder="（可选）">
+            <label data-i18n="label_openclaw_token">OpenClaw Token</label>
+            <input type="text" id="cfg-openclaw-token" placeholder="changeme">
           </div>
+        </div>
+      </div>
+      <details>
+        <summary data-i18n="summary_advanced">高级选项</summary>
+        <div class="adv-block" style="margin-top:10px">
+          <div class="adv-block-title" data-i18n="adv_title_git">Git 配置</div>
+          <div class="config-grid">
+            <div class="form-group">
+              <label data-i18n="label_git_name">Git 用户名</label>
+              <input type="text" id="cfg-git-name" data-i18n-placeholder="ph_optional" placeholder="（可选）">
+            </div>
+            <div class="form-group">
+              <label data-i18n="label_git_email">Git 邮箱</label>
+              <input type="text" id="cfg-git-email" data-i18n-placeholder="ph_optional" placeholder="（可选）">
+            </div>
+          </div>
+        </div>
+        <div class="adv-block">
+          <div class="adv-block-title" data-i18n="adv_title_cloudflare">Cloudflare Tunnel</div>
           <div class="form-group">
-            <label data-i18n="label_git_email">Git 邮箱</label>
-            <input type="text" id="cfg-git-email" data-i18n-placeholder="ph_optional" placeholder="（可选）">
+            <label data-i18n="label_cf_token">Cloudflare Tunnel Token（可选）</label>
+            <input type="text" id="cfg-cf-token" placeholder="">
+            <p class="help-text" style="font-size:11px; color:var(--text-muted); margin-top:4px">
+              <span data-i18n="cf_help_text">如何获取 Token？</span>
+              <a class="link" id="cf-help-link-wizard" data-i18n="cf_help_link">Cloudflare Zero Trust 控制台</a><span data-i18n="cf_help_steps"> → Networks → Tunnels → 创建 Tunnel → 复制 token</span>
+            </p>
           </div>
         </div>
-        <div class="form-group">
-          <label data-i18n="label_cf_token">Cloudflare Tunnel Token（可选）</label>
-          <input type="text" id="cfg-cf-token" placeholder="">
-          <p class="help-text" style="font-size:11px; color:var(--text-muted); margin-top:4px">
-            <span data-i18n="cf_help_text">如何获取 Token？</span>
-            <a class="link" id="cf-help-link-wizard" data-i18n="cf_help_link">Cloudflare Zero Trust 控制台</a><span data-i18n="cf_help_steps"> → Networks → Tunnels → 创建 Tunnel → 复制 token</span>
-          </p>
-        </div>
-        <div class="form-group">
-          <label data-i18n="label_port_config">端口配置（自动检测冲突）</label>
+        <div class="adv-block">
+          <div class="adv-block-title" data-i18n="adv_title_ports">端口配置</div>
           <div class="port-grid" id="port-grid">
             <div class="port-item">
               <span class="port-label">Theia IDE</span>
@@ -155,12 +170,22 @@
             </div>
           </div>
           <button class="btn-secondary btn-sm" id="btn-check-ports" style="margin-top:8px" data-i18n="btn_check_ports">🔍 检测端口冲突</button>
+          <hr class="adv-divider">
+          <div class="adv-sub-row">
+            <span class="adv-sub-title" data-i18n="adv_sub_custom_ports">自定义端口映射</span>
+            <button class="btn-secondary btn-sm" id="btn-add-port-map" data-i18n="btn_add_port_map">+ 添加端口</button>
+          </div>
+          <div id="port-map-list"></div>
         </div>
-        <div class="form-group" id="volume-group">
-          <label data-i18n="label_volumes">自定义目录挂载</label>
+        <div class="adv-block">
+          <div class="adv-block-title" data-i18n="adv_title_volumes">目录挂载</div>
           <div id="named-vols-display" class="named-vols-block"></div>
+          <hr class="adv-divider">
+          <div class="adv-sub-row">
+            <span class="adv-sub-title" data-i18n="adv_sub_custom_volumes">自定义目录挂载</span>
+            <button class="btn-secondary btn-sm" id="btn-add-volume" data-i18n="btn_add_volume">+ 添加</button>
+          </div>
           <div id="volume-list"></div>
-          <button class="btn-secondary btn-sm" id="btn-add-volume" style="margin-top:6px" data-i18n="btn_add_volume">+ 添加挂载</button>
         </div>
       </details>
       <div class="action-row">
@@ -273,53 +298,68 @@
       <!-- Config section -->
       <div class="config-section">
         <h3 data-i18n="h_config">配置</h3>
-        <div class="config-grid">
-          <div class="form-group">
-            <label data-i18n="label_run_mode_ws">运行模式</label>
-            <div class="toggle-row">
-              <button class="toggle-btn" data-mode="desktop" id="ws-mode-desktop" data-i18n="mode_desktop_short">🖥 Desktop</button>
-              <button class="toggle-btn" data-mode="lite"    id="ws-mode-lite"    data-i18n="mode_lite_short">⚡ Lite</button>
+        <div class="adv-block">
+          <div class="adv-block-title" data-i18n="adv_title_run_mode">运行模式</div>
+          <div class="adv-inline-row">
+            <div style="flex:1">
+              <div class="toggle-row">
+                <button class="toggle-btn" data-mode="desktop" id="ws-mode-desktop" data-i18n="mode_desktop_short">🖥 Desktop</button>
+                <button class="toggle-btn" data-mode="lite"    id="ws-mode-lite"    data-i18n="mode_lite_short">⚡ Lite</button>
+              </div>
+            </div>
+            <div class="form-group" style="flex:1;margin-bottom:0">
+              <label data-i18n="label_vnc_resolution">VNC 分辨率</label>
+              <input type="text" id="ws-vnc-resolution">
             </div>
           </div>
-          <div class="form-group">
-            <label data-i18n="label_auth_password">Basic Auth 密码</label>
-            <input type="password" id="ws-auth-password">
-          </div>
-          <div class="form-group">
-            <label data-i18n="label_vnc_password">VNC 密码</label>
-            <input type="password" id="ws-vnc-password">
-          </div>
-          <div class="form-group">
-            <label data-i18n="label_openclaw_token">OpenClaw Token</label>
-            <input type="text" id="ws-openclaw-token">
-          </div>
-          <div class="form-group">
-            <label data-i18n="label_auth_user">Basic Auth 用户名</label>
-            <input type="text" id="ws-auth-user">
-          </div>
-          <div class="form-group">
-            <label data-i18n="label_vnc_resolution">VNC 分辨率</label>
-            <input type="text" id="ws-vnc-resolution">
-          </div>
-          <div class="form-group">
-            <label data-i18n="label_git_name">Git 用户名</label>
-            <input type="text" id="ws-git-name">
-          </div>
-          <div class="form-group">
-            <label data-i18n="label_git_email">Git 邮箱</label>
-            <input type="text" id="ws-git-email">
+        </div>
+        <div class="adv-block">
+          <div class="adv-block-title" data-i18n="adv_title_auth">访问认证</div>
+          <div class="config-grid">
+            <div class="form-group">
+              <label data-i18n="label_auth_user">Basic Auth 用户名</label>
+              <input type="text" id="ws-auth-user">
+            </div>
+            <div class="form-group">
+              <label data-i18n="label_auth_password">Basic Auth 密码</label>
+              <input type="password" id="ws-auth-password">
+            </div>
+            <div class="form-group">
+              <label data-i18n="label_vnc_password">VNC 密码</label>
+              <input type="password" id="ws-vnc-password">
+            </div>
+            <div class="form-group">
+              <label data-i18n="label_openclaw_token">OpenClaw Token</label>
+              <input type="text" id="ws-openclaw-token">
+            </div>
           </div>
         </div>
-        <div class="form-group">
-          <label data-i18n="label_cf_token">Cloudflare Tunnel Token（可选）</label>
-          <input type="text" id="ws-cf-token">
-          <p class="help-text" style="font-size:11px; color:var(--text-muted); margin-top:4px">
-            <span data-i18n="cf_help_text">如何获取 Token？</span>
-            <a class="link" id="cf-help-link-ws" data-i18n="cf_help_link">Cloudflare Zero Trust 控制台</a><span data-i18n="cf_help_steps"> → Networks → Tunnels → 创建 Tunnel → 复制 token</span>
-          </p>
+        <div class="adv-block">
+          <div class="adv-block-title" data-i18n="adv_title_git">Git 配置</div>
+          <div class="config-grid">
+            <div class="form-group">
+              <label data-i18n="label_git_name">Git 用户名</label>
+              <input type="text" id="ws-git-name">
+            </div>
+            <div class="form-group">
+              <label data-i18n="label_git_email">Git 邮箱</label>
+              <input type="text" id="ws-git-email">
+            </div>
+          </div>
         </div>
-        <div class="form-group">
-          <label data-i18n="label_port_config_ws">端口配置</label>
+        <div class="adv-block">
+          <div class="adv-block-title" data-i18n="adv_title_cloudflare">Cloudflare Tunnel</div>
+          <div class="form-group">
+            <label data-i18n="label_cf_token">Cloudflare Tunnel Token（可选）</label>
+            <input type="text" id="ws-cf-token">
+            <p class="help-text" style="font-size:11px; color:var(--text-muted); margin-top:4px">
+              <span data-i18n="cf_help_text">如何获取 Token？</span>
+              <a class="link" id="cf-help-link-ws" data-i18n="cf_help_link">Cloudflare Zero Trust 控制台</a><span data-i18n="cf_help_steps"> → Networks → Tunnels → 创建 Tunnel → 复制 token</span>
+            </p>
+          </div>
+        </div>
+        <div class="adv-block">
+          <div class="adv-block-title" data-i18n="adv_title_ports">端口配置</div>
           <div class="port-grid" id="ws-port-grid">
             <div class="port-item">
               <span class="port-label">Theia IDE</span>
@@ -343,12 +383,22 @@
             </div>
           </div>
           <button class="btn-secondary btn-sm" id="ws-btn-check-ports" style="margin-top:8px" data-i18n="btn_check_ports">🔍 检测端口冲突</button>
+          <hr class="adv-divider">
+          <div class="adv-sub-row">
+            <span class="adv-sub-title" data-i18n="adv_sub_custom_ports">自定义端口映射</span>
+            <button class="btn-secondary btn-sm" id="ws-btn-add-port-map" data-i18n="btn_add_port_map">+ 添加端口</button>
+          </div>
+          <div id="ws-port-map-list"></div>
         </div>
-        <div class="form-group">
-          <label data-i18n="label_volumes">自定义目录挂载</label>
+        <div class="adv-block">
+          <div class="adv-block-title" data-i18n="adv_title_volumes">目录挂载</div>
           <div id="ws-named-vols-display" class="named-vols-block"></div>
+          <hr class="adv-divider">
+          <div class="adv-sub-row">
+            <span class="adv-sub-title" data-i18n="adv_sub_custom_volumes">自定义目录挂载</span>
+            <button class="btn-secondary btn-sm" id="ws-btn-add-volume" data-i18n="btn_add_volume">+ 添加</button>
+          </div>
           <div id="ws-volume-list"></div>
-          <button class="btn-secondary btn-sm" id="ws-btn-add-volume" style="margin-top:6px" data-i18n="btn_add_volume">+ 添加挂载</button>
         </div>
         <div class="action-row" style="margin-top:0">
           <button class="btn-secondary btn-sm" id="btn-save-config"  data-i18n="btn_save_config">保存配置</button>
@@ -393,10 +443,6 @@
     </div>
     <div id="process-logs-content" class="log-area" style="flex:1;overflow:auto;font-family:monospace;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all"></div>
     <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
-      <button class="btn-secondary btn-sm" id="refresh-logs-btn">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path><path d="M16 21h5v-5"></path></svg>
-        <span>刷新</span>
-      </button>
       <button class="btn-primary btn-sm" id="close-logs-btn">关闭</button>
     </div>
   </div>
@@ -763,6 +809,7 @@ function renderNamedVolumes(containerId) {
       '<span class="named-vol-name">' + escHtml(v.name) + '</span>' +
       '<span class="named-vol-arrow">→</span>' +
       '<span class="named-vol-path">' + escHtml(v.container) + '</span>' +
+      '<button class="btn-secondary btn-sm" style="flex-shrink:0;padding:3px 7px;font-size:11px" data-vol-clear="' + escHtml(v.name) + '">' + t('btn_clear_vol') + '</button>' +
       '</div>';
   }).join('');
 }
@@ -775,12 +822,14 @@ function renderVolumeList(containerId, volumes) {
     row.className = 'volume-row';
     row.style.cssText = 'display:flex;gap:6px;margin-bottom:5px;align-items:center';
     row.innerHTML =
+      '<span class="port-map-label">' + t('label_host') + '</span>' +
       '<div style="flex:1;display:flex;gap:4px">' +
         '<input type="text" class="vol-host" list="host-paths-list" placeholder="' + t('ph_host_path') + '" value="' + escHtml(v.host || '') + '" style="flex:1">' +
         '<button class="btn-secondary btn-sm vol-pick-btn" title="' + t('btn_pick_dir') + '" style="flex-shrink:0;padding:4px 8px">📂</button>' +
         '<input type="file" nwdirectory style="display:none" class="vol-dir-picker">' +
       '</div>' +
       '<span style="color:var(--text-muted);font-size:13px;flex-shrink:0">→</span>' +
+      '<span class="port-map-label">' + t('label_container') + '</span>' +
       '<input type="text" class="vol-container" list="container-paths-list" placeholder="' + t('ph_container_path') + '" value="' + escHtml(v.container || '') + '" style="flex:1">' +
       '<button class="btn-secondary btn-sm" style="flex-shrink:0;padding:4px 8px" data-vol-del="' + i + '">✕</button>';
     container.appendChild(row);
@@ -808,6 +857,76 @@ function collectVolumeList(containerId) {
   });
   return result;
 }
+
+// ─── Port map list helpers ────────────────────────────────────────────────────
+
+function renderPortMapList(containerId, ports) {
+  var container = document.getElementById(containerId);
+  container.innerHTML = '';
+  if (!ports || ports.length === 0) return;
+
+  ports.forEach(function(p, i) {
+    var row = document.createElement('div');
+    row.className = 'volume-row';
+    row.style.cssText = 'display:flex;gap:6px;margin-bottom:5px;align-items:center';
+    row.innerHTML =
+      '<span class="port-map-label">' + t('label_host') + '</span>' +
+      '<input type="number" class="port-map-host" placeholder="8080" ' +
+        'value="' + escHtml(p.host || '') + '" style="flex:1;min-width:0">' +
+      '<span style="color:var(--text-muted);font-size:13px;flex-shrink:0">→</span>' +
+      '<span class="port-map-label">' + t('label_container') + '</span>' +
+      '<input type="number" class="port-map-container" placeholder="3000" ' +
+        'value="' + escHtml(p.container || '') + '" style="flex:1;min-width:0">' +
+      '<button class="btn-secondary btn-sm" style="flex-shrink:0;padding:4px 8px" ' +
+        'data-port-del="' + i + '">✕</button>';
+    container.appendChild(row);
+  });
+}
+
+function collectPortMapList(containerId) {
+  var rows = document.getElementById(containerId).querySelectorAll('.volume-row');
+  var result = [];
+  rows.forEach(function(row) {
+    var host      = row.querySelector('.port-map-host').value.trim();
+    var container = row.querySelector('.port-map-container').value.trim();
+    if (host || container) result.push({ host: host, container: container });
+  });
+  return result;
+}
+
+// Port map add/delete event delegation (wizard)
+document.addEventListener('click', function(e) {
+  if (e.target.id === 'btn-add-port-map') {
+    var ports = collectPortMapList('port-map-list');
+    ports.push({ host: '', container: '' });
+    renderPortMapList('port-map-list', ports);
+    return;
+  }
+  var delBtn = e.target.closest('[data-port-del]');
+  if (delBtn && document.getElementById('port-map-list').contains(delBtn)) {
+    var idx = parseInt(delBtn.getAttribute('data-port-del'), 10);
+    var ports = collectPortMapList('port-map-list');
+    ports.splice(idx, 1);
+    renderPortMapList('port-map-list', ports);
+  }
+});
+
+// Port map add/delete event delegation (workspace)
+document.addEventListener('click', function(e) {
+  if (e.target.id === 'ws-btn-add-port-map') {
+    var ports = collectPortMapList('ws-port-map-list');
+    ports.push({ host: '', container: '' });
+    renderPortMapList('ws-port-map-list', ports);
+    return;
+  }
+  var delBtn = e.target.closest('[data-port-del]');
+  if (delBtn && document.getElementById('ws-port-map-list').contains(delBtn)) {
+    var idx = parseInt(delBtn.getAttribute('data-port-del'), 10);
+    var ports = collectPortMapList('ws-port-map-list');
+    ports.splice(idx, 1);
+    renderPortMapList('ws-port-map-list', ports);
+  }
+});
 
 // Volume add/delete event delegation (wizard)
 document.addEventListener('click', function(e) {
@@ -841,6 +960,28 @@ document.addEventListener('click', function(e) {
     vols.splice(idx, 1);
     renderVolumeList('ws-volume-list', vols);
   }
+});
+
+// ─── Named volume clear ───────────────────────────────────────────────────────
+
+document.addEventListener('click', function(e) {
+  const clearBtn = e.target.closest('[data-vol-clear]');
+  if (!clearBtn) return;
+  const volName = clearBtn.getAttribute('data-vol-clear');
+  if (!confirm(t('dyn_confirm_clear_vol', { name: volName }))) return;
+  clearBtn.disabled = true;
+  const origText = clearBtn.textContent;
+  // Step 1: stop container
+  clearBtn.textContent = t('dyn_stopping');
+  app.dockerDown(cfg, null, function() {
+    // Step 2: remove volume
+    clearBtn.textContent = '…';
+    app.dockerVolumeRm(volName, function(code, out) {
+      clearBtn.disabled = false;
+      clearBtn.textContent = origText;
+      alert(code === 0 ? '✓ ' + out : '✗ ' + out);
+    });
+  });
 });
 
 // ─── Step 2: Config form ─────────────────────────────────────────────────────
@@ -885,6 +1026,7 @@ function loadConfigIntoWizardForm() {
 
   renderNamedVolumes('named-vols-display');
   renderVolumeList('volume-list', cfg.CUSTOM_VOLUMES || []);
+  renderPortMapList('port-map-list', cfg.CUSTOM_PORTS || []);
 }
 
 function collectWizardForm() {
@@ -906,6 +1048,7 @@ function collectWizardForm() {
   cfg.PORT_VNC      = parseInt(document.getElementById('cfg-port-vnc').value)      || 20005;
 
   cfg.CUSTOM_VOLUMES = collectVolumeList('volume-list');
+  cfg.CUSTOM_PORTS = collectPortMapList('port-map-list');
 
   writeConfig(cfg);
 }
@@ -1140,13 +1283,13 @@ function updateStatusUI(containers) {
           <div class="svc-name">${escHtml(svc.name)}</div>
           <div class="svc-state"><span class="dot ${dotClass}"></span> ${escHtml(svc.state)}</div>
           <div class="svc-actions">
-            <button class="svc-logs-btn" data-process="${escHtml(svc.name)}"
-                    data-i18n-title="title_view_logs" title="查看日志">
-              ${icons.processLogs}
-            </button>
             <button class="svc-restart-btn" data-process="${escHtml(svc.name)}"
                     data-i18n-title="title_restart_process" title="重启进程">
               ${icons.processRestart}
+            </button>
+            <button class="svc-logs-btn" data-process="${escHtml(svc.name)}"
+                    data-i18n-title="title_view_logs" title="查看日志">
+              ${icons.processLogs}
             </button>
           </div>
         </div>`;
@@ -1160,61 +1303,70 @@ function updateStatusUI(containers) {
 // ─── Process logs modal ─────────────────────────────────────────────────────────────
 
 let currentLogProcess = null;
+let logPollTimer = null;
 
-function showProcessLogs(processName) {
+function startLogPolling(processName) {
+  stopLogPolling();
   currentLogProcess = processName;
-  const modal = document.getElementById('process-logs-modal');
-  const title = document.getElementById('process-logs-title');
-  const content = document.getElementById('process-logs-content');
+  function poll() {
+    var content = document.getElementById('process-logs-content');
+    if (!content || !currentLogProcess) return;
+    var atBottom = content.scrollHeight - content.scrollTop - content.clientHeight < 60;
+    app.supervisorProcessLog(cfg, processName, function(logs) {
+      // Skip DOM update if user is selecting text inside the log area
+      var sel = window.getSelection();
+      if (sel && sel.toString().length > 0 && content.contains(sel.anchorNode)) return;
 
-  title.textContent = t('dyn_logs_for_process', { name: processName });
-  content.textContent = t('dyn_loading_logs');
-  modal.style.display = 'flex';
-
-  loadProcessLogs(processName);
+      if (!logs || !logs.trim()) {
+        content.innerHTML = '<div style="color:var(--text-muted);padding:4px 0">(暂无日志)</div>';
+      } else {
+        content.innerHTML = logs.split('\n').map(function(line) {
+          if (!line.trim()) return '';
+          if (line.trim() === '=== stderr ===') {
+            return '<div class="log-stderr-header">================== stderr =====================</div>';
+          }
+          var isError = line.startsWith('[ERROR]');
+          return '<div class="' + (isError ? 'log-error-line' : '') + '">' + escHtml(line) + '</div>';
+        }).join('');
+      }
+      if (atBottom) content.scrollTop = content.scrollHeight;
+    });
+  }
+  poll();
+  logPollTimer = setInterval(poll, 2000);
 }
 
-function loadProcessLogs(processName) {
-  const content = document.getElementById('process-logs-content');
-  app.supervisorProcessLog(cfg, processName, function(logs) {
-    if (!logs || logs.trim() === '') {
-      content.textContent = '(无日志输出)';
-    } else {
-      // 将日志按行分割并格式化显示
-      const lines = logs.split('\n');
-      content.innerHTML = lines.map(line => {
-        if (!line.trim()) return '';
-        const isError = line.startsWith('[ERROR]');
-        const cssClass = isError ? 'log-error-line' : '';
-        return `<div class="${cssClass}">${escHtml(line)}</div>`;
-      }).join('');
-    }
-    content.scrollTop = content.scrollHeight;
-  });
+function stopLogPolling() {
+  if (logPollTimer) { clearInterval(logPollTimer); logPollTimer = null; }
+  currentLogProcess = null;
+}
+
+function showProcessLogs(processName) {
+  var modal   = document.getElementById('process-logs-modal');
+  var title   = document.getElementById('process-logs-title');
+  var content = document.getElementById('process-logs-content');
+  title.textContent = t('dyn_logs_for_process', { name: processName });
+  content.innerHTML = '<div style="color:var(--text-muted)">' + escHtml(t('dyn_loading_logs')) + '</div>';
+  modal.style.display = 'flex';
+  startLogPolling(processName);
 }
 
 // Close modal handlers
 document.getElementById('close-logs-modal').addEventListener('click', function() {
+  stopLogPolling();
   document.getElementById('process-logs-modal').style.display = 'none';
-  currentLogProcess = null;
 });
 
 document.getElementById('close-logs-btn').addEventListener('click', function() {
+  stopLogPolling();
   document.getElementById('process-logs-modal').style.display = 'none';
-  currentLogProcess = null;
-});
-
-document.getElementById('refresh-logs-btn').addEventListener('click', function() {
-  if (currentLogProcess) {
-    loadProcessLogs(currentLogProcess);
-  }
 });
 
 // Close on backdrop click
 document.getElementById('process-logs-modal').addEventListener('click', function(e) {
   if (e.target === this) {
+    stopLogPolling();
     this.style.display = 'none';
-    currentLogProcess = null;
   }
 });
 
@@ -1249,13 +1401,13 @@ document.addEventListener('click', function(e) {
                     <div class="svc-name">${escHtml(svc.name)}</div>
                     <div class="svc-state"><span class="dot ${dotClass}"></span> ${escHtml(svc.state)}</div>
                     <div class="svc-actions">
-                      <button class="svc-logs-btn" data-process="${escHtml(svc.name)}"
-                              data-i18n-title="title_view_logs" title="查看日志">
-                        ${icons.processLogs}
-                      </button>
                       <button class="svc-restart-btn" data-process="${escHtml(svc.name)}"
                               data-i18n-title="title_restart_process" title="重启进程">
                         ${icons.processRestart}
+                      </button>
+                      <button class="svc-logs-btn" data-process="${escHtml(svc.name)}"
+                              data-i18n-title="title_view_logs" title="查看日志">
+                        ${icons.processLogs}
                       </button>
                     </div>
                   </div>`;
@@ -1364,6 +1516,7 @@ function loadConfigIntoWorkspaceForm() {
 
   renderNamedVolumes('ws-named-vols-display');
   renderVolumeList('ws-volume-list', cfg.CUSTOM_VOLUMES || []);
+  renderPortMapList('ws-port-map-list', cfg.CUSTOM_PORTS || []);
 }
 
 function collectWorkspaceForm() {
@@ -1385,6 +1538,7 @@ function collectWorkspaceForm() {
   cfg.PORT_VNC      = parseInt(document.getElementById('ws-port-vnc').value)      || 20005;
 
   cfg.CUSTOM_VOLUMES = collectVolumeList('ws-volume-list');
+  cfg.CUSTOM_PORTS = collectPortMapList('ws-port-map-list');
 
   writeConfig(cfg);
 }

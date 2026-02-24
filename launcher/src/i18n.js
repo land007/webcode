@@ -112,9 +112,21 @@ const translations = {
     dyn_restart_failed:        '重启失败 (exit {code})',
     dyn_loading_logs:          '加载日志中…',
     dyn_logs_for_process:      '{name} 日志：',
-    // 问题1: 自定义挂载
+    // 区块标题
+    adv_title_run_mode:   '运行模式',
+    adv_title_auth:       '访问认证',
+    adv_title_git:        'Git 配置',
+    adv_title_cloudflare: 'Cloudflare Tunnel',
+    // 自定义挂载 & 端口映射
     label_volumes:    '自定义目录挂载',
     btn_add_volume:   '+ 添加挂载',
+    btn_add_port_map: '+ 添加端口',
+    adv_title_ports:        '端口配置',
+    adv_title_volumes:      '目录挂载',
+    adv_sub_custom_ports:   '自定义端口映射',
+    adv_sub_custom_volumes: '自定义目录挂载',
+    label_host:       '主机',
+    label_container:  '容器',
     ph_host_path:     '宿主机路径或命名卷',
     ph_container_path: '容器路径',
     btn_pick_dir:     '选择文件夹',
@@ -125,6 +137,9 @@ const translations = {
     cf_help_text:     '如何获取 Token？',
     cf_help_link:     'Cloudflare Zero Trust 控制台',
     cf_help_steps:    ' → Networks → Tunnels → 创建 Tunnel → 复制 token',
+    // 清空卷
+    btn_clear_vol:    '清空',
+    dyn_confirm_clear_vol: '确定要清空卷 {name}？\n将永久删除其中所有数据，且不可恢复。\n\n操作将自动停止容器，完成后需手动重启。',
   },
 
   'en': {
@@ -236,9 +251,21 @@ const translations = {
     dyn_restart_failed:        'Restart failed (exit {code})',
     dyn_loading_logs:          'Loading logs…',
     dyn_logs_for_process:      '{name} logs:',
-    // Issue 1: Custom volumes
+    // Block titles
+    adv_title_run_mode:   'Run mode',
+    adv_title_auth:       'Authentication',
+    adv_title_git:        'Git config',
+    adv_title_cloudflare: 'Cloudflare Tunnel',
+    // Custom volumes & port mapping
     label_volumes:    'Custom volume mounts',
     btn_add_volume:   '+ Add mount',
+    btn_add_port_map: '+ Add port',
+    adv_title_ports:        'Port config',
+    adv_title_volumes:      'Volume mounts',
+    adv_sub_custom_ports:   'Custom port mapping',
+    adv_sub_custom_volumes: 'Custom volume mounts',
+    label_host:       'Host',
+    label_container:  'Container',
     ph_host_path:     'Host path or volume name',
     ph_container_path: 'Container path',
     btn_pick_dir:     'Pick folder',
@@ -249,6 +276,9 @@ const translations = {
     cf_help_text:     'How to get a Token?',
     cf_help_link:     'Cloudflare Zero Trust dashboard',
     cf_help_steps:    ' → Networks → Tunnels → Create Tunnel → Copy token',
+    // Clear volume
+    btn_clear_vol:    'Clear',
+    dyn_confirm_clear_vol: 'Clear volume {name}?\nThis will permanently delete all data and cannot be undone.\n\nThe container will be stopped automatically. You will need to restart it afterwards.',
   },
 };
 

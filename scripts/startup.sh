@@ -62,22 +62,42 @@ chown -R ubuntu:ubuntu /home/ubuntu/.theia
 mkdir -p /home/ubuntu/.openclaw
 chown -R ubuntu:ubuntu /home/ubuntu/.openclaw
 
-# ─── OpenClaw config (allow Control UI over plain HTTP) ────────────
-OPENCLAW_CONFIG="/home/ubuntu/.openclaw/openclaw.json5"
-if [ ! -f "$OPENCLAW_CONFIG" ]; then
-    cat > "$OPENCLAW_CONFIG" <<'EOF'
+# ─── OpenClaw config ────────────────────────────────────────────────
+# OpenClaw reads openclaw.json (not openclaw.json5).
+# We need to ensure three things regardless of whether onboard has run:
+#   1. gateway.port = 10003  (matches supervisor --port flag, fixes CLI tools)
+#   2. gateway.controlUi.dangerouslyDisableDeviceAuth = true
+#      (disable browser device-pairing; token auth is sufficient in a container)
+#   3. gateway.controlUi.allowInsecureAuth = true  (allow HTTP, not just HTTPS)
+OPENCLAW_JSON="/home/ubuntu/.openclaw/openclaw.json"
+if [ -f "$OPENCLAW_JSON" ]; then
+    # Patch existing config (written by openclaw onboard)
+    PATCHED=$(jq '
+        .gateway.port = 10003 |
+        .gateway.controlUi.dangerouslyDisableDeviceAuth = true |
+        .gateway.controlUi.allowInsecureAuth = true
+    ' "$OPENCLAW_JSON") && echo "$PATCHED" > "$OPENCLAW_JSON" \
+        && echo "[startup] OpenClaw config patched (port=10003, dangerouslyDisableDeviceAuth=true)" \
+        || echo "[startup] WARNING: Failed to patch OpenClaw config"
+else
+    # First-ever run before onboard: write a minimal bootstrap config
+    cat > "$OPENCLAW_JSON" <<'EOF'
 {
-  gateway: {
-    trustedProxies: "0.0.0.0/0",
-    controlUi: {
-      allowInsecureAuth: true,
-    },
-  },
+  "gateway": {
+    "port": 10003,
+    "mode": "local",
+    "bind": "loopback",
+    "auth": { "mode": "token" },
+    "controlUi": {
+      "allowInsecureAuth": true,
+      "dangerouslyDisableDeviceAuth": true
+    }
+  }
 }
 EOF
-    chown ubuntu:ubuntu "$OPENCLAW_CONFIG"
-    echo "[startup] OpenClaw config written (allowInsecureAuth enabled)"
+    echo "[startup] OpenClaw bootstrap config written"
 fi
+chown ubuntu:ubuntu "$OPENCLAW_JSON"
 
 # ─── Caddy auth setup (Basic Auth for all web services) ──────────
 export AUTH_USER="${AUTH_USER:-admin}"

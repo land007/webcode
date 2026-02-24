@@ -75,6 +75,7 @@ button:not(:disabled):hover { opacity: .87; }
 
 /* ── Forms ───────────────────────────────────────────────────── */
 input[type="text"], input[type="password"], input[type="email"],
+input[type="number"],
 select, textarea {
   background: var(--surface2);
   border: 1px solid var(--border);
@@ -109,7 +110,7 @@ label {
   border: 1px solid var(--border);
   color: var(--text-muted);
   border-radius: 6px;
-  padding: 8px;
+  padding: 7px 10px;
   font-size: 13px;
 }
 .toggle-btn.active {
@@ -171,7 +172,7 @@ details[open] > summary { margin-bottom: 10px; }
 .named-vol-row:hover { background: var(--surface2); }
 .named-vol-name { font-family: monospace; min-width: 130px; }
 .named-vol-arrow { flex-shrink: 0; }
-.named-vol-path { font-family: monospace; color: var(--text); }
+.named-vol-path { font-family: monospace; color: var(--text); flex: 1; }
 
 /* ── WIZARD ─────────────────────────────────────────────────── */
 #wizard {
@@ -393,14 +394,14 @@ details[open] > summary { margin-bottom: 10px; }
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 12px 14px;
+  padding: 12px 14px 16px;
   position: relative;
 }
 .svc-card .svc-name {
   font-weight: 600;
   font-size: 13px;
   margin-bottom: 4px;
-  padding-right: 32px;
+  padding-right: 26px;
 }
 .svc-card .svc-state {
   font-size: 12px;
@@ -453,6 +454,18 @@ details[open] > summary { margin-bottom: 10px; }
   color: var(--danger);
   font-weight: 500;
 }
+
+.log-stderr-header {
+  color: var(--danger);
+  font-weight: 700;
+  margin-top: 6px;
+  padding: 2px 6px;
+  background: rgba(224, 82, 82, 0.12);
+  border-radius: 3px;
+  border-left: 3px solid var(--danger);
+  user-select: none;
+}
+
 
 
 .config-section {
@@ -517,7 +530,7 @@ details[open] > summary { margin-bottom: 10px; }
 
 .port-input {
   flex: 1;
-  background: var(--bg);
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 4px;
   color: var(--text);
@@ -535,6 +548,60 @@ details[open] > summary { margin-bottom: 10px; }
 .port-status.ok { color: var(--success); }
 .port-status.error { color: var(--danger); }
 .port-status.checking { color: var(--accent); }
+
+/* ── Advanced option blocks ─────────────────────────────────────── */
+.adv-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.adv-block-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.adv-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 10px 0;
+}
+
+.adv-sub-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.adv-sub-title {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.adv-block .form-group:last-child,
+.adv-block .config-grid .form-group:last-child {
+  margin-bottom: 0;
+}
+
+.adv-inline-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+/* ── Port map inline label ──────────────────────────────────────── */
+.port-map-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
 
 /* ── Header controls（语言 + 主题切换）──────────────────────────── */
 .wizard-header {

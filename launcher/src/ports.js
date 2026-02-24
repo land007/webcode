@@ -163,6 +163,31 @@ function updateComposePorts(workDir, ports) {
 }
 
 /**
+ * 将自定义端口映射注入 docker-compose.yml（追加在标准 5 个端口之后）
+ * @param {string} workDir
+ * @param {Array<{host:string, container:string}>} customPorts
+ */
+function updateComposeCustomPorts(workDir, customPorts) {
+  if (!customPorts || customPorts.length === 0) return;
+  const composePath = path.join(workDir, 'docker-compose.yml');
+  if (!fs.existsSync(composePath)) return;
+
+  const valid = customPorts.filter(p => p.host && p.container);
+  if (valid.length === 0) return;
+
+  let content = fs.readFileSync(composePath, 'utf8');
+  const extraLines = valid.map(p => `      - "${p.host}:${p.container}"`).join('\n');
+
+  // 插入到 TigerVNC 端口行（唯一标识：:10005）之后
+  content = content.replace(
+    /( +- "\d+:10005"[^\n]*)/,
+    `$1\n${extraLines}`
+  );
+
+  fs.writeFileSync(composePath, content, 'utf8');
+}
+
+/**
  * 获取端口摘要信息（用于显示）
  * @param {Object} ports - 端口配置
  * @returns {Array} - 端口信息数组
@@ -184,5 +209,6 @@ module.exports = {
   autoFixPorts,
   getPortsFromConfig,
   updateComposePorts,
+  updateComposeCustomPorts,
   getPortSummary
 };

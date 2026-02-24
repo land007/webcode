@@ -22,7 +22,9 @@ const DEFAULT_CONFIG = {
   PORT_NOVNC: 20004,
   PORT_VNC: 20005,
   // 自定义目录挂载：[{ host: '/宿主机路径', container: '/容器路径' }, ...]
-  CUSTOM_VOLUMES: []
+  CUSTOM_VOLUMES: [],
+  // 自定义端口映射：[{ host: '8080', container: '3000' }, ...]
+  CUSTOM_PORTS: []
 };
 
 function getConfigPath() {
