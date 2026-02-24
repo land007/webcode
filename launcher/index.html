@@ -83,8 +83,14 @@
         <div class="adv-inline-row">
           <div style="flex:1">
             <div class="toggle-row">
-              <button class="toggle-btn active" data-mode="desktop" id="mode-desktop" data-i18n="mode_desktop_short">🖥 Desktop</button>
-              <button class="toggle-btn" data-mode="lite" id="mode-lite" data-i18n="mode_lite_short">⚡ Lite</button>
+              <button class="toggle-btn active" data-mode="desktop" id="mode-desktop">
+                <span class="btn-icon" data-icon="modeDesktop"></span>
+                <span data-i18n="mode_desktop_short">Desktop</span>
+              </button>
+              <button class="toggle-btn" data-mode="lite" id="mode-lite">
+                <span class="btn-icon" data-icon="modeLite"></span>
+                <span data-i18n="mode_lite_short">Lite</span>
+              </button>
             </div>
           </div>
           <div class="form-group" style="flex:1;margin-bottom:0">
@@ -169,7 +175,10 @@
               <span class="port-status" id="port-status-vnc"></span>
             </div>
           </div>
-          <button class="btn-secondary btn-sm" id="btn-check-ports" style="margin-top:8px" data-i18n="btn_check_ports">🔍 检测端口冲突</button>
+          <button class="btn-secondary btn-sm" id="btn-check-ports" style="margin-top:8px">
+            <span class="btn-icon" data-icon="checkPorts"></span>
+            <span data-i18n="btn_check_ports">检测端口冲突</span>
+          </button>
           <hr class="adv-divider">
           <div class="adv-sub-row">
             <span class="adv-sub-title" data-i18n="adv_sub_custom_ports">自定义端口映射</span>
@@ -208,7 +217,10 @@
     <div id="step-4" style="display:none">
       <p class="text-muted text-sm" style="margin-bottom:16px" data-i18n="step4_desc">配置已加载，容器当前未运行。</p>
       <div class="action-row" style="justify-content:flex-start; flex-wrap:wrap; gap:10px">
-        <button class="btn-primary" id="btn-step4-start" data-i18n="btn_step4_start">▶ 启动容器</button>
+        <button class="btn-primary" id="btn-step4-start">
+          <span class="btn-icon" data-icon="playArrow"></span>
+          <span data-i18n="btn_step4_start">启动容器</span>
+        </button>
         <button class="btn-secondary btn-sm" id="btn-step4-config" data-i18n="btn_step4_config">修改配置</button>
         <button class="btn-secondary btn-sm" id="btn-step4-enter" data-i18n="btn_step4_enter">直接进入工作区</button>
       </div>
@@ -303,8 +315,14 @@
           <div class="adv-inline-row">
             <div style="flex:1">
               <div class="toggle-row">
-                <button class="toggle-btn" data-mode="desktop" id="ws-mode-desktop" data-i18n="mode_desktop_short">🖥 Desktop</button>
-                <button class="toggle-btn" data-mode="lite"    id="ws-mode-lite"    data-i18n="mode_lite_short">⚡ Lite</button>
+                <button class="toggle-btn" data-mode="desktop" id="ws-mode-desktop">
+                  <span class="btn-icon" data-icon="modeDesktop"></span>
+                  <span data-i18n="mode_desktop_short">Desktop</span>
+                </button>
+                <button class="toggle-btn" data-mode="lite" id="ws-mode-lite">
+                  <span class="btn-icon" data-icon="modeLite"></span>
+                  <span data-i18n="mode_lite_short">Lite</span>
+                </button>
               </div>
             </div>
             <div class="form-group" style="flex:1;margin-bottom:0">
@@ -382,7 +400,10 @@
               <input type="number" id="ws-port-vnc" class="port-input">
             </div>
           </div>
-          <button class="btn-secondary btn-sm" id="ws-btn-check-ports" style="margin-top:8px" data-i18n="btn_check_ports">🔍 检测端口冲突</button>
+          <button class="btn-secondary btn-sm" id="ws-btn-check-ports" style="margin-top:8px">
+            <span class="btn-icon" data-icon="checkPorts"></span>
+            <span data-i18n="btn_check_ports">检测端口冲突</span>
+          </button>
           <hr class="adv-divider">
           <div class="adv-sub-row">
             <span class="adv-sub-title" data-i18n="adv_sub_custom_ports">自定义端口映射</span>
@@ -582,7 +603,7 @@ function updateLangButtons() {
 
 // 辅助函数：渲染标签页图标
 function renderTabIcons() {
-  document.querySelectorAll('.tab-icon').forEach(function(el) {
+  document.querySelectorAll('.tab-icon, .btn-icon').forEach(function(el) {
     var iconKey = el.getAttribute('data-icon');
     if (icons[iconKey]) {
       el.innerHTML = icons[iconKey];

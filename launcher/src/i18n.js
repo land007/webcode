@@ -30,8 +30,8 @@ const translations = {
 
     // Step 2
     label_run_mode:   '运行模式',
-    mode_desktop:     '🖥 Desktop（完整桌面）',
-    mode_lite:        '⚡ Lite（仅 IDE + 看板）',
+    mode_desktop:     'Desktop（完整桌面）',
+    mode_lite:        'Lite（仅 IDE + 看板）',
     label_auth_password: 'Basic Auth 密码',
     label_vnc_password:  'VNC 密码',
     label_openclaw_token: 'OpenClaw Token',
@@ -43,7 +43,7 @@ const translations = {
     ph_optional:      '（可选）',
     label_cf_token:   'Cloudflare Tunnel Token（可选）',
     label_port_config: '端口配置（自动检测冲突）',
-    btn_check_ports:  '🔍 检测端口冲突',
+    btn_check_ports:  '检测端口冲突',
     btn_step2_back:   '上一步',
     btn_step2_next:   '下一步：启动容器',
 
@@ -54,7 +54,7 @@ const translations = {
 
     // Step 4
     step4_desc:       '配置已加载，容器当前未运行。',
-    btn_step4_start:  '▶ 启动容器',
+    btn_step4_start:  '启动容器',
     btn_step4_config: '修改配置',
     btn_step4_enter:  '直接进入工作区',
 
@@ -75,8 +75,8 @@ const translations = {
     state_unknown:    '未知',
     h_config:         '配置',
     label_run_mode_ws: '运行模式',
-    mode_desktop_short: '🖥 Desktop',
-    mode_lite_short:  '⚡ Lite',
+    mode_desktop_short: 'Desktop',
+    mode_lite_short:  'Lite',
     label_port_config_ws: '端口配置',
     btn_save_config:  '保存配置',
     btn_save_restart: '保存并重启容器',
@@ -169,8 +169,8 @@ const translations = {
 
     // Step 2
     label_run_mode:   'Run mode',
-    mode_desktop:     '🖥 Desktop (full desktop)',
-    mode_lite:        '⚡ Lite (IDE + Kanban only)',
+    mode_desktop:     'Desktop (full desktop)',
+    mode_lite:        'Lite (IDE + Kanban only)',
     label_auth_password: 'Basic Auth password',
     label_vnc_password:  'VNC password',
     label_openclaw_token: 'OpenClaw Token',
@@ -182,7 +182,7 @@ const translations = {
     ph_optional:      '(optional)',
     label_cf_token:   'Cloudflare Tunnel Token (optional)',
     label_port_config: 'Port config (auto conflict detection)',
-    btn_check_ports:  '🔍 Check port conflicts',
+    btn_check_ports:  'Check port conflicts',
     btn_step2_back:   'Back',
     btn_step2_next:   'Next: Launch container',
 
@@ -193,7 +193,7 @@ const translations = {
 
     // Step 4
     step4_desc:       'Config loaded, container not running.',
-    btn_step4_start:  '▶ Start container',
+    btn_step4_start:  'Start container',
     btn_step4_config: 'Edit config',
     btn_step4_enter:  'Enter workspace',
 
@@ -214,8 +214,8 @@ const translations = {
     state_unknown:    'Unknown',
     h_config:         'Config',
     label_run_mode_ws: 'Run mode',
-    mode_desktop_short: '🖥 Desktop',
-    mode_lite_short:  '⚡ Lite',
+    mode_desktop_short: 'Desktop',
+    mode_lite_short:  'Lite',
     label_port_config_ws: 'Port config',
     btn_save_config:  'Save config',
     btn_save_restart: 'Save & restart',

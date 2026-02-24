@@ -318,6 +318,28 @@ details[open] > summary { margin-bottom: 10px; }
   border-color: var(--border);
 }
 
+/* 按钮内的图标样式 */
+.toggle-btn .btn-icon,
+button .btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+}
+
+.toggle-btn .btn-icon svg,
+button .btn-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.tab-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
 .topbar-spacer { flex: 1; }
 
 .status-pill {
