@@ -59,11 +59,11 @@ const translations = {
     btn_step4_enter:  '直接进入工作区',
 
     // Workspace tabs
-    tab_status:       '● 状态',
-    tab_vnc:          '🖥 桌面',
-    tab_ide:          '💻 IDE',
-    tab_kanban:       '📋 看板',
-    tab_ai:           '🤖 AI',
+    tab_status:       '状态',
+    tab_vnc:          '桌面',
+    tab_ide:          'IDE',
+    tab_kanban:       '看板',
+    tab_ai:           'AI',
     title_refresh:    '刷新',
     title_open_browser: '在浏览器中打开',
     status_detecting: '检测中…',
@@ -198,11 +198,11 @@ const translations = {
     btn_step4_enter:  'Enter workspace',
 
     // Workspace tabs
-    tab_status:       '● Status',
-    tab_vnc:          '🖥 Desktop',
-    tab_ide:          '💻 IDE',
-    tab_kanban:       '📋 Kanban',
-    tab_ai:           '🤖 AI',
+    tab_status:       'Status',
+    tab_vnc:          'Desktop',
+    tab_ide:          'IDE',
+    tab_kanban:       'Kanban',
+    tab_ai:           'AI',
     title_refresh:    'Refresh',
     title_open_browser: 'Open in browser',
     status_detecting: 'Detecting…',

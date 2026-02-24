@@ -530,13 +530,19 @@ details[open] > summary { margin-bottom: 10px; }
 
 .port-input {
   flex: 1;
-  background: var(--surface);
+  background: transparent;
   border: 1px solid var(--border);
   border-radius: 4px;
   color: var(--text);
   font-size: 12px;
   padding: 4px 6px;
   width: 70px;
+}
+
+.port-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface);
 }
 
 .port-status {
