@@ -116,7 +116,7 @@
           </div>
           <div class="form-group" style="flex:1;margin-bottom:0">
             <label data-i18n="label_vnc_resolution">VNC 分辨率</label>
-            <input type="text" id="cfg-vnc-resolution" placeholder="1920x1080">
+            <input type="text" id="cfg-vnc-resolution" placeholder="1920x1080" list="vnc-resolution-list">
           </div>
         </div>
       </div>
@@ -206,6 +206,7 @@
             <button class="btn-secondary btn-sm" id="btn-add-port-map" data-i18n="btn_add_port_map">+ 添加端口</button>
           </div>
           <div id="port-map-list"></div>
+          <div id="custom-port-status" style="font-size:11px;margin-top:4px"></div>
         </div>
         <div class="adv-block">
           <div class="adv-block-title" data-i18n="adv_title_volumes">目录挂载</div>
@@ -348,7 +349,7 @@
             </div>
             <div class="form-group" style="flex:1;margin-bottom:0">
               <label data-i18n="label_vnc_resolution">VNC 分辨率</label>
-              <input type="text" id="ws-vnc-resolution">
+              <input type="text" id="ws-vnc-resolution" list="vnc-resolution-list">
             </div>
           </div>
         </div>
@@ -431,6 +432,7 @@
             <button class="btn-secondary btn-sm" id="ws-btn-add-port-map" data-i18n="btn_add_port_map">+ 添加端口</button>
           </div>
           <div id="ws-port-map-list"></div>
+          <div id="ws-custom-port-status" style="font-size:11px;margin-top:4px"></div>
         </div>
         <div class="adv-block">
           <div class="adv-block-title" data-i18n="adv_title_volumes">目录挂载</div>
@@ -528,6 +530,17 @@
   <option value="/home/ubuntu/.local/share">
   <option value="/home/ubuntu/.openclaw">
   <option value="/home/ubuntu/.gitconfig-vol">
+</datalist>
+
+<!-- VNC 分辨率预设 -->
+<datalist id="vnc-resolution-list">
+  <option value="1280x720">
+  <option value="1366x768">
+  <option value="1440x900">
+  <option value="1600x900">
+  <option value="1920x1080">
+  <option value="2560x1440">
+  <option value="3840x2160">
 </datalist>
 
 <!-- ═══════════════════════ SCRIPTS ══════════════════════════════ -->
@@ -1162,6 +1175,13 @@ document.getElementById('btn-check-ports').addEventListener('click', async () =>
     vnc: parseInt(document.getElementById('cfg-port-vnc').value) || 20005
   };
 
+  // 追加自定义端口映射的宿主机端口
+  const customList = collectPortMapList('port-map-list');
+  customList.forEach(function(p, i) {
+    const n = parseInt(p.host);
+    if (n > 0) ports['custom_' + i] = n;
+  });
+
   // 显示检测中状态
   for (const key of Object.keys(ports)) {
     const statusEl = document.getElementById(`port-status-${key}`);
@@ -1170,20 +1190,27 @@ document.getElementById('btn-check-ports').addEventListener('click', async () =>
       statusEl.className = 'port-status checking';
     }
   }
+  document.getElementById('custom-port-status').textContent = '';
 
   const results = await app.checkPorts(ports);
 
+  const customConflicts = [];
   for (const [key, result] of Object.entries(results)) {
     const statusEl = document.getElementById(`port-status-${key}`);
     if (statusEl) {
-      if (result.available) {
-        statusEl.textContent = '✓';
-        statusEl.className = 'port-status ok';
-      } else {
-        statusEl.textContent = '✗';
-        statusEl.className = 'port-status error';
-      }
+      statusEl.textContent = result.available ? '✓' : '✗';
+      statusEl.className = 'port-status ' + (result.available ? 'ok' : 'error');
+    } else if (key.startsWith('custom_') && !result.available) {
+      customConflicts.push(result.port);
     }
+  }
+  const statusDiv = document.getElementById('custom-port-status');
+  if (customConflicts.length > 0) {
+    statusDiv.style.color = 'var(--danger)';
+    statusDiv.textContent = '✗ 自定义端口冲突：' + customConflicts.join(', ');
+  } else if (customList.some(p => parseInt(p.host) > 0)) {
+    statusDiv.style.color = 'var(--success)';
+    statusDiv.textContent = '✓ 自定义端口均可用';
   }
 });
 
@@ -1650,34 +1677,55 @@ document.getElementById('ws-btn-check-ports').addEventListener('click', async ()
     vnc: parseInt(document.getElementById('ws-port-vnc').value) || 20005
   };
 
+  // 追加自定义端口映射的宿主机端口
+  const customList = collectPortMapList('ws-port-map-list');
+  customList.forEach(function(p, i) {
+    const n = parseInt(p.host);
+    if (n > 0) ports['custom_' + i] = n;
+  });
+
+  document.getElementById('ws-custom-port-status').textContent = '';
   const results = await app.checkPorts(ports);
 
-  let hasConflicts = false;
+  // 分离标准端口冲突和自定义端口冲突
+  const stdConflicts = [];
+  const customConflicts = [];
   for (const [key, result] of Object.entries(results)) {
     if (!result.available) {
-      hasConflicts = true;
-      break;
+      if (key.startsWith('custom_')) customConflicts.push(result.port);
+      else stdConflicts.push(result);
     }
   }
 
-  if (hasConflicts) {
-    const detail = Object.entries(results)
-      .filter(([_, r]) => !r.available)
-      .map(([_, r]) => t('dyn_port_occupied', { name: r.name, port: r.port }))
-      .join('\n');
-    if (confirm(t('dyn_port_conflict') + '\n' + detail)) {
-      const fixedPorts = await app.autoFixPorts(ports);
+  const wsStatusDiv = document.getElementById('ws-custom-port-status');
+  if (customConflicts.length > 0) {
+    wsStatusDiv.style.color = 'var(--danger)';
+    wsStatusDiv.textContent = '✗ 自定义端口冲突：' + customConflicts.join(', ');
+  } else if (customList.some(p => parseInt(p.host) > 0)) {
+    wsStatusDiv.style.color = 'var(--success)';
+    wsStatusDiv.textContent = '✓ 自定义端口均可用';
+  }
 
-      // 更新表单
+  if (stdConflicts.length > 0) {
+    const detail = stdConflicts.map(r => t('dyn_port_occupied', { name: r.name, port: r.port })).join('\n');
+    if (confirm(t('dyn_port_conflict') + '\n' + detail)) {
+      // 只对标准端口做自动修复
+      const stdPorts = {
+        theia:    parseInt(document.getElementById('ws-port-theia').value)    || 20001,
+        kanban:   parseInt(document.getElementById('ws-port-kanban').value)   || 20002,
+        openclaw: parseInt(document.getElementById('ws-port-openclaw').value) || 20003,
+        novnc:    parseInt(document.getElementById('ws-port-novnc').value)    || 20004,
+        vnc:      parseInt(document.getElementById('ws-port-vnc').value)      || 20005
+      };
+      const fixedPorts = await app.autoFixPorts(stdPorts);
       document.getElementById('ws-port-theia').value    = fixedPorts.theia;
       document.getElementById('ws-port-kanban').value   = fixedPorts.kanban;
       document.getElementById('ws-port-openclaw').value = fixedPorts.openclaw;
       document.getElementById('ws-port-novnc').value    = fixedPorts.novnc;
       document.getElementById('ws-port-vnc').value      = fixedPorts.vnc;
-
       alert(t('dyn_port_fixed'));
     }
-  } else {
+  } else if (stdConflicts.length === 0 && customConflicts.length === 0) {
     alert(t('dyn_port_ok'));
   }
 });
@@ -1804,6 +1852,7 @@ function switchToInstance(id) {
   });
 
   renderSidebar();
+  refreshSidebarDots(); // 立即更新所有实例状态点，无需等待轮询周期
 
   app.dockerPs(cfg, function(err, containers) {
     if (!err && containerRunning(containers)) {
@@ -1860,21 +1909,24 @@ function handleRemoveInstance(id) {
 
 let sidebarPollTimer = null;
 
+function refreshSidebarDots() {
+  const instances = globalCfg ? (globalCfg.instances || []) : [];
+  instances.forEach(function(inst) {
+    const instCfg = readInstanceConfig(inst.id);
+    if (!instCfg) return;
+    app.dockerPs(instCfg, function(err, containers) {
+      const dot = document.getElementById('dot-' + inst.id);
+      if (!dot) return;
+      const running = containerRunning(containers);
+      dot.className = 'instance-status-dot dot ' + (running ? 'dot-green' : 'dot-gray');
+    });
+  });
+}
+
 function startSidebarPolling() {
   if (sidebarPollTimer) clearInterval(sidebarPollTimer);
-  sidebarPollTimer = setInterval(function() {
-    const instances = globalCfg ? (globalCfg.instances || []) : [];
-    instances.forEach(function(inst) {
-      const instCfg = readInstanceConfig(inst.id);
-      if (!instCfg) return;
-      app.dockerPs(instCfg, function(err, containers) {
-        const dot = document.getElementById('dot-' + inst.id);
-        if (!dot) return;
-        const running = containerRunning(containers);
-        dot.className = 'instance-status-dot dot ' + (running ? 'dot-green' : 'dot-gray');
-      });
-    });
-  }, 10000);
+  refreshSidebarDots(); // 立即刷新一次，避免等待第一个周期
+  sidebarPollTimer = setInterval(refreshSidebarDots, 10000);
 }
 
 // Sidebar toggle
