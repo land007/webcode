@@ -736,6 +736,34 @@ button .btn-icon svg {
   height: 16px;
 }
 
+/* ── Password eye toggle ────────────────────────────────────── */
+.input-with-eye {
+  position: relative;
+  display: block;
+}
+.input-with-eye input {
+  padding-right: 34px;
+}
+.eye-toggle {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  padding: 0;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  border-radius: 4px;
+  line-height: 0;
+}
+.eye-toggle:hover { color: var(--text); }
+.eye-toggle:active { transform: translateY(-50%) scale(0.92); }
+
 /* ── App layout (sidebar + main) ────────────────────────────── */
 #app-layout {
   display: flex;

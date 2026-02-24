@@ -129,15 +129,24 @@
           </div>
           <div class="form-group">
             <label data-i18n="label_auth_password">Basic Auth 密码</label>
-            <input type="password" id="cfg-auth-password" placeholder="changeme">
+            <div class="input-with-eye">
+              <input type="password" id="cfg-auth-password" placeholder="changeme">
+              <button type="button" class="eye-toggle" data-target="cfg-auth-password" tabindex="-1"></button>
+            </div>
           </div>
           <div id="vnc-group" class="form-group">
             <label data-i18n="label_vnc_password">VNC 密码</label>
-            <input type="password" id="cfg-vnc-password" placeholder="changeme">
+            <div class="input-with-eye">
+              <input type="password" id="cfg-vnc-password" placeholder="changeme">
+              <button type="button" class="eye-toggle" data-target="cfg-vnc-password" tabindex="-1"></button>
+            </div>
           </div>
           <div class="form-group">
             <label data-i18n="label_openclaw_token">OpenClaw Token</label>
-            <input type="text" id="cfg-openclaw-token" placeholder="changeme">
+            <div class="input-with-eye">
+              <input type="password" id="cfg-openclaw-token" placeholder="changeme">
+              <button type="button" class="eye-toggle" data-target="cfg-openclaw-token" tabindex="-1"></button>
+            </div>
           </div>
         </div>
       </div>
@@ -362,15 +371,24 @@
             </div>
             <div class="form-group">
               <label data-i18n="label_auth_password">Basic Auth 密码</label>
-              <input type="password" id="ws-auth-password">
+              <div class="input-with-eye">
+                <input type="password" id="ws-auth-password">
+                <button type="button" class="eye-toggle" data-target="ws-auth-password" tabindex="-1"></button>
+              </div>
             </div>
             <div class="form-group">
               <label data-i18n="label_vnc_password">VNC 密码</label>
-              <input type="password" id="ws-vnc-password">
+              <div class="input-with-eye">
+                <input type="password" id="ws-vnc-password">
+                <button type="button" class="eye-toggle" data-target="ws-vnc-password" tabindex="-1"></button>
+              </div>
             </div>
             <div class="form-group">
               <label data-i18n="label_openclaw_token">OpenClaw Token</label>
-              <input type="text" id="ws-openclaw-token">
+              <div class="input-with-eye">
+                <input type="password" id="ws-openclaw-token">
+                <button type="button" class="eye-toggle" data-target="ws-openclaw-token" tabindex="-1"></button>
+              </div>
             </div>
           </div>
         </div>
@@ -445,8 +463,14 @@
           <div id="ws-volume-list"></div>
         </div>
         <div class="action-row" style="margin-top:0">
-          <button class="btn-secondary btn-sm" id="btn-save-config"  data-i18n="btn_save_config">保存配置</button>
-          <button class="btn-primary btn-sm"   id="btn-save-restart" data-i18n="btn_save_restart">保存并重启容器</button>
+          <button class="btn-secondary btn-sm" id="btn-save-config" style="display:flex;align-items:center;gap:5px">
+            <span class="btn-icon" data-icon="save"></span>
+            <span data-i18n="btn_save_config">保存配置</span>
+          </button>
+          <button class="btn-primary btn-sm" id="btn-save-restart" style="display:flex;align-items:center;gap:5px">
+            <span class="btn-icon" data-icon="restart"></span>
+            <span data-i18n="btn_save_restart">保存并重启容器</span>
+          </button>
         </div>
       </div>
 
@@ -1770,6 +1794,26 @@ document.getElementById('btn-save-restart').addEventListener('click', () => {
   });
 });
 
+// ─── Eye toggle (密码可见性切换) ─────────────────────────────────────────────────
+
+// 初始化所有眼睛按钮图标（默认显示 eyeOff，表示当前是密码模式）
+function initEyeToggles() {
+  document.querySelectorAll('.eye-toggle').forEach(function(btn) {
+    btn.innerHTML = icons.eyeOff;
+  });
+}
+
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.eye-toggle');
+  if (!btn) return;
+  const targetId = btn.getAttribute('data-target');
+  const input = document.getElementById(targetId);
+  if (!input) return;
+  const nowVisible = input.type === 'password';
+  input.type = nowVisible ? 'text' : 'password';
+  btn.innerHTML = nowVisible ? icons.eye : icons.eyeOff;
+});
+
 // ─── Multi-instance: init, sidebar, switch ────────────────────────────────────
 
 function initInstances() {
@@ -1991,6 +2035,8 @@ function boot() {
   applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
   // 渲染标签页图标
   renderTabIcons();
+  // 初始化眼睛图标
+  initEyeToggles();
   // Apply translations to all annotated elements
   applyTranslations();
   // 渲染侧边栏
