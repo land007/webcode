@@ -90,6 +90,15 @@ RUN mkdir -p /etc/dconf/profile /etc/dconf/db/local.d \
     && cp /usr/share/gnome-panel/layouts/default.layout \
        /usr/share/gnome-panel/layouts/ubuntu.layout
 
+# ─── 6c. hsetroot for dynamic background color switching ───────────────
+RUN apt-get update && apt-get install -y --no-install-recommends hsetroot \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# ─── 6d. Theme switch script (light/dark mode) ─────────────────────────
+COPY scripts/theme-switch.sh /usr/local/bin/theme-switch
+RUN chmod +x /usr/local/bin/theme-switch \
+    && printf '\n# Theme switch aliases\nalias light-mode="/usr/local/bin/theme-switch light"\nalias dark-mode="/usr/local/bin/theme-switch dark"\n' >> /home/ubuntu/.bashrc
+
 # ─── 7. VNC + noVNC ─────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y \
         tigervnc-standalone-server tigervnc-common tigervnc-tools \

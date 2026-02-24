@@ -737,6 +737,12 @@ function syncTheiaTheme(theme) {
       }
     }
   });
+  // 同步桌面主题
+  if (app.setDesktopTheme) {
+    app.setDesktopTheme(cfg, effective, function(code) {
+      console.log('Desktop theme switched to ' + effective + (code === 0 ? ' (success)' : ' (failed)'));
+    });
+  }
 }
 
 function applyTheme(theme) {

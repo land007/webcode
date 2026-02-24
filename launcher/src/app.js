@@ -313,6 +313,19 @@ function setTheiaTheme(cfg, themeName, callback) {
 }
 
 /**
+ * Update desktop theme (background + GTK theme) inside the container.
+ * @param {Object} cfg
+ * @param {string} themeName  'dark' or 'light'
+ * @param {Function} [callback]  (exitCode)
+ */
+function setDesktopTheme(cfg, themeName, callback) {
+  const proc = spawn('docker', ['exec', '-u', 'ubuntu', cfg.CONTAINER_NAME || 'webcode', '/usr/local/bin/theme-switch', themeName], {
+    env: buildEnv(cfg)
+  });
+  proc.on('close', (code) => { if (callback) callback(code); });
+}
+
+/**
  * Run supervisorctl status inside the webcode container.
  * @param {Object} cfg
  * @param {Function} callback  (err, [{name, state, detail}])
@@ -453,4 +466,5 @@ module.exports = {
   getPortSummary,
   dockerVolumeRm,
   setTheiaTheme,
+  setDesktopTheme,
 };
