@@ -80,6 +80,7 @@ function startProxies(cfg) {
   startProxy(11002, ports.kanban, basicAuth);                       // Vibe Kanban
   startProxy(11003, ports.openclaw, 'Bearer ' + cfg.OPENCLAW_TOKEN); // OpenClaw (own token auth, no Caddy basicauth)
   startProxy(11004, ports.novnc, basicAuth);                        // noVNC
+  startProxy(11006, ports.audio, basicAuth);                        // Audio WebSocket
 }
 
 // ─── Docker helpers ──────────────────────────────────────────────────────────
@@ -154,6 +155,7 @@ async function dockerUp(cfg, onData, onClose) {
     cfg.PORT_OPENCLAW = fixedPorts.openclaw;
     cfg.PORT_NOVNC = fixedPorts.novnc;
     cfg.PORT_VNC = fixedPorts.vnc;
+    cfg.PORT_AUDIO = fixedPorts.audio;
     ports = fixedPorts;
 
     // 保存配置

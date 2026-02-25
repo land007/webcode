@@ -36,3 +36,8 @@
 :20004 {
 	reverse_proxy 127.0.0.1:10004
 }
+
+# Audio WebSocket stream (PulseAudio null-sink -> browser Web Audio API)
+:20006 {
+	reverse_proxy 127.0.0.1:10006
+}

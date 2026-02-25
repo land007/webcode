@@ -157,6 +157,10 @@ else
     chown ubuntu:ubuntu /run/user/1000
     chmod 700 /run/user/1000
 
+    # PulseAudio socket directory
+    mkdir -p /run/user/1000/pulse
+    chown ubuntu:ubuntu /run/user/1000/pulse
+
     # fcitx 4 configuration
     FCITX_DIR=/home/ubuntu/.config/fcitx
     mkdir -p "$FCITX_DIR"

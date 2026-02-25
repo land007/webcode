@@ -9,6 +9,7 @@ services:
       - "20003:20003"  # OpenClaw (via Caddy)
       - "20004:20004"  # noVNC (via Caddy)
       - "20005:10005"  # TigerVNC (direct connection)
+      - "20006:20006"  # Audio WebSocket stream (via Caddy)
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - dna-data:/home/ubuntu/dna          # DNA 目录：项目源码，空时自动 clone

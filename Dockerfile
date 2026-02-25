@@ -117,6 +117,12 @@ RUN apt-get update && apt-get install -y \
         fonts-noto-cjk fonts-noto-cjk-extra \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# ─── 8b. PulseAudio + Python WebSocket server deps ──────────────────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        pulseaudio pulseaudio-utils \
+        python3-websockets \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # ─── 9. Docker CLI (client only, auto-detect arch) ──────────────────
 RUN install -m 0755 -d /etc/apt/keyrings \
     && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg \
@@ -179,6 +185,13 @@ COPY configs/Caddyfile /etc/caddy/Caddyfile
 COPY configs/supervisor-caddy.conf /etc/supervisor/conf.d/supervisor-caddy.conf
 COPY configs/supervisor-cloudflared.conf /etc/supervisor/conf.d/supervisor-cloudflared.conf
 COPY configs/supervisor-analytics.conf /etc/supervisor/conf.d/supervisor-analytics.conf
+
+COPY configs/supervisor-audio.conf /etc/supervisor/conf.d/supervisor-audio.conf
+COPY scripts/audio-ws-server.py /opt/audio-ws-server.py
+COPY configs/audio-player.html /opt/noVNC/audio.html
+COPY configs/audio-bar.js /opt/noVNC/audio-bar.js
+RUN chmod +x /opt/audio-ws-server.py \
+    && sed -i 's|</body>|<script src="audio-bar.js"></script>\n</body>|' /opt/noVNC/vnc.html
 
 COPY configs/xsession /opt/xsession
 RUN chmod +x /opt/xsession

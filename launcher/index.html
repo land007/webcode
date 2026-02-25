@@ -204,6 +204,11 @@
               <input type="number" id="cfg-port-vnc" class="port-input" placeholder="20005">
               <span class="port-status" id="port-status-vnc"></span>
             </div>
+            <div class="port-item">
+              <span class="port-label">Audio WebSocket</span>
+              <input type="number" id="cfg-port-audio" class="port-input" placeholder="20006">
+              <span class="port-status" id="port-status-audio"></span>
+            </div>
           </div>
           <button class="btn-secondary btn-sm" id="btn-check-ports" style="margin-top:8px">
             <span class="btn-icon" data-icon="checkPorts"></span>
@@ -290,6 +295,7 @@
     </button>
     <span class="topbar-spacer"></span>
     <div class="tab-actions" id="tab-actions" style="display:none">
+      <button class="btn-icon" id="btn-audio-toggle" title="开启/关闭桌面音频" style="display:none;font-size:15px;padding:2px 6px">🔇</button>
       <button class="btn-icon" id="btn-refresh"      data-i18n-title="title_refresh"      title="刷新">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path><path d="M16 21h5v-5"></path></svg>
       </button>
@@ -442,6 +448,10 @@
             <div class="port-item">
               <span class="port-label">TigerVNC</span>
               <input type="number" id="ws-port-vnc" class="port-input">
+            </div>
+            <div class="port-item">
+              <span class="port-label">Audio WebSocket</span>
+              <input type="number" id="ws-port-audio" class="port-input">
             </div>
           </div>
           <button class="btn-secondary btn-sm" id="ws-btn-check-ports" style="margin-top:8px">
@@ -1186,6 +1196,7 @@ function loadConfigIntoWizardForm() {
   document.getElementById('cfg-port-openclaw').value = cfg.PORT_OPENCLAW || 20003;
   document.getElementById('cfg-port-novnc').value    = cfg.PORT_NOVNC    || 20004;
   document.getElementById('cfg-port-vnc').value      = cfg.PORT_VNC      || 20005;
+  document.getElementById('cfg-port-audio').value    = cfg.PORT_AUDIO    || 20006;
 
   selectedMode = cfg.MODE || 'desktop';
   document.getElementById('mode-desktop').classList.toggle('active', selectedMode === 'desktop');
@@ -1214,6 +1225,7 @@ function collectWizardForm() {
   cfg.PORT_OPENCLAW = parseInt(document.getElementById('cfg-port-openclaw').value) || 20003;
   cfg.PORT_NOVNC    = parseInt(document.getElementById('cfg-port-novnc').value)    || 20004;
   cfg.PORT_VNC      = parseInt(document.getElementById('cfg-port-vnc').value)      || 20005;
+  cfg.PORT_AUDIO    = parseInt(document.getElementById('cfg-port-audio').value)    || 20006;
 
   cfg.CUSTOM_VOLUMES = collectVolumeList('volume-list');
   cfg.CUSTOM_PORTS = collectPortMapList('port-map-list');
@@ -1230,7 +1242,8 @@ document.getElementById('btn-check-ports').addEventListener('click', async () =>
     kanban: parseInt(document.getElementById('cfg-port-kanban').value) || 20002,
     openclaw: parseInt(document.getElementById('cfg-port-openclaw').value) || 20003,
     novnc: parseInt(document.getElementById('cfg-port-novnc').value) || 20004,
-    vnc: parseInt(document.getElementById('cfg-port-vnc').value) || 20005
+    vnc: parseInt(document.getElementById('cfg-port-vnc').value) || 20005,
+    audio: parseInt(document.getElementById('cfg-port-audio').value) || 20006
   };
 
   // 追加自定义端口映射的宿主机端口
@@ -1410,6 +1423,10 @@ function activateTab(tab) {
   const tabActions = document.getElementById('tab-actions');
   tabActions.style.display = (tab === 'status') ? 'none' : 'flex';
 
+  // Show audio button only on VNC tab
+  const audioBtn = document.getElementById('btn-audio-toggle');
+  if (audioBtn) audioBtn.style.display = (tab === 'vnc') ? '' : 'none';
+
   // Show/hide status panel vs iframes
   const panel = document.getElementById('panel-status');
   panel.classList.toggle('visible', tab === 'status');
@@ -1442,6 +1459,78 @@ document.getElementById('btn-open-browser').addEventListener('click', () => {
   const url = iframeUrl(currentTab);
   nw.Shell.openExternal(url);
 });
+
+// ─── Audio toggle button (VNC tab) ───────────────────────────────────────────
+(function () {
+  var SAMPLE_RATE = 44100;
+  var CHANNELS    = 2;
+  var audioCtx    = null;
+  var audioWs     = null;
+  var nextPlayTime = 0;
+  var audioActive = false;
+
+  function getAudioPort() {
+    return (cfg && cfg.PORT_AUDIO) ? cfg.PORT_AUDIO : 20006;
+  }
+
+  function stopAudio() {
+    audioActive = false;
+    var btn = document.getElementById('btn-audio-toggle');
+    if (btn) { btn.textContent = '🔇'; btn.title = '开启桌面音频'; btn.style.color = ''; }
+    if (audioWs) { audioWs.close(); audioWs = null; }
+    if (audioCtx) { audioCtx.close().catch(function(){}); audioCtx = null; }
+  }
+
+  function startAudio() {
+    audioActive = true;
+    var btn = document.getElementById('btn-audio-toggle');
+    if (btn) { btn.textContent = '⏳'; btn.title = '连接中…'; }
+
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: SAMPLE_RATE });
+    } catch (e) {
+      stopAudio();
+      return;
+    }
+    nextPlayTime = audioCtx.currentTime + 0.1;
+
+    // Launcher proxy port 11006 → container audio WebSocket (no auth header needed on the WS itself)
+    audioWs = new WebSocket('ws://localhost:11006');
+    audioWs.binaryType = 'arraybuffer';
+
+    audioWs.onopen = function () {
+      var b = document.getElementById('btn-audio-toggle');
+      if (b) { b.textContent = '🔊'; b.title = '停止桌面音频'; b.style.color = 'var(--success, #4caf50)'; }
+    };
+    audioWs.onerror = function () { stopAudio(); };
+    audioWs.onclose = function () { if (audioActive) stopAudio(); };
+
+    audioWs.onmessage = function (event) {
+      if (!audioCtx) return;
+      var raw = new Int16Array(event.data);
+      var numFrames = Math.floor(raw.length / CHANNELS);
+      if (numFrames < 1) return;
+      var buffer = audioCtx.createBuffer(CHANNELS, numFrames, SAMPLE_RATE);
+      for (var ch = 0; ch < CHANNELS; ch++) {
+        var channelData = buffer.getChannelData(ch);
+        for (var i = 0; i < numFrames; i++) {
+          channelData[i] = raw[i * CHANNELS + ch] / 32768.0;
+        }
+      }
+      var source = audioCtx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(audioCtx.destination);
+      var now = audioCtx.currentTime;
+      if (nextPlayTime < now) nextPlayTime = now + 0.05;
+      source.start(nextPlayTime);
+      nextPlayTime += buffer.duration;
+    };
+  }
+
+  document.getElementById('btn-audio-toggle').addEventListener('click', function () {
+    if (audioActive) { stopAudio(); } else { startAudio(); }
+  });
+})();
 
 // ─── Workspace: status polling ────────────────────────────────────────────────
 
@@ -1755,6 +1844,7 @@ function loadConfigIntoWorkspaceForm() {
   document.getElementById('ws-port-openclaw').value = cfg.PORT_OPENCLAW || 20003;
   document.getElementById('ws-port-novnc').value    = cfg.PORT_NOVNC    || 20004;
   document.getElementById('ws-port-vnc').value      = cfg.PORT_VNC      || 20005;
+  document.getElementById('ws-port-audio').value    = cfg.PORT_AUDIO    || 20006;
 
   wsMode = cfg.MODE || 'desktop';
   document.getElementById('ws-mode-desktop').classList.toggle('active', wsMode === 'desktop');
@@ -1782,6 +1872,7 @@ function collectWorkspaceForm() {
   cfg.PORT_OPENCLAW = parseInt(document.getElementById('ws-port-openclaw').value) || 20003;
   cfg.PORT_NOVNC    = parseInt(document.getElementById('ws-port-novnc').value)    || 20004;
   cfg.PORT_VNC      = parseInt(document.getElementById('ws-port-vnc').value)      || 20005;
+  cfg.PORT_AUDIO    = parseInt(document.getElementById('ws-port-audio').value)    || 20006;
 
   cfg.CUSTOM_VOLUMES = collectVolumeList('ws-volume-list');
   cfg.CUSTOM_PORTS = collectPortMapList('ws-port-map-list');
@@ -1796,7 +1887,8 @@ document.getElementById('ws-btn-check-ports').addEventListener('click', async ()
     kanban: parseInt(document.getElementById('ws-port-kanban').value) || 20002,
     openclaw: parseInt(document.getElementById('ws-port-openclaw').value) || 20003,
     novnc: parseInt(document.getElementById('ws-port-novnc').value) || 20004,
-    vnc: parseInt(document.getElementById('ws-port-vnc').value) || 20005
+    vnc: parseInt(document.getElementById('ws-port-vnc').value) || 20005,
+    audio: parseInt(document.getElementById('ws-port-audio').value) || 20006
   };
 
   // 追加自定义端口映射的宿主机端口
@@ -1837,7 +1929,8 @@ document.getElementById('ws-btn-check-ports').addEventListener('click', async ()
         kanban:   parseInt(document.getElementById('ws-port-kanban').value)   || 20002,
         openclaw: parseInt(document.getElementById('ws-port-openclaw').value) || 20003,
         novnc:    parseInt(document.getElementById('ws-port-novnc').value)    || 20004,
-        vnc:      parseInt(document.getElementById('ws-port-vnc').value)      || 20005
+        vnc:      parseInt(document.getElementById('ws-port-vnc').value)      || 20005,
+        audio:    parseInt(document.getElementById('ws-port-audio').value)    || 20006
       };
       const fixedPorts = await app.autoFixPorts(stdPorts);
       document.getElementById('ws-port-theia').value    = fixedPorts.theia;
@@ -1845,6 +1938,7 @@ document.getElementById('ws-btn-check-ports').addEventListener('click', async ()
       document.getElementById('ws-port-openclaw').value = fixedPorts.openclaw;
       document.getElementById('ws-port-novnc').value    = fixedPorts.novnc;
       document.getElementById('ws-port-vnc').value      = fixedPorts.vnc;
+      document.getElementById('ws-port-audio').value    = fixedPorts.audio;
       alert(t('dyn_port_fixed'));
     }
   } else if (stdConflicts.length === 0 && customConflicts.length === 0) {

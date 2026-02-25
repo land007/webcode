@@ -10,7 +10,8 @@ const DEFAULT_PORTS = {
   kanban: 20002,
   openclaw: 20003,
   novnc: 20004,
-  vnc: 20005
+  vnc: 20005,
+  audio: 20006
 };
 
 // 端口配置名称映射
@@ -19,7 +20,8 @@ const PORT_NAMES = {
   kanban: 'Vibe Kanban',
   openclaw: 'OpenClaw AI',
   novnc: 'noVNC',
-  vnc: 'TigerVNC'
+  vnc: 'TigerVNC',
+  audio: 'Audio WebSocket'
 };
 
 /**
@@ -134,7 +136,8 @@ function getPortsFromConfig(cfg) {
     kanban: cfg.PORT_KANBAN || DEFAULT_PORTS.kanban,
     openclaw: cfg.PORT_OPENCLAW || DEFAULT_PORTS.openclaw,
     novnc: cfg.PORT_NOVNC || DEFAULT_PORTS.novnc,
-    vnc: cfg.PORT_VNC || DEFAULT_PORTS.vnc
+    vnc: cfg.PORT_VNC || DEFAULT_PORTS.vnc,
+    audio: cfg.PORT_AUDIO || DEFAULT_PORTS.audio
   };
 }
 
@@ -158,6 +161,7 @@ function updateComposePorts(workDir, ports) {
   content = content.replace(/"(\d+):20003"/, `"${ports.openclaw}:20003"`);
   content = content.replace(/"(\d+):20004"/, `"${ports.novnc}:20004"`);
   content = content.replace(/"(\d+):10005"/, `"${ports.vnc}:10005"`);
+  if (ports.audio) content = content.replace(/"(\d+):20006"/, `"${ports.audio}:20006"`);
 
   fs.writeFileSync(composePath, content, 'utf8');
 }

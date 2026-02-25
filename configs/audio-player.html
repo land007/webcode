@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Webcode Audio Player</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    gap: 24px;
+  }
+  h1 { font-size: 1.4rem; opacity: 0.85; letter-spacing: 0.03em; }
+  #status {
+    font-size: 0.9rem;
+    opacity: 0.6;
+    min-height: 1.4em;
+    text-align: center;
+  }
+  #toggle-btn {
+    font-size: 2.5rem;
+    padding: 18px 36px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    background: #2a5298;
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+  #toggle-btn:hover { background: #3060b0; transform: scale(1.04); }
+  #toggle-btn.active { background: #1a8a4a; }
+  #toggle-btn.error  { background: #8a1a1a; }
+  .hint {
+    font-size: 0.78rem;
+    opacity: 0.45;
+    text-align: center;
+    max-width: 320px;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+<h1>🖥️ Webcode Desktop Audio</h1>
+<button id="toggle-btn">🔇 开启音频</button>
+<div id="status">点击按钮开始播放容器桌面音频</div>
+<p class="hint">浏览器安全策略要求用户主动点击才能播放音频。<br>音频经由 PulseAudio → WebSocket 实时传输，延迟约 50ms。</p>
+
+<script>
+(function () {
+  'use strict';
+  var AUDIO_WS_PORT = 20006;
+  var SAMPLE_RATE = 44100;
+  var CHANNELS = 2;
+
+  var btn    = document.getElementById('toggle-btn');
+  var status = document.getElementById('status');
+
+  var audioCtx    = null;
+  var ws          = null;
+  var nextPlayTime = 0;
+  var active      = false;
+
+  function setStatus(msg) { status.textContent = msg; }
+
+  function stopAudio() {
+    active = false;
+    btn.textContent = '🔇 开启音频';
+    btn.className = '';
+    setStatus('已停止');
+    if (ws)        { ws.close(); ws = null; }
+    if (audioCtx)  { audioCtx.close(); audioCtx = null; }
+  }
+
+  function startAudio() {
+    active = true;
+    btn.textContent = '⏳ 连接中…';
+    btn.className = '';
+    setStatus('正在连接 WebSocket 音频服务…');
+
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)({
+        sampleRate: SAMPLE_RATE,
+      });
+    } catch (e) {
+      setStatus('错误：无法创建 AudioContext — ' + e.message);
+      stopAudio();
+      return;
+    }
+
+    nextPlayTime = audioCtx.currentTime + 0.1;
+
+    var wsUrl = 'ws://' + location.hostname + ':' + AUDIO_WS_PORT;
+    try {
+      ws = new WebSocket(wsUrl);
+    } catch (e) {
+      setStatus('错误：WebSocket 连接失败 — ' + e.message);
+      stopAudio();
+      return;
+    }
+
+    ws.binaryType = 'arraybuffer';
+
+    ws.onopen = function () {
+      btn.textContent = '🔊 停止音频';
+      btn.className = 'active';
+      setStatus('正在播放… (' + wsUrl + ')');
+    };
+
+    ws.onerror = function () {
+      setStatus('错误：WebSocket 连接断开');
+      btn.className = 'error';
+      setTimeout(stopAudio, 2000);
+    };
+
+    ws.onclose = function () {
+      if (active) {
+        setStatus('连接已关闭');
+        btn.className = 'error';
+        setTimeout(stopAudio, 2000);
+      }
+    };
+
+    ws.onmessage = function (event) {
+      if (!audioCtx) return;
+      var raw = new Int16Array(event.data);
+      var numFrames = raw.length / CHANNELS;
+      if (numFrames < 1) return;
+
+      var buffer = audioCtx.createBuffer(CHANNELS, numFrames, SAMPLE_RATE);
+      for (var ch = 0; ch < CHANNELS; ch++) {
+        var channelData = buffer.getChannelData(ch);
+        for (var i = 0; i < numFrames; i++) {
+          channelData[i] = raw[i * CHANNELS + ch] / 32768.0;
+        }
+      }
+
+      var source = audioCtx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(audioCtx.destination);
+
+      var now = audioCtx.currentTime;
+      if (nextPlayTime < now) { nextPlayTime = now + 0.05; }
+      source.start(nextPlayTime);
+      nextPlayTime += buffer.duration;
+    };
+  }
+
+  btn.addEventListener('click', function () {
+    if (active) { stopAudio(); } else { startAudio(); }
+  });
+})();
+</script>
+</body>
+</html>
