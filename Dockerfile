@@ -145,12 +145,12 @@ RUN if [ "$(dpkg --print-architecture)" = "amd64" ]; then \
         curl -LO https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
         && apt-get update && apt-get install -y ./google-chrome-stable_current_amd64.deb \
         && rm -f google-chrome-stable_current_amd64.deb \
-        && printf '#!/bin/sh\nHOSTNAME=$$(hostname)\nUSER_DATA_DIR=/home/ubuntu/.config/google-chrome-$$HOSTNAME\nmkdir -p "$$USER_DATA_DIR"\nexec /usr/bin/google-chrome-stable --user-data-dir="$$USER_DATA_DIR" --password-store=basic "$@"\n' > /usr/local/bin/browser \
+        && printf '#!/bin/sh\nexport PULSE_SERVER="unix:/run/user/1000/pulse/native"\nexport PULSE_SINK="webcode_null"\nexport PULSE_SOURCE="webcode_mic"\nHOSTNAME=$$(hostname)\nUSER_DATA_DIR=/home/ubuntu/.config/google-chrome-$$HOSTNAME\nmkdir -p "$$USER_DATA_DIR"\nexec /usr/bin/google-chrome-stable --user-data-dir="$$USER_DATA_DIR" --password-store=basic "$@"\n' > /usr/local/bin/browser \
         && chmod +x /usr/local/bin/browser; \
     else \
         add-apt-repository -y ppa:xtradeb/apps \
         && apt-get update && apt-get install -y chromium \
-        && printf '#!/bin/sh\nHOSTNAME=$$(hostname)\nUSER_DATA_DIR=/home/ubuntu/.config/chromium-$$HOSTNAME\nmkdir -p "$$USER_DATA_DIR"\nexec /usr/bin/chromium --user-data-dir="$$USER_DATA_DIR" --password-store=basic "$@"\n' > /usr/local/bin/browser \
+        && printf '#!/bin/sh\nexport PULSE_SERVER="unix:/run/user/1000/pulse/native"\nexport PULSE_SINK="webcode_null"\nexport PULSE_SOURCE="webcode_mic"\nHOSTNAME=$$(hostname)\nUSER_DATA_DIR=/home/ubuntu/.config/chromium-$$HOSTNAME\nmkdir -p "$$USER_DATA_DIR"\nexec /usr/bin/chromium --user-data-dir="$$USER_DATA_DIR" --password-store=basic "$@"\n' > /usr/local/bin/browser \
         && chmod +x /usr/local/bin/browser; \
     fi \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -220,3 +220,5 @@ ENV PASSWORD=
 ENV VNC_RESOLUTION=1920x1080
 
 ENTRYPOINT ["/opt/startup.sh"]
+
+#docker build -t land007/webcode:latest .

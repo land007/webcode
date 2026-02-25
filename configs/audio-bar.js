@@ -4,13 +4,25 @@
  * Always shows in noVNC toolbar regardless of iframe environment.
  * If audioPort parameter is present in URL, auto-starts audio playback.
  * Audio control is now handled within noVNC itself.
+ * Full-duplex: also includes a microphone button to send browser mic to container.
  */
 (function () {
   'use strict';
 
-  // ── SVG Icon (white) ─────────────────────────────────────
+  // ── SVG Icons (white) ─────────────────────────────────────
   function getIcon() {
     return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>';
+  }
+
+  function getMicIcon(state) {
+    // state: 'off' | 'on' | 'error'
+    var stroke = state === 'on' ? '#4caf50' : state === 'error' ? '#f44336' : 'white';
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="' + stroke + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+      '<rect x="9" y="2" width="6" height="11" rx="3"></rect>' +
+      '<path d="M19 10a7 7 0 0 1-14 0"></path>' +
+      '<line x1="12" y1="19" x2="12" y2="22"></line>' +
+      '<line x1="8" y1="22" x2="16" y2="22"></line>' +
+      '</svg>';
   }
 
   // ── Port detection ───────────────────────────────────────
@@ -27,7 +39,7 @@
   var AUDIO_WS_PORT = getAudioPort();
   console.log('[audio-bar] Port:', AUDIO_WS_PORT, 'Auto-start:', shouldAutoStart());
 
-  // ── Create button ────────────────────────────────────────
+  // ── Create audio output button ────────────────────────────
   function createButton() {
     var fsBtn = document.getElementById('noVNC_fullscreen_button');
     if (!fsBtn) {
@@ -49,14 +61,40 @@
     btn.src = 'data:image/svg+xml;base64,' + btoa(getIcon());
 
     fsBtn.parentNode.insertBefore(btn, fsBtn);
-    console.log('[audio-bar] ✅ Button created in noVNC toolbar');
+    console.log('[audio-bar] ✅ Audio button created in noVNC toolbar');
     return true;
   }
 
-  // ── Wait and create ─────────────────────────────────────
+  // ── Create microphone button (inserted before audio button) ──
+  function createMicButton() {
+    var audioBtn = document.getElementById('noVNC_audio_button');
+    if (!audioBtn) return false;
+
+    if (document.getElementById('noVNC_mic_button')) return true;
+
+    var btn = document.createElement('input');
+    btn.type = 'image';
+    btn.id = 'noVNC_mic_button';
+    btn.className = 'noVNC_button';
+    btn.alt = '麦克风';
+    btn.title = '麦克风输入';
+    btn.src = 'data:image/svg+xml;base64,' + btoa(getMicIcon('off'));
+
+    audioBtn.parentNode.insertBefore(btn, audioBtn);
+    console.log('[audio-bar] ✅ Mic button created in noVNC toolbar');
+    return true;
+  }
+
+  // ── Wait and create both buttons ─────────────────────────
   function tryCreate() {
-    if (createButton()) return;
-    setTimeout(tryCreate, 100);
+    var audioOk = createButton();
+    if (!audioOk) {
+      setTimeout(tryCreate, 100);
+      return;
+    }
+    if (!createMicButton()) {
+      setTimeout(tryCreate, 100);
+    }
   }
 
   if (document.readyState === 'loading') {
@@ -65,7 +103,7 @@
     setTimeout(tryCreate, 100);
   }
 
-  // ── Audio logic ──────────────────────────────────────────
+  // ── Audio output logic ───────────────────────────────────
   var audioCtx, ws, nextPlayTime = 0, active = false;
   var SAMPLE_RATE = 44100, CHANNELS = 2;
   var autoStartAttempted = false;
@@ -154,12 +192,130 @@
     };
   }
 
-  // ── Click handler ────────────────────────────────────────
+  // ── Microphone input logic ───────────────────────────────
+  var micActive = false;
+  var micStream = null;
+  var micAudioCtx = null;
+  var micProcessor = null;
+  var micWs = null;
+
+  function setMicSelected(state) {
+    var btn = document.getElementById('noVNC_mic_button');
+    if (!btn) return;
+    btn.src = 'data:image/svg+xml;base64,' + btoa(getMicIcon(state));
+    if (state === 'on') {
+      btn.className = 'noVNC_button noVNC_selected';
+    } else {
+      btn.className = 'noVNC_button';
+    }
+  }
+
+  function stopMicrophone() {
+    micActive = false;
+    if (micProcessor) { micProcessor.disconnect(); micProcessor = null; }
+    if (micStream) { micStream.getTracks().forEach(function(t) { t.stop(); }); micStream = null; }
+    if (micAudioCtx) { micAudioCtx.close(); micAudioCtx = null; }
+    if (micWs) { micWs.close(); micWs = null; }
+    setMicSelected('off');
+    console.log('[audio-bar] Microphone stopped');
+  }
+
+  async function startMicrophone() {
+    // nw.js environment check
+    if (typeof nw !== 'undefined') {
+      console.warn('[audio-bar] nw.js environment does not support getUserMedia for mic');
+      setMicSelected('error');
+      return;
+    }
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      console.warn('[audio-bar] getUserMedia not available');
+      setMicSelected('error');
+      return;
+    }
+
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: { ideal: CHANNELS },
+          sampleRate: { ideal: SAMPLE_RATE },
+          echoCancellation: true,
+          noiseSuppression: true,
+        }
+      });
+    } catch (e) {
+      console.error('[audio-bar] getUserMedia failed:', e);
+      setMicSelected('error');
+      return;
+    }
+
+    micActive = true;
+    setMicSelected('on');
+
+    try {
+      micAudioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: SAMPLE_RATE });
+    } catch (e) {
+      console.error('[audio-bar] AudioContext failed:', e);
+      stopMicrophone();
+      return;
+    }
+
+    var source = micAudioCtx.createMediaStreamSource(micStream);
+    // bufferSize=2048 → ~46ms @ 44100Hz
+    micProcessor = micAudioCtx.createScriptProcessor(2048, CHANNELS, CHANNELS);
+
+    micProcessor.onaudioprocess = function(e) {
+      if (!micWs || micWs.readyState !== WebSocket.OPEN) return;
+      var numFrames = e.inputBuffer.length;
+      var buf = new Int16Array(numFrames * CHANNELS);
+      for (var ch = 0; ch < CHANNELS; ch++) {
+        var channelData = e.inputBuffer.getChannelData(ch);
+        for (var i = 0; i < numFrames; i++) {
+          var sample = Math.max(-1, Math.min(1, channelData[i]));
+          buf[i * CHANNELS + ch] = sample < 0 ? sample * 32768 : sample * 32767;
+        }
+      }
+      micWs.send(buf.buffer);
+    };
+
+    source.connect(micProcessor);
+    micProcessor.connect(micAudioCtx.destination);
+
+    var wsUrl = 'ws://' + location.hostname + ':' + AUDIO_WS_PORT;
+    console.log('[audio-bar] Mic WebSocket connecting:', wsUrl);
+    try {
+      micWs = new WebSocket(wsUrl);
+    } catch (e) {
+      console.error('[audio-bar] Mic WebSocket failed:', e);
+      stopMicrophone();
+      return;
+    }
+
+    micWs.binaryType = 'arraybuffer';
+
+    micWs.onerror = function(e) {
+      console.error('[audio-bar] Mic WebSocket error:', e);
+      stopMicrophone();
+    };
+
+    micWs.onclose = function() {
+      if (micActive) stopMicrophone();
+    };
+
+    console.log('[audio-bar] ✅ Microphone started');
+  }
+
+  // ── Click handlers ────────────────────────────────────────
   document.addEventListener('click', function(e) {
     if (e.target && e.target.id === 'noVNC_audio_button') {
       e.preventDefault();
-      console.log('[audio-bar] Button clicked, active:', active);
+      console.log('[audio-bar] Audio button clicked, active:', active);
       if (active) stopAudio(); else startAudio();
+    }
+    if (e.target && e.target.id === 'noVNC_mic_button') {
+      e.preventDefault();
+      console.log('[audio-bar] Mic button clicked, active:', micActive);
+      if (micActive) stopMicrophone(); else startMicrophone();
     }
   }, true);
 

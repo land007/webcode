@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""PulseAudio null-sink -> WebSocket audio stream (s16le, 44100Hz, stereo)"""
+"""PulseAudio null-sink -> WebSocket audio stream (s16le, 44100Hz, stereo)
+Full-duplex: also accepts inbound binary messages from browser mic and writes
+them into a webcode_input null-sink via pacat --playback.
+"""
 import asyncio
 import os
 import subprocess
@@ -12,11 +15,15 @@ SAMPLE_RATE = 44100
 CHANNELS = 2
 CHUNK_SIZE = 16384  # ~186ms per chunk (16384 / (44100 * 2))
 PULSE_SINK = "webcode_null"
+PULSE_INPUT_SINK = "webcode_input"
 CLIENTS = set()
 
 # PulseAudio socket path
 PULSE_SOCKET = "/run/user/1000/pulse/native"
 PULSE_ENV = {**os.environ, "PULSE_SERVER": f"unix:{PULSE_SOCKET}"}
+
+# pacat --playback subprocess for microphone input
+pacat_in_proc = None
 
 
 async def broadcast_audio():
@@ -65,11 +72,19 @@ async def broadcast_audio():
 
 
 async def handler(ws):
-    """Handle WebSocket client connection."""
+    """Handle WebSocket client connection (full-duplex)."""
     CLIENTS.add(ws)
     print(f"[audio-ws] client connected ({len(CLIENTS)} total) from {ws.remote_address}", flush=True)
     try:
-        await ws.wait_closed()
+        async for message in ws:
+            if isinstance(message, bytes) and pacat_in_proc and pacat_in_proc.stdin:
+                try:
+                    pacat_in_proc.stdin.write(message)
+                    await pacat_in_proc.stdin.drain()
+                except Exception as e:
+                    print(f"[audio-ws] mic input write error: {e}", flush=True)
+    except Exception:
+        pass
     finally:
         CLIENTS.discard(ws)
         print(f"[audio-ws] client disconnected ({len(CLIENTS)} remaining)", flush=True)
@@ -151,12 +166,97 @@ async def setup_null_sink():
         print(f"[audio-ws] ERROR setting up null-sink: {e}", flush=True)
 
 
+async def setup_input_sink():
+    """Create webcode_input null-sink and wrap its monitor as a normal source.
+
+    Chrome filters out PA_SOURCE_MONITOR sources during getUserMedia enumeration.
+    module-remap-source wraps webcode_input.monitor into a plain source 'webcode_mic'
+    without the MONITOR flag, so Chrome can enumerate and select it.
+    """
+    try:
+        # 1. Create webcode_input null-sink if missing
+        result = subprocess.run(
+            ["pactl", "list", "sinks", "short"],
+            capture_output=True,
+            text=True,
+            env=PULSE_ENV,
+        )
+        if PULSE_INPUT_SINK in result.stdout:
+            print(f"[audio-ws] null-sink '{PULSE_INPUT_SINK}' already exists", flush=True)
+        else:
+            subprocess.run(
+                [
+                    "pactl", "load-module", "module-null-sink",
+                    f"sink_name={PULSE_INPUT_SINK}",
+                    "sink_properties=device.description=WebcodeMic",
+                ],
+                env=PULSE_ENV,
+                check=True,
+            )
+            print(f"[audio-ws] null-sink '{PULSE_INPUT_SINK}' created", flush=True)
+
+        # 2. Wrap webcode_input.monitor as plain source 'webcode_mic' (no MONITOR flag)
+        src_result = subprocess.run(
+            ["pactl", "list", "sources", "short"],
+            capture_output=True,
+            text=True,
+            env=PULSE_ENV,
+        )
+        if "webcode_mic" in src_result.stdout:
+            print("[audio-ws] remap-source 'webcode_mic' already exists", flush=True)
+        else:
+            subprocess.run(
+                [
+                    "pactl", "load-module", "module-remap-source",
+                    "source_name=webcode_mic",
+                    f"master={PULSE_INPUT_SINK}.monitor",
+                    "source_properties=device.description=WebcodeMicrophone",
+                ],
+                env=PULSE_ENV,
+                check=True,
+            )
+            print("[audio-ws] remap-source 'webcode_mic' created", flush=True)
+
+        # 3. Set webcode_mic as default source
+        subprocess.run(
+            ["pactl", "set-default-source", "webcode_mic"],
+            env=PULSE_ENV,
+            check=True,
+        )
+        print("[audio-ws] default source set to 'webcode_mic'", flush=True)
+
+    except subprocess.CalledProcessError as e:
+        print(f"[audio-ws] ERROR setting up input sink: {e}", flush=True)
+
+
+async def start_input_playback():
+    """Start pacat --playback to feed browser mic audio into webcode_input."""
+    global pacat_in_proc
+    cmd = [
+        "pacat", "--playback",
+        "-d", PULSE_INPUT_SINK,
+        "--format=s16le",
+        f"--rate={SAMPLE_RATE}",
+        f"--channels={CHANNELS}",
+        "--latency-msec=20",
+    ]
+    pacat_in_proc = await asyncio.create_subprocess_exec(
+        *cmd,
+        stdin=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        env=PULSE_ENV,
+    )
+    print(f"[audio-ws] pacat --playback started (pid={pacat_in_proc.pid}) for mic input", flush=True)
+
+
 async def main():
     if not await wait_for_pulseaudio():
         sys.exit(1)
 
     await setup_null_sink()
     await wait_for_null_sink()
+    await setup_input_sink()
+    await start_input_playback()
 
     async with websockets.serve(handler, HOST, PORT):
         print(f"[audio-ws] WebSocket server listening on ws://{HOST}:{PORT}", flush=True)
