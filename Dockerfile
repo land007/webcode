@@ -134,10 +134,13 @@ RUN install -m 0755 -d /etc/apt/keyrings \
         docker-ce-cli docker-compose-plugin \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# ─── 9b. Cloudflare Tunnel client ─────────────────────────────────
-RUN curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-$(dpkg --print-architecture).deb -o /tmp/cloudflared.deb \
-    && dpkg -i /tmp/cloudflared.deb \
-    && rm /tmp/cloudflared.deb
+# ─── 9b. Cloudflare Tunnel client (via official apt repo — avoids GitHub rate limits) ───
+RUN curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg \
+        | tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null \
+    && echo "deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared noble main" \
+        > /etc/apt/sources.list.d/cloudflared.list \
+    && apt-get update && apt-get install -y --no-install-recommends cloudflared \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # ─── 10. Browser: amd64=Google Chrome, arm64=Chromium ────────────────
 # Use container-specific user-data-dir to avoid SingletonLock conflicts
