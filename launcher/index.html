@@ -1384,14 +1384,15 @@ function iframeUrl(tab) {
     theia: cfg.PORT_THEIA || 20001,
     kanban: cfg.PORT_KANBAN || 20002,
     openclaw: cfg.PORT_OPENCLAW || 20003,
-    novnc: cfg.PORT_NOVNC || 20004
+    novnc: cfg.PORT_NOVNC || 20004,
+    audio: cfg.PORT_AUDIO || 20006
   };
   const proxyPort = (p) => p - 9000;
   switch (tab) {
     case 'ide':    return `http://localhost:${proxyPort(ports.theia)}/?locale=${theiaLocale}`;
-    case 'kanban': return 'http://localhost:${proxyPort(ports.kanban)}';
-    case 'vnc':    return `http://localhost:${proxyPort(ports.novnc)}/?autoconnect=true&resize=remote&password=${encodeURIComponent(cfg.VNC_PASSWORD)}`;
-    case 'ai':     return 'http://localhost:${proxyPort(ports.openclaw)}/';
+    case 'kanban': return `http://localhost:${proxyPort(ports.kanban)}`;
+    case 'vnc':    return `http://localhost:${proxyPort(ports.novnc)}/?autoconnect=true&resize=remote&password=${encodeURIComponent(cfg.VNC_PASSWORD)}&audioPort=${ports.audio}`;
+    case 'ai':     return `http://localhost:${proxyPort(ports.openclaw)}/`;
   }
 }
 
