@@ -167,7 +167,11 @@ RUN su -l ubuntu -c \
 
 # ─── 11c. v2rayN (GUI proxy client) ─────────────────────────────────
 RUN ARCH=$(dpkg --print-architecture) \
-    && V2RAYN_ARCH=${ARCH/amd64/64} \
+    && case "$ARCH" in \
+        amd64) V2RAYN_ARCH=64 ;; \
+        arm64) V2RAYN_ARCH=arm64 ;; \
+        *) V2RAYN_ARCH="$ARCH" ;; \
+    esac \
     && V2RAYN_VER=$(curl -fsSL https://api.github.com/repos/2dust/v2rayN/releases/latest | grep '"tag_name"' | cut -d'"' -f4) \
     && curl -fsSL "https://github.com/2dust/v2rayN/releases/download/${V2RAYN_VER}/v2rayN-linux-${V2RAYN_ARCH}.deb" -o /tmp/v2rayn.deb \
     && apt-get install -y /tmp/v2rayn.deb \
