@@ -14,10 +14,8 @@
     return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>';
   }
 
-  function getMicIcon(state) {
-    // state: 'off' | 'on' | 'error'
-    var stroke = state === 'on' ? '#4caf50' : state === 'error' ? '#f44336' : 'white';
-    return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="' + stroke + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+  function getMicIcon() {
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
       '<rect x="9" y="2" width="6" height="11" rx="3"></rect>' +
       '<path d="M19 10a7 7 0 0 1-14 0"></path>' +
       '<line x1="12" y1="19" x2="12" y2="22"></line>' +
@@ -78,7 +76,7 @@
     btn.className = 'noVNC_button';
     btn.alt = '麦克风';
     btn.title = '麦克风输入';
-    btn.src = 'data:image/svg+xml;base64,' + btoa(getMicIcon('off'));
+    btn.src = 'data:image/svg+xml;base64,' + btoa(getMicIcon());
 
     audioBtn.parentNode.insertBefore(btn, audioBtn);
     console.log('[audio-bar] ✅ Mic button created in noVNC toolbar');
@@ -199,15 +197,10 @@
   var micProcessor = null;
   var micWs = null;
 
-  function setMicSelected(state) {
+  function setMicSelected(selected) {
     var btn = document.getElementById('noVNC_mic_button');
     if (!btn) return;
-    btn.src = 'data:image/svg+xml;base64,' + btoa(getMicIcon(state));
-    if (state === 'on') {
-      btn.className = 'noVNC_button noVNC_selected';
-    } else {
-      btn.className = 'noVNC_button';
-    }
+    btn.className = selected ? 'noVNC_button noVNC_selected' : 'noVNC_button';
   }
 
   function stopMicrophone() {
@@ -216,21 +209,13 @@
     if (micStream) { micStream.getTracks().forEach(function(t) { t.stop(); }); micStream = null; }
     if (micAudioCtx) { micAudioCtx.close(); micAudioCtx = null; }
     if (micWs) { micWs.close(); micWs = null; }
-    setMicSelected('off');
+    setMicSelected(false);
     console.log('[audio-bar] Microphone stopped');
   }
 
   async function startMicrophone() {
-    // nw.js environment check
-    if (typeof nw !== 'undefined') {
-      console.warn('[audio-bar] nw.js environment does not support getUserMedia for mic');
-      setMicSelected('error');
-      return;
-    }
-
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      console.warn('[audio-bar] getUserMedia not available');
-      setMicSelected('error');
+      console.warn('[audio-bar] getUserMedia not available in this environment');
       return;
     }
 
@@ -245,12 +230,11 @@
       });
     } catch (e) {
       console.error('[audio-bar] getUserMedia failed:', e);
-      setMicSelected('error');
       return;
     }
 
     micActive = true;
-    setMicSelected('on');
+    setMicSelected(true);
 
     try {
       micAudioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: SAMPLE_RATE });
