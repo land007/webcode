@@ -2,6 +2,7 @@
  * audio-bar.js - integrated audio toggle button for noVNC
  *
  * Always shows in noVNC toolbar regardless of iframe environment.
+ * If audioPort parameter is present in URL, auto-starts audio playback.
  * Audio control is now handled within noVNC itself.
  */
 (function () {
@@ -18,8 +19,13 @@
     return m ? parseInt(m[1]) : 20006;
   }
 
+  // ── Check if auto-start is requested ─────────────────────
+  function shouldAutoStart() {
+    return location.search.match(/audioPort=\d+/) !== null;
+  }
+
   var AUDIO_WS_PORT = getAudioPort();
-  console.log('[audio-bar] Port:', AUDIO_WS_PORT);
+  console.log('[audio-bar] Port:', AUDIO_WS_PORT, 'Auto-start:', shouldAutoStart());
 
   // ── Create button ────────────────────────────────────────
   function createButton() {
@@ -62,6 +68,7 @@
   // ── Audio logic ──────────────────────────────────────────
   var audioCtx, ws, nextPlayTime = 0, active = false;
   var SAMPLE_RATE = 44100, CHANNELS = 2;
+  var autoStartAttempted = false;
 
   function setSelected(selected) {
     var btn = document.getElementById('noVNC_audio_button');
@@ -155,4 +162,46 @@
       if (active) stopAudio(); else startAudio();
     }
   }, true);
+
+  // ── Auto-start audio if audioPort parameter exists ──────────
+  // Note: AudioContext requires user gesture, so we wait for first interaction
+  function attemptAutoStart() {
+    if (autoStartAttempted || !shouldAutoStart()) return;
+    autoStartAttempted = true;
+
+    console.log('[audio-bar] Auto-start requested, waiting for user gesture...');
+
+    // Wait for any user interaction (click, keypress, touch)
+    function onUserGesture() {
+      if (!active && shouldAutoStart()) {
+        console.log('[audio-bar] User gesture detected, starting audio...');
+        startAudio();
+      }
+      // Remove listeners after first interaction
+      document.removeEventListener('click', onUserGesture, true);
+      document.removeEventListener('keydown', onUserGesture, true);
+      document.removeEventListener('touchstart', onUserGesture, true);
+    }
+
+    document.addEventListener('click', onUserGesture, true);
+    document.addEventListener('keydown', onUserGesture, true);
+    document.addEventListener('touchstart', onUserGesture, true);
+  }
+
+  // Try auto-start after button is created
+  function tryAutoStart() {
+    if (document.getElementById('noVNC_audio_button')) {
+      attemptAutoStart();
+    } else {
+      setTimeout(tryAutoStart, 100);
+    }
+  }
+
+  if (shouldAutoStart()) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', tryAutoStart);
+    } else {
+      setTimeout(tryAutoStart, 100);
+    }
+  }
 })();
