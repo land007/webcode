@@ -137,11 +137,13 @@ RUN if [ "$(dpkg --print-architecture)" = "amd64" ]; then \
         curl -LO https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
         && apt-get update && apt-get install -y ./google-chrome-stable_current_amd64.deb \
         && rm -f google-chrome-stable_current_amd64.deb \
-        && ln -sf /usr/bin/google-chrome-stable /usr/local/bin/browser; \
+        && printf '#!/bin/sh\nexec /usr/bin/google-chrome-stable --password-store=basic "$@"\n' > /usr/local/bin/browser \
+        && chmod +x /usr/local/bin/browser; \
     else \
         add-apt-repository -y ppa:xtradeb/apps \
         && apt-get update && apt-get install -y chromium \
-        && ln -sf /usr/bin/chromium /usr/local/bin/browser; \
+        && printf '#!/bin/sh\nexec /usr/bin/chromium --password-store=basic "$@"\n' > /usr/local/bin/browser \
+        && chmod +x /usr/local/bin/browser; \
     fi \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 

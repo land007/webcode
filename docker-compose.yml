@@ -18,6 +18,7 @@ services:
       - user-data:/home/ubuntu/.local/share
       - gitconfig:/home/ubuntu/.gitconfig-vol
       - openclaw-data:/home/ubuntu/.openclaw
+      - chrome-data:/home/ubuntu/.config
     environment:
       - MODE=${MODE:-desktop}
       - AUTH_USER=${AUTH_USER:-admin}
@@ -41,4 +42,5 @@ volumes:
   theia-data:
   user-data:
   openclaw-data:
+  chrome-data:
   gitconfig:
