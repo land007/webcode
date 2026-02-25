@@ -35,16 +35,35 @@ recording_filename = None
 RECORDINGS_DIR = "/home/ubuntu/recordings"
 
 
-def _build_ffmpeg_cmd(filename):
+def _get_display_resolution(display):
+    """Query actual X11 display size via xdpyinfo (avoids VNC_RESOLUTION mismatch)."""
     import re
+    try:
+        result = subprocess.run(
+            ["xdpyinfo", "-display", display],
+            capture_output=True, text=True, timeout=3,
+            env={**os.environ, "DISPLAY": display},
+        )
+        m = re.search(r'dimensions:\s+(\d+x\d+)', result.stdout)
+        if m:
+            return m.group(1)
+    except Exception:
+        pass
+    # fallback to env var
     vnc_res = os.environ.get("VNC_RESOLUTION", "1920x1080")
     if not re.match(r'^\d+x\d+$', vnc_res):
         vnc_res = "1920x1080"
+    return vnc_res
+
+
+def _build_ffmpeg_cmd(filename):
     display = os.environ.get("DISPLAY", ":1")
+    res = _get_display_resolution(display)
+    print(f"[audio-ws] Recording resolution: {res}", flush=True)
     return [
         "ffmpeg", "-y",
         "-f", "x11grab", "-framerate", "30",
-        "-video_size", vnc_res,
+        "-video_size", res,
         "-i", f"{display}.0+0,0",
         "-f", "pulse", "-i", f"{PULSE_SINK}.monitor",
         "-c:v", "libx264", "-preset", "fast", "-crf", "23",
