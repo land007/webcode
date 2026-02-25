@@ -2,12 +2,16 @@
 """PulseAudio null-sink -> WebSocket audio stream (s16le, 44100Hz, stereo)
 Full-duplex: also accepts inbound binary messages from browser mic and writes
 them into a webcode_input null-sink via pacat --playback.
+Text frames: JSON control messages for server-side ffmpeg recording.
 """
 import asyncio
 import os
 import subprocess
 import sys
 import websockets
+import json
+import signal
+import datetime
 
 HOST = "127.0.0.1"
 PORT = 10006
@@ -24,6 +28,90 @@ PULSE_ENV = {**os.environ, "PULSE_SERVER": f"unix:{PULSE_SOCKET}"}
 
 # pacat --playback subprocess for microphone input
 pacat_in_proc = None
+
+# ffmpeg recording state
+ffmpeg_proc = None
+recording_filename = None
+RECORDINGS_DIR = "/home/ubuntu/recordings"
+
+
+def _build_ffmpeg_cmd(filename):
+    import re
+    vnc_res = os.environ.get("VNC_RESOLUTION", "1920x1080")
+    if not re.match(r'^\d+x\d+$', vnc_res):
+        vnc_res = "1920x1080"
+    display = os.environ.get("DISPLAY", ":1")
+    return [
+        "ffmpeg", "-y",
+        "-f", "x11grab", "-framerate", "30",
+        "-video_size", vnc_res,
+        "-i", f"{display}.0+0,0",
+        "-f", "pulse", "-i", f"{PULSE_SINK}.monitor",
+        "-c:v", "libx264", "-preset", "fast", "-crf", "23",
+        "-c:a", "aac", "-b:a", "192k",
+        "-movflags", "+faststart",
+        filename,
+    ]
+
+
+async def start_recording():
+    global ffmpeg_proc, recording_filename
+    if ffmpeg_proc is not None and ffmpeg_proc.returncode is None:
+        return None, "already_recording"
+    os.makedirs(RECORDINGS_DIR, exist_ok=True)
+    ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    recording_filename = os.path.join(RECORDINGS_DIR, f"recording_{ts}.mp4")
+    cmd = _build_ffmpeg_cmd(recording_filename)
+    print(f"[audio-ws] Starting recording: {recording_filename}", flush=True)
+    try:
+        ffmpeg_proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            env={**PULSE_ENV, "DISPLAY": os.environ.get("DISPLAY", ":1")},
+        )
+        asyncio.ensure_future(_drain_ffmpeg_stderr())
+        return recording_filename, None
+    except Exception as e:
+        ffmpeg_proc = None
+        recording_filename = None
+        return None, str(e)
+
+
+async def _drain_ffmpeg_stderr():
+    if not ffmpeg_proc:
+        return
+    try:
+        while True:
+            line = await ffmpeg_proc.stderr.readline()
+            if not line:
+                break
+            text = line.decode("utf-8", errors="replace").strip()
+            if text and not text.startswith("frame="):
+                print(f"[ffmpeg] {text}", flush=True)
+    except Exception:
+        pass
+
+
+async def stop_recording():
+    global ffmpeg_proc, recording_filename
+    if ffmpeg_proc is None or ffmpeg_proc.returncode is not None:
+        return None, "not_recording"
+    fname = recording_filename
+    try:
+        ffmpeg_proc.send_signal(signal.SIGINT)
+        try:
+            await asyncio.wait_for(ffmpeg_proc.wait(), timeout=10.0)
+        except asyncio.TimeoutError:
+            ffmpeg_proc.kill()
+            await ffmpeg_proc.wait()
+        print(f"[audio-ws] Recording saved: {fname}", flush=True)
+    except Exception as e:
+        return None, str(e)
+    finally:
+        ffmpeg_proc = None
+        recording_filename = None
+    return fname, None
 
 
 async def broadcast_audio():
@@ -77,12 +165,37 @@ async def handler(ws):
     print(f"[audio-ws] client connected ({len(CLIENTS)} total) from {ws.remote_address}", flush=True)
     try:
         async for message in ws:
-            if isinstance(message, bytes) and pacat_in_proc and pacat_in_proc.stdin:
+            if isinstance(message, bytes):
+                if pacat_in_proc and pacat_in_proc.stdin:
+                    try:
+                        pacat_in_proc.stdin.write(message)
+                        await pacat_in_proc.stdin.drain()
+                    except Exception as e:
+                        print(f"[audio-ws] mic input write error: {e}", flush=True)
+            elif isinstance(message, str):
                 try:
-                    pacat_in_proc.stdin.write(message)
-                    await pacat_in_proc.stdin.drain()
-                except Exception as e:
-                    print(f"[audio-ws] mic input write error: {e}", flush=True)
+                    cmd = json.loads(message)
+                except json.JSONDecodeError:
+                    continue
+                action = cmd.get("action")
+                if action == "start_recording":
+                    fname, err = await start_recording()
+                    resp = {"event": "recording_error", "error": err} if err else \
+                           {"event": "recording_started", "filename": os.path.basename(fname)}
+                elif action == "stop_recording":
+                    fname, err = await stop_recording()
+                    resp = {"event": "recording_error", "error": err} if err else \
+                           {"event": "recording_stopped", "filename": os.path.basename(fname)}
+                elif action == "recording_status":
+                    is_rec = ffmpeg_proc is not None and ffmpeg_proc.returncode is None
+                    resp = {"event": "recording_status", "recording": is_rec,
+                            "filename": os.path.basename(recording_filename) if recording_filename else None}
+                else:
+                    continue
+                try:
+                    await ws.send(json.dumps(resp))
+                except Exception:
+                    pass
     except Exception:
         pass
     finally:
@@ -250,6 +363,17 @@ async def start_input_playback():
 
 
 async def main():
+    import atexit
+
+    def _cleanup():
+        if ffmpeg_proc and ffmpeg_proc.returncode is None:
+            try:
+                ffmpeg_proc.send_signal(signal.SIGINT)
+            except Exception:
+                pass
+
+    atexit.register(_cleanup)
+
     if not await wait_for_pulseaudio():
         sys.exit(1)
 

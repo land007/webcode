@@ -12,7 +12,8 @@ const DEFAULT_VOLUMES = {
   'user-data': '/home/ubuntu/.local/share',
   'openclaw-data': '/home/ubuntu/.openclaw',
   'chrome-data': '/home/ubuntu/.config',
-  'gitconfig': '/home/ubuntu/.gitconfig-vol'
+  'gitconfig': '/home/ubuntu/.gitconfig-vol',
+  'recordings': '/home/ubuntu/recordings'
 };
 
 // Volume 名称映射（用于显示）
@@ -24,7 +25,8 @@ const VOLUME_NAMES = {
   'user-data': 'User Data',
   'openclaw-data': 'OpenClaw',
   'chrome-data': 'Chrome/Chromium',
-  'gitconfig': 'Git Config'
+  'gitconfig': 'Git Config',
+  'recordings': 'Recordings'
 };
 
 /**
@@ -129,9 +131,9 @@ function updateComposeCustomVolumes(workDir, customVolumes) {
   let content = fs.readFileSync(composePath, 'utf8');
   const extraLines = valid.map(v => `      - ${v.host}:${v.container}`).join('\n');
 
-  // 插入到 gitconfig 挂载行之后
+  // 插入到 recordings 挂载行之后
   content = content.replace(
-    /( +- gitconfig:[^\n]*)/,
+    /( +- recordings:[^\n]*)/,
     `$1\n${extraLines}`
   );
 

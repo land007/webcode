@@ -18,6 +18,9 @@ chown -R ubuntu:ubuntu /home/ubuntu/projects
 chown -R ubuntu:ubuntu /home/ubuntu/Desktop
 chown -R ubuntu:ubuntu /home/ubuntu/.local
 
+mkdir -p /home/ubuntu/recordings
+chown ubuntu:ubuntu /home/ubuntu/recordings
+
 # ─── DNA directory (self-evolution source) ───────────────────────────
 # DNA_REPO_URL: 机器人的基因来源，支持 fork 仓库，默认指向原始库
 DNA_REPO_URL="${DNA_REPO_URL:-https://github.com/land007/webcode}"

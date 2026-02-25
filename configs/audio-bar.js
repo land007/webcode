@@ -23,6 +23,16 @@
       '</svg>';
   }
 
+  function getRecordIcon() {   // white circle = ready to record
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">' +
+      '<circle cx="12" cy="12" r="7" fill="white" stroke="white" stroke-width="1.5"/></svg>';
+  }
+
+  function getRecordingIcon() {  // white square = recording (click to stop)
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">' +
+      '<rect x="5" y="5" width="14" height="14" rx="2" fill="white" stroke="white" stroke-width="1.5"/></svg>';
+  }
+
   // ── Port detection ───────────────────────────────────────
   function getAudioPort() {
     var m = location.search.match(/audioPort=(\d+)/);
@@ -83,7 +93,27 @@
     return true;
   }
 
-  // ── Wait and create both buttons ─────────────────────────
+  // ── Create record button (inserted after mic button) ──────
+  function createRecordButton() {
+    var micBtn = document.getElementById('noVNC_mic_button');
+    if (!micBtn) return false;
+
+    if (document.getElementById('noVNC_record_button')) return true;
+
+    var btn = document.createElement('input');
+    btn.type = 'image';
+    btn.id = 'noVNC_record_button';
+    btn.className = 'noVNC_button';
+    btn.alt = '录制';
+    btn.title = '录制桌面视频';
+    btn.src = 'data:image/svg+xml;base64,' + btoa(getRecordIcon());
+
+    micBtn.parentNode.insertBefore(btn, micBtn.nextSibling);
+    console.log('[audio-bar] ✅ Record button created in noVNC toolbar');
+    return true;
+  }
+
+  // ── Wait and create all three buttons ────────────────────
   function tryCreate() {
     var audioOk = createButton();
     if (!audioOk) {
@@ -91,6 +121,10 @@
       return;
     }
     if (!createMicButton()) {
+      setTimeout(tryCreate, 100);
+      return;
+    }
+    if (!createRecordButton()) {
       setTimeout(tryCreate, 100);
     }
   }
@@ -105,6 +139,7 @@
   var audioCtx, ws, nextPlayTime = 0, active = false;
   var SAMPLE_RATE = 44100, CHANNELS = 2;
   var autoStartAttempted = false;
+  var recordActive = false;
 
   function setSelected(selected) {
     var btn = document.getElementById('noVNC_audio_button');
@@ -113,6 +148,35 @@
       btn.className = 'noVNC_button noVNC_selected';
     } else {
       btn.className = 'noVNC_button';
+    }
+  }
+
+  function setRecordSelected(selected) {
+    var btn = document.getElementById('noVNC_record_button');
+    if (!btn) return;
+    btn.className = selected ? 'noVNC_button noVNC_selected' : 'noVNC_button';
+    btn.src = 'data:image/svg+xml;base64,' + btoa(selected ? getRecordingIcon() : getRecordIcon());
+    btn.title = selected ? '停止录制' : '录制桌面视频';
+  }
+
+  function handleRecordingMessage(text) {
+    var msg;
+    try { msg = JSON.parse(text); } catch (e) { return; }
+    if (msg.event === 'recording_started') {
+      recordActive = true;
+      setRecordSelected(true);
+      console.log('[audio-bar] Recording started:', msg.filename);
+    } else if (msg.event === 'recording_stopped') {
+      recordActive = false;
+      setRecordSelected(false);
+      console.log('[audio-bar] Recording saved:', msg.filename);
+    } else if (msg.event === 'recording_error') {
+      recordActive = false;
+      setRecordSelected(false);
+      console.error('[audio-bar] Recording error:', msg.error);
+    } else if (msg.event === 'recording_status') {
+      recordActive = msg.recording;
+      setRecordSelected(msg.recording);
     }
   }
 
@@ -152,6 +216,7 @@
     ws.onopen = function () {
       setSelected(true);
       console.log('[audio-bar] ✅ Connected');
+      try { ws.send(JSON.stringify({action: 'recording_status'})); } catch (e) {}
     };
 
     ws.onerror = function (e) {
@@ -166,6 +231,10 @@
     };
 
     ws.onmessage = function (event) {
+      if (typeof event.data === 'string') {
+        handleRecordingMessage(event.data);
+        return;
+      }
       if (!audioCtx) return;
       var raw = new Int16Array(event.data);
       var numFrames = raw.length / CHANNELS;
@@ -300,6 +369,15 @@
       e.preventDefault();
       console.log('[audio-bar] Mic button clicked, active:', micActive);
       if (micActive) stopMicrophone(); else startMicrophone();
+    }
+    if (e.target && e.target.id === 'noVNC_record_button') {
+      e.preventDefault();
+      console.log('[audio-bar] Record button clicked, recordActive:', recordActive);
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        startAudio();  // establish WS connection first
+        return;
+      }
+      ws.send(JSON.stringify({action: recordActive ? 'stop_recording' : 'start_recording'}));
     }
   }, true);
 

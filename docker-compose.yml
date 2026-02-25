@@ -20,6 +20,7 @@ services:
       - gitconfig:/home/ubuntu/.gitconfig-vol
       - openclaw-data:/home/ubuntu/.openclaw
       - chrome-data:/home/ubuntu/.config
+      - recordings:/home/ubuntu/recordings
     environment:
       - MODE=${MODE:-desktop}
       - AUTH_USER=${AUTH_USER:-admin}
@@ -45,3 +46,4 @@ volumes:
   openclaw-data:
   chrome-data:
   gitconfig:
+  recordings:

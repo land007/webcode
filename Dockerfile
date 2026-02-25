@@ -121,6 +121,7 @@ RUN apt-get update && apt-get install -y \
 RUN apt-get update && apt-get install -y --no-install-recommends \
         pulseaudio pulseaudio-utils \
         python3-websockets \
+        ffmpeg \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # ─── 9. Docker CLI (client only, auto-detect arch) ──────────────────
