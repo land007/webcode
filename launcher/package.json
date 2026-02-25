@@ -22,6 +22,7 @@
     "build:osx-arm64": "node build.js osx arm64",
     "build:osx-x64": "node build.js osx x64",
     "build:win-x64": "node build.js win x64",
-    "start": "nw ."
+    "start": "nw .",
+    "start:offline": "./start-offline.sh"
   }
 }

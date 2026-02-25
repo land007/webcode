@@ -206,6 +206,12 @@ FCITX_PROFILE_EOF
     # Clean stale X locks (previously in vnc-wrapper.sh)
     rm -f /tmp/.X1-lock /tmp/.X11-unix/X1
 
+    # Clean stale Chromium/Chrome locks (including hostname-specific profiles)
+    rm -f /home/ubuntu/.config/chromium/SingletonLock
+    rm -f /home/ubuntu/.config/google-chrome/SingletonLock
+    rm -f /home/ubuntu/.config/chromium-*/SingletonLock 2>/dev/null || true
+    rm -f /home/ubuntu/.config/google-chrome-*/SingletonLock 2>/dev/null || true
+
     # Copy xsession (supervisor desktop process reads ~/.xsession)
     cp /opt/xsession /home/ubuntu/.xsession
     chmod +x /home/ubuntu/.xsession

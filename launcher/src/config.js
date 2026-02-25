@@ -146,7 +146,25 @@ function ensureInstanceComposeFile(id) {
   }
   const dest = path.join(workDir, 'docker-compose.yml');
   const src = path.join(__dirname, '..', 'assets', 'docker-compose.yml');
+
+  // Copy template
   fs.copyFileSync(src, dest);
+
+  // Apply instance-specific volumes
+  const volumes = require('./volumes');
+  volumes.updateComposeVolumes(workDir, id);
+
+  // Apply instance-specific ports
+  const ports = require('./ports');
+  const cfg = readInstanceConfig(id);
+  if (cfg) {
+    const portConfig = ports.getPortsFromConfig(cfg);
+    ports.updateComposePorts(workDir, portConfig);
+    ports.updateComposeCustomPorts(workDir, cfg.CUSTOM_PORTS || []);
+  }
+
+  // Apply custom volumes
+  volumes.updateComposeCustomVolumes(workDir, cfg ? cfg.CUSTOM_VOLUMES || [] : []);
 }
 
 function createInstance(name) {
