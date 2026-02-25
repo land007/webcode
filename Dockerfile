@@ -153,6 +153,18 @@ RUN groupadd -f docker && usermod -aG docker ubuntu \
     && touch /home/ubuntu/.hushlogin \
     && chown -R ubuntu:ubuntu /home/ubuntu
 
+# ─── 11b. nvm for ubuntu user ────────────────────────────────────────
+RUN su -l ubuntu -c \
+    'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash'
+
+# ─── 11c. v2rayN (GUI proxy client) ─────────────────────────────────
+RUN ARCH=$(dpkg --print-architecture) \
+    && V2RAYN_VER=$(curl -fsSL https://api.github.com/repos/2dust/v2rayN/releases/latest | grep '"tag_name"' | cut -d'"' -f4) \
+    && curl -fsSL "https://github.com/2dust/v2rayN/releases/download/${V2RAYN_VER}/v2rayN-linux-${ARCH}.deb" -o /tmp/v2rayn.deb \
+    && apt-get install -y /tmp/v2rayn.deb \
+    && rm /tmp/v2rayn.deb \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # ─── 12. Config files (COPY last — most likely to change) ───────────
 COPY configs/theia-settings.json /opt/theia-defaults/settings.json
 
