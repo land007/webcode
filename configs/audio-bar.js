@@ -1,14 +1,11 @@
 /**
  * audio-bar.js - integrated audio toggle button for noVNC
+ *
+ * Always shows in noVNC toolbar regardless of iframe environment.
+ * Audio control is now handled within noVNC itself.
  */
 (function () {
   'use strict';
-
-  // ── Detect iframe ───────────────────────────────────────
-  if (window.self !== window.top || window.frameElement !== null) {
-    console.log('[audio-bar] In iframe, skipping');
-    return;
-  }
 
   // ── SVG Icon (white) ─────────────────────────────────────
   function getIcon() {
@@ -46,7 +43,7 @@
     btn.src = 'data:image/svg+xml;base64,' + btoa(getIcon());
 
     fsBtn.parentNode.insertBefore(btn, fsBtn);
-    console.log('[audio-bar] ✅ Button created');
+    console.log('[audio-bar] ✅ Button created in noVNC toolbar');
     return true;
   }
 

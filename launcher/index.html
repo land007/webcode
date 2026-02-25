@@ -295,9 +295,6 @@
     </button>
     <span class="topbar-spacer"></span>
     <div class="tab-actions" id="tab-actions" style="display:none">
-      <button class="btn-icon" id="btn-audio-toggle" title="开启/关闭桌面音频" style="display:none">
-        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
-      </button>
       <button class="btn-icon" id="btn-refresh"      data-i18n-title="title_refresh"      title="刷新">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path><path d="M16 21h5v-5"></path></svg>
       </button>
@@ -1433,10 +1430,6 @@ function activateTab(tab) {
   const tabActions = document.getElementById('tab-actions');
   tabActions.style.display = (tab === 'status') ? 'none' : 'flex';
 
-  // Show audio button only on VNC tab
-  const audioBtn = document.getElementById('btn-audio-toggle');
-  if (audioBtn) audioBtn.style.display = (tab === 'vnc') ? '' : 'none';
-
   // Show/hide status panel vs iframes
   const panel = document.getElementById('panel-status');
   panel.classList.toggle('visible', tab === 'status');
@@ -1469,80 +1462,6 @@ document.getElementById('btn-open-browser').addEventListener('click', () => {
   const url = iframeUrl(currentTab);
   nw.Shell.openExternal(url);
 });
-
-// ─── Audio toggle button (VNC tab) ───────────────────────────────────────────
-(function () {
-  var SAMPLE_RATE = 44100;
-  var CHANNELS    = 2;
-  var audioCtx    = null;
-  var audioWs     = null;
-  var nextPlayTime = 0;
-  var audioActive = false;
-
-  function getAudioPort() {
-    return (cfg && cfg.PORT_AUDIO) ? cfg.PORT_AUDIO : 20006;
-  }
-
-  function stopAudio() {
-    audioActive = false;
-    var btn = document.getElementById('btn-audio-toggle');
-    if (btn) { btn.innerHTML = icons.audioOff; btn.title = '开启桌面音频'; btn.style.color = ''; }
-    if (audioWs) { audioWs.close(); audioWs = null; }
-    if (audioCtx) { audioCtx.close().catch(function(){}); audioCtx = null; }
-  }
-
-  function startAudio() {
-    audioActive = true;
-    var btn = document.getElementById('btn-audio-toggle');
-    if (btn) { btn.innerHTML = icons.audioConnecting; btn.title = '连接中…'; }
-
-    try {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: SAMPLE_RATE });
-    } catch (e) {
-      stopAudio();
-      return;
-    }
-    nextPlayTime = audioCtx.currentTime + 0.1;
-
-    // Launcher proxy port → container audio WebSocket (dynamic based on config)
-    var audioPort = (cfg && cfg.PORT_AUDIO) ? cfg.PORT_AUDIO : 20006;
-    var audioProxyPort = audioPort - 9000;
-    audioWs = new WebSocket('ws://localhost:' + audioProxyPort);
-    audioWs.binaryType = 'arraybuffer';
-
-    audioWs.onopen = function () {
-      var b = document.getElementById('btn-audio-toggle');
-      if (b) { b.innerHTML = icons.audioOn; b.title = '停止桌面音频'; b.style.color = 'var(--success, #4caf50)'; }
-    };
-    audioWs.onerror = function () { stopAudio(); };
-    audioWs.onclose = function () { if (audioActive) stopAudio(); };
-
-    audioWs.onmessage = function (event) {
-      if (!audioCtx) return;
-      var raw = new Int16Array(event.data);
-      var numFrames = Math.floor(raw.length / CHANNELS);
-      if (numFrames < 1) return;
-      var buffer = audioCtx.createBuffer(CHANNELS, numFrames, SAMPLE_RATE);
-      for (var ch = 0; ch < CHANNELS; ch++) {
-        var channelData = buffer.getChannelData(ch);
-        for (var i = 0; i < numFrames; i++) {
-          channelData[i] = raw[i * CHANNELS + ch] / 32768.0;
-        }
-      }
-      var source = audioCtx.createBufferSource();
-      source.buffer = buffer;
-      source.connect(audioCtx.destination);
-      var now = audioCtx.currentTime;
-      if (nextPlayTime < now) nextPlayTime = now + 0.05;
-      source.start(nextPlayTime);
-      nextPlayTime += buffer.duration;
-    };
-  }
-
-  document.getElementById('btn-audio-toggle').addEventListener('click', function () {
-    if (audioActive) { stopAudio(); } else { startAudio(); }
-  });
-})();
 
 // ─── Workspace: status polling ────────────────────────────────────────────────
 
