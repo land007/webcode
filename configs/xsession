@@ -34,8 +34,41 @@ for i in $(seq 1 20); do
     sleep 0.5
 done
 
-# ─── Root window ────────────────────────────────────────────────────
-xsetroot -solid '#2c2c2c' -cursor_name left_ptr
+# ─── Theme initialization (read from saved theme preference) ───────────
+THEME_FILE="$HOME/.config/gnome-initial-theme"
+if [ -f "$THEME_FILE" ]; then
+    INITIAL_THEME=$(cat "$THEME_FILE")
+else
+    INITIAL_THEME="dark"  # Default to dark mode
+    echo "$INITIAL_THEME" > "$THEME_FILE"
+fi
+
+# Apply initial theme settings with a random wallpaper
+LIGHT_WALLPAPERS=(
+    "/usr/share/backgrounds/Fuji_san_by_amaral.png"
+    "/usr/share/backgrounds/Fuwafuwa_nanbatto_san_by_amaral-light.png"
+    "/usr/share/backgrounds/Numbat_wallpaper_light_3480x2160.png"
+    "/usr/share/backgrounds/Clouds_by_Tibor_Mokanszki.jpg"
+)
+DARK_WALLPAPERS=(
+    "/usr/share/backgrounds/Numbat_wallpaper_dimmed_3480x2160.png"
+    "/usr/share/backgrounds/Fuwafuwa_nanbatto_san_by_amaral-dark.png"
+    "/usr/share/backgrounds/Province_of_the_south_of_france_by_orbitelambda.jpg"
+    "/usr/share/backgrounds/Monument_valley_by_orbitelambda.jpg"
+    "/usr/share/backgrounds/Northan_lights_by_mizuno.webp"
+)
+
+if [ "$INITIAL_THEME" = "light" ]; then
+    WP="${LIGHT_WALLPAPERS[$((RANDOM % ${#LIGHT_WALLPAPERS[@]}))]}"
+    hsetroot -cover "$WP" 2>/dev/null || xsetroot -solid '#f0f0f0'
+    xsetroot -cursor_name left_ptr
+    export GTK_THEME=Adwaita
+else
+    WP="${DARK_WALLPAPERS[$((RANDOM % ${#DARK_WALLPAPERS[@]}))]}"
+    hsetroot -cover "$WP" 2>/dev/null || xsetroot -solid '#0d1117'
+    xsetroot -cursor_name left_ptr
+    export GTK_THEME=Adwaita-dark
+fi
 
 # ─── Window manager ─────────────────────────────────────────────────
 metacity --replace &
@@ -43,15 +76,28 @@ sleep 0.5
 
 # ─── Settings daemon plugins (Ubuntu 24.04: no monolithic binary) ────
 # gsd-xsettings: GTK themes, fonts, icons; gsd-keyboard: keyboard layout
-export XDG_RUNTIME_DIR=/run/user/$(id -u)
 /usr/libexec/gsd-xsettings 2>/dev/null &
 /usr/libexec/gsd-keyboard 2>/dev/null &
 sleep 0.5
 
 # ─── Desktop panel (taskbar, system tray, clock) ────────────────────
 export XDG_MENU_PREFIX=gnome-flashback-
-gnome-panel --replace &
-sleep 0.5
+# GTK_THEME must be passed inline: gsd-xsettings broadcasts dconf theme via
+# XSETTINGS after connecting, which can override the exported env var.
+if [ "$INITIAL_THEME" = "light" ]; then
+    env GTK_THEME=Adwaita gnome-panel --replace &
+else
+    env GTK_THEME=Adwaita-dark gnome-panel --replace &
+fi
+sleep 1
+
+# ─── Apply theme via theme-switch to sync dconf and restart panel ───────
+# gsd-xsettings reads dconf; calling theme-switch updates dconf and
+# restarts gnome-panel with the correct GTK_THEME, ensuring the panel
+# colour matches the saved preference after every container start.
+if [ -f "$THEME_FILE" ]; then
+    /usr/local/bin/theme-switch "$INITIAL_THEME" >/dev/null 2>&1 &
+fi
 
 # ─── fcitx input method (start after panel so tray icon appears) ────
 fcitx -r 2>/dev/null &

@@ -3,6 +3,10 @@
 export DISPLAY=:1
 export XDG_RUNTIME_DIR=/run/user/1000
 
+# Save theme preference for next session
+THEME_FILE="/home/ubuntu/.config/gnome-initial-theme"
+mkdir -p "$(dirname "$THEME_FILE")"
+
 # Light mode wallpapers (bright, cheerful scenes)
 LIGHT_WALLPAPERS=(
     "/usr/share/backgrounds/Fuji_san_by_amaral.png"
@@ -35,6 +39,12 @@ case "$1" in
         gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita' 2>/dev/null
         gsettings set org.gnome.desktop.wm.preferences theme 'Adwaita' 2>/dev/null
         gsettings set org.gnome.gnome-panel.general theme-variant 'light' 2>/dev/null
+        echo "light" > "$THEME_FILE"
+        # Restart panel to apply theme immediately
+        export XDG_MENU_PREFIX=gnome-flashback-
+        killall gnome-panel 2>/dev/null
+        sleep 0.2
+        env GTK_THEME=Adwaita gnome-panel --replace >/dev/null 2>&1 &
         basename "$WALLPAPER"
         ;;
     dark)
@@ -43,6 +53,12 @@ case "$1" in
         gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark' 2>/dev/null
         gsettings set org.gnome.desktop.wm.preferences theme 'Adwaita-dark' 2>/dev/null
         gsettings set org.gnome.gnome-panel.general theme-variant 'dark' 2>/dev/null
+        echo "dark" > "$THEME_FILE"
+        # Restart panel to apply theme immediately
+        export XDG_MENU_PREFIX=gnome-flashback-
+        killall gnome-panel 2>/dev/null
+        sleep 0.2
+        env GTK_THEME=Adwaita-dark gnome-panel --replace >/dev/null 2>&1 &
         basename "$WALLPAPER"
         ;;
     *)
