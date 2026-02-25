@@ -14,9 +14,26 @@
   'use strict';
 
   // ── Detect iframe environment ───────────────────────────────────────
-  var isInIframe = (window.self !== window.top);
+  // 方法1: 检查 window.self 和 window.top
+  var check1 = (window.self !== window.top);
+
+  // 方法2: 检查 window.frameElement（如果存在说明在 iframe 中）
+  var check2 = (window.frameElement !== null);
+
+  // 方法3: 检查父窗口（如果可访问且不同，说明在 iframe 中）
+  var check3 = false;
+  try {
+    check3 = (window.parent !== window);
+  } catch (e) {
+    // 跨域访问失败，肯定在 iframe 中
+    check3 = true;
+  }
+
+  var isInIframe = check1 || check2 || check3;
+
   if (isInIframe) {
     console.log('[audio-bar] Running inside iframe, hiding button - parent window should handle audio');
+    console.log('[audio-bar] Detection: self≠top=' + check1 + ', frameElement=' + check2 + ', parent≠self=' + check3);
     return; // Don't create button in iframe
   }
 
@@ -37,6 +54,7 @@
   var CHANNELS = 2;
 
   console.log('[audio-bar] Audio WebSocket port:', AUDIO_WS_PORT);
+  console.log('[audio-bar] Creating floating button (not in iframe)');
 
   // ── Create floating button ──────────────────────────────────────────
   var btn = document.createElement('button');
