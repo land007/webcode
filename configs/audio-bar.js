@@ -77,10 +77,11 @@
     'padding:4px 6px',
     'border:none',
     'border-radius:6px',
-    'background:rgba(0,0,0,0.55)',
+    'background:rgba(255,255,255,0.9)',
+    'color:#000',
     'cursor:pointer',
     'user-select:none',
-    'box-shadow:0 2px 6px rgba(0,0,0,0.4)',
+    'box-shadow:0 2px 6px rgba(0,0,0,0.3)',
     'transition:background 0.2s',
     'display:flex',
     'align-items:center',
@@ -98,7 +99,7 @@
   function stopAudio() {
     active = false;
     btn.innerHTML = ICONS.off;
-    btn.style.background = 'rgba(0,0,0,0.55)';
+    btn.style.background = 'rgba(255,255,255,0.9)';
     if (ws) {
       ws.close();
       ws = null;
@@ -112,7 +113,7 @@
   function startAudio() {
     active = true;
     btn.innerHTML = ICONS.connecting;
-    btn.style.background = 'rgba(30,100,200,0.7)';
+    btn.style.background = 'rgba(200,220,255,0.9)';
 
     try {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)({
@@ -142,7 +143,7 @@
 
     ws.onopen = function () {
       btn.innerHTML = ICONS.on;
-      btn.style.background = 'rgba(20,160,80,0.75)';
+      btn.style.background = 'rgba(180,255,180,0.9)';
       console.log('[audio-bar] connected to', wsUrl);
     };
 
@@ -155,7 +156,7 @@
       if (active) {
         // Unexpected close — show error state briefly then reset
         btn.innerHTML = ICONS.error;
-        btn.style.background = 'rgba(180,30,30,0.7)';
+        btn.style.background = 'rgba(255,200,200,0.9)';
         setTimeout(function () {
           if (!active) return; // already stopped by user
           stopAudio();
