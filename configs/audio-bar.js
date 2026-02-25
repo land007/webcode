@@ -1,14 +1,42 @@
 /**
- * audio-bar.js — floating audio toggle button for noVNC
- * Connects to the PulseAudio WebSocket stream (port 20006) and plays via Web Audio API.
- * Must be triggered by a user gesture due to browser autoplay policy.
+ * audio-bar.js - floating audio toggle button for noVNC
+ *
+ * Detects if running inside iframe (Launcher) - if so, hides button and lets parent handle audio.
+ * Otherwise, shows floating button for direct browser access.
+ *
+ * Port detection:
+ * - From URL query parameter ?audioPort=XXXX
+ * - Or from window.location.port (default 20006)
+ *
+ * Must be triggered by user gesture due to browser autoplay policy.
  */
 (function () {
   'use strict';
 
-  var AUDIO_WS_PORT = 20006;
+  // ── Detect iframe environment ───────────────────────────────────────
+  var isInIframe = (window.self !== window.top);
+  if (isInIframe) {
+    console.log('[audio-bar] Running inside iframe, hiding button - parent window should handle audio');
+    return; // Don't create button in iframe
+  }
+
+  // ── Port detection ───────────────────────────────────────────────────
+  function getAudioPort() {
+    // Try URL query parameter first: ?audioPort=20006
+    var urlParams = new URLSearchParams(window.location.search);
+    var portParam = urlParams.get('audioPort');
+    if (portParam) {
+      return parseInt(portParam, 10);
+    }
+    // Fall back to default port
+    return 20006;
+  }
+
+  var AUDIO_WS_PORT = getAudioPort();
   var SAMPLE_RATE = 44100;
   var CHANNELS = 2;
+
+  console.log('[audio-bar] Audio WebSocket port:', AUDIO_WS_PORT);
 
   // ── Create floating button ──────────────────────────────────────────
   var btn = document.createElement('button');
@@ -72,7 +100,10 @@
 
     nextPlayTime = audioCtx.currentTime + 0.02; // 20ms initial buffer for low latency
 
+    // Construct WebSocket URL with detected port
     var wsUrl = 'ws://' + location.hostname + ':' + AUDIO_WS_PORT;
+    console.log('[audio-bar] Connecting to:', wsUrl);
+
     try {
       ws = new WebSocket(wsUrl);
     } catch (e) {
