@@ -193,9 +193,10 @@ COPY configs/supervisor-analytics.conf /etc/supervisor/conf.d/supervisor-analyti
 
 COPY configs/supervisor-audio.conf /etc/supervisor/conf.d/supervisor-audio.conf
 COPY scripts/audio-ws-server.py /opt/audio-ws-server.py
+COPY scripts/audio-ws-wrapper.sh /opt/audio-ws-wrapper.sh
 COPY configs/audio-player.html /opt/noVNC/audio.html
 COPY configs/audio-bar.js /opt/noVNC/audio-bar.js
-RUN chmod +x /opt/audio-ws-server.py \
+RUN chmod +x /opt/audio-ws-server.py /opt/audio-ws-wrapper.sh \
     && sed -i 's|</body>|<script src="audio-bar.js"></script>\n</body>|' /opt/noVNC/vnc.html
 
 COPY configs/xsession /opt/xsession

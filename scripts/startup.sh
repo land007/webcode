@@ -161,6 +161,13 @@ else
     mkdir -p /run/user/1000/pulse
     chown ubuntu:ubuntu /run/user/1000/pulse
 
+    # D-Bus system bus (needed by PulseAudio for null-sink module)
+    mkdir -p /run/dbus
+    if [ ! -S /run/dbus/system_bus_socket ]; then
+        dbus-daemon --system --fork
+        echo "[startup] D-Bus system bus started"
+    fi
+
     # fcitx 4 configuration
     FCITX_DIR=/home/ubuntu/.config/fcitx
     mkdir -p "$FCITX_DIR"
