@@ -1378,11 +1378,18 @@ const iframeLoaded = {};
 function iframeUrl(tab) {
   // Pass locale to Theia so it loads in the correct language (requires NLS packages in the container)
   const theiaLocale = getLang() === 'zh-CN' ? 'zh-CN' : 'en';
+  const ports = app.getPortsFromConfig ? app.getPortsFromConfig(cfg) : {
+    theia: cfg.PORT_THEIA || 20001,
+    kanban: cfg.PORT_KANBAN || 20002,
+    openclaw: cfg.PORT_OPENCLAW || 20003,
+    novnc: cfg.PORT_NOVNC || 20004
+  };
+  const proxyPort = (p) => p - 9000;
   switch (tab) {
-    case 'ide':    return `http://localhost:11001/?locale=${theiaLocale}`;
-    case 'kanban': return 'http://localhost:11002';
-    case 'vnc':    return `http://localhost:11004/?autoconnect=true&resize=remote&password=${encodeURIComponent(cfg.VNC_PASSWORD)}`;
-    case 'ai':     return 'http://localhost:11003/';
+    case 'ide':    return `http://localhost:${proxyPort(ports.theia)}/?locale=${theiaLocale}`;
+    case 'kanban': return 'http://localhost:${proxyPort(ports.kanban)}';
+    case 'vnc':    return `http://localhost:${proxyPort(ports.novnc)}/?autoconnect=true&resize=remote&password=${encodeURIComponent(cfg.VNC_PASSWORD)}`;
+    case 'ai':     return 'http://localhost:${proxyPort(ports.openclaw)}/';
   }
 }
 
@@ -1494,8 +1501,10 @@ document.getElementById('btn-open-browser').addEventListener('click', () => {
     }
     nextPlayTime = audioCtx.currentTime + 0.1;
 
-    // Launcher proxy port 11006 → container audio WebSocket (no auth header needed on the WS itself)
-    audioWs = new WebSocket('ws://localhost:11006');
+    // Launcher proxy port → container audio WebSocket (dynamic based on config)
+    var audioPort = (cfg && cfg.PORT_AUDIO) ? cfg.PORT_AUDIO : 20006;
+    var audioProxyPort = audioPort - 9000;
+    audioWs = new WebSocket('ws://localhost:' + audioProxyPort);
     audioWs.binaryType = 'arraybuffer';
 
     audioWs.onopen = function () {

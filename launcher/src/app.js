@@ -72,15 +72,21 @@ function stopProxies() {
   proxyServers.length = 0;
 }
 
+// Calculate proxy port from container port (proxy = container - 9000)
+function getProxyPort(containerPort) {
+  return containerPort - 9000;
+}
+
 function startProxies(cfg) {
   stopProxies();
   const basicAuth = 'Basic ' + Buffer.from(`${cfg.AUTH_USER}:${cfg.AUTH_PASSWORD}`).toString('base64');
   const ports = getPortsFromConfig(cfg);
-  startProxy(11001, ports.theia, basicAuth);                        // Theia
-  startProxy(11002, ports.kanban, basicAuth);                       // Vibe Kanban
-  startProxy(11003, ports.openclaw, 'Bearer ' + cfg.OPENCLAW_TOKEN); // OpenClaw (own token auth, no Caddy basicauth)
-  startProxy(11004, ports.novnc, basicAuth);                        // noVNC
-  startProxy(11006, ports.audio, basicAuth);                        // Audio WebSocket
+
+  startProxy(getProxyPort(ports.theia), ports.theia, basicAuth);       // Theia
+  startProxy(getProxyPort(ports.kanban), ports.kanban, basicAuth);     // Vibe Kanban
+  startProxy(getProxyPort(ports.openclaw), ports.openclaw, 'Bearer ' + cfg.OPENCLAW_TOKEN); // OpenClaw
+  startProxy(getProxyPort(ports.novnc), ports.novnc, basicAuth);       // noVNC
+  if (ports.audio) startProxy(getProxyPort(ports.audio), ports.audio, basicAuth); // Audio WebSocket
 }
 
 // ─── Docker helpers ──────────────────────────────────────────────────────────
@@ -449,6 +455,7 @@ function dockerVolumeRm(volumeName, callback) {
 module.exports = {
   startProxies,
   stopProxies,
+  getProxyPort,
   dockerUp,
   dockerDown,
   dockerLogs,
