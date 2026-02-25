@@ -295,7 +295,9 @@
     </button>
     <span class="topbar-spacer"></span>
     <div class="tab-actions" id="tab-actions" style="display:none">
-      <button class="btn-icon" id="btn-audio-toggle" title="开启/关闭桌面音频" style="display:none;font-size:15px;padding:2px 6px">🔇</button>
+      <button class="btn-icon" id="btn-audio-toggle" title="开启/关闭桌面音频" style="display:none">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+      </button>
       <button class="btn-icon" id="btn-refresh"      data-i18n-title="title_refresh"      title="刷新">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path><path d="M16 21h5v-5"></path></svg>
       </button>
@@ -1483,7 +1485,7 @@ document.getElementById('btn-open-browser').addEventListener('click', () => {
   function stopAudio() {
     audioActive = false;
     var btn = document.getElementById('btn-audio-toggle');
-    if (btn) { btn.textContent = '🔇'; btn.title = '开启桌面音频'; btn.style.color = ''; }
+    if (btn) { btn.innerHTML = icons.audioOff; btn.title = '开启桌面音频'; btn.style.color = ''; }
     if (audioWs) { audioWs.close(); audioWs = null; }
     if (audioCtx) { audioCtx.close().catch(function(){}); audioCtx = null; }
   }
@@ -1491,7 +1493,7 @@ document.getElementById('btn-open-browser').addEventListener('click', () => {
   function startAudio() {
     audioActive = true;
     var btn = document.getElementById('btn-audio-toggle');
-    if (btn) { btn.textContent = '⏳'; btn.title = '连接中…'; }
+    if (btn) { btn.innerHTML = icons.audioConnecting; btn.title = '连接中…'; }
 
     try {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: SAMPLE_RATE });
@@ -1509,7 +1511,7 @@ document.getElementById('btn-open-browser').addEventListener('click', () => {
 
     audioWs.onopen = function () {
       var b = document.getElementById('btn-audio-toggle');
-      if (b) { b.textContent = '🔊'; b.title = '停止桌面音频'; b.style.color = 'var(--success, #4caf50)'; }
+      if (b) { b.innerHTML = icons.audioOn; b.title = '停止桌面音频'; b.style.color = 'var(--success, #4caf50)'; }
     };
     audioWs.onerror = function () { stopAudio(); };
     audioWs.onclose = function () { if (audioActive) stopAudio(); };
