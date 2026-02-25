@@ -10,7 +10,7 @@ HOST = "127.0.0.1"
 PORT = 10006
 SAMPLE_RATE = 44100
 CHANNELS = 2
-CHUNK_SIZE = 4096
+CHUNK_SIZE = 16384  # ~186ms per chunk (16384 / (44100 * 2))
 PULSE_SINK = "webcode_null"
 CLIENTS = set()
 
@@ -27,7 +27,9 @@ async def broadcast_audio():
         "--format=s16le",
         f"--rate={SAMPLE_RATE}",
         f"--channels={CHANNELS}",
-        "--latency-msec=50",
+        "--latency-msec=10",
+        "--property=buffer_time=25000",  # 25ms buffer
+        "--property=fragment_time=8533",  # ~8.5ms fragment (1/3 buffer)
     ]
     proc = await asyncio.create_subprocess_exec(
         *cmd,

@@ -95,7 +95,7 @@
       return;
     }
 
-    nextPlayTime = audioCtx.currentTime + 0.1;
+    nextPlayTime = audioCtx.currentTime + 0.02; // 20ms initial buffer for low latency
 
     var wsUrl = 'ws://' + location.hostname + ':' + AUDIO_WS_PORT;
     try {
@@ -147,7 +147,7 @@
       source.connect(audioCtx.destination);
 
       var now = audioCtx.currentTime;
-      if (nextPlayTime < now) { nextPlayTime = now + 0.05; }
+      if (nextPlayTime < now) { nextPlayTime = now + 0.01; } // 10ms resync buffer for low latency
       source.start(nextPlayTime);
       nextPlayTime += buffer.duration;
     };
