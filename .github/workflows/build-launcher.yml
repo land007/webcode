@@ -39,6 +39,15 @@ jobs:
         working-directory: launcher
         run: npm install
 
+      - name: Update package.json version from tag
+        working-directory: launcher
+        run: |
+          TAG="${{ github.ref_name }}"
+          # Remove 'v' prefix if present
+          VERSION="${TAG#v}"
+          echo "Setting version to $VERSION"
+          npm version $VERSION --no-git-tag-version
+
       - name: Cache NW.js binaries
         uses: actions/cache@v4
         with:
