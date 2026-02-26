@@ -5,6 +5,7 @@
  * If audioPort parameter is present in URL, auto-starts audio playback.
  * Audio control is now handled within noVNC itself.
  * Full-duplex: also includes a microphone button to send browser mic to container.
+ * Supports both PCM (s16le) and Opus audio codecs for bandwidth efficiency.
  */
 (function () {
   'use strict';
@@ -40,6 +41,21 @@
 
   var t = i18n[getLanguage()];
   console.log('[audio-bar] Language:', getLanguage());
+
+  // ── Codec selection ────────────────────────────────────────
+  function getAudioCodec() {
+    var match = location.search.match(/audioCodec=([^&]+)/i);
+    var codec = match ? match[1].toLowerCase() : 'opus';
+    // Check if AudioDecoder is supported
+    if (codec === 'opus' && typeof AudioDecoder === 'undefined') {
+      console.warn('[audio-bar] AudioDecoder not supported, falling back to PCM');
+      return 'pcm';
+    }
+    return codec;
+  }
+
+  var currentCodec = getAudioCodec();
+  console.log('[audio-bar] Codec:', currentCodec.toUpperCase());
 
   // ── SVG Icons (white) ─────────────────────────────────────
   function getIcon() {
@@ -175,6 +191,12 @@
   var autoStartAttempted = false;
   var recordActive = false;
 
+  // Opus decoder
+  var audioDecoder = null;
+  var decoderQueue = [];
+  var decoderPending = 0;
+  var MAX_DECODER_QUEUE = 3; // Buffer 2-3 frames
+
   function setSelected(selected) {
     var btn = document.getElementById('noVNC_audio_button');
     if (!btn) return;
@@ -218,12 +240,163 @@
     active = false;
     setSelected(false);
     if (ws) { ws.close(); ws = null; }
+    if (audioDecoder) {
+      try { audioDecoder.close(); } catch (e) {}
+      audioDecoder = null;
+    }
     if (audioCtx) { audioCtx.close(); audioCtx = null; }
+    decoderQueue = [];
+    decoderPending = 0;
+  }
+
+  function initOpusDecoder() {
+    if (typeof AudioDecoder === 'undefined') {
+      console.error('[audio-bar] AudioDecoder not supported');
+      return false;
+    }
+
+    try {
+      audioDecoder = new AudioDecoder({
+        output: function(frame) {
+          playDecodedFrame(frame);
+        },
+        error: function(e) {
+          console.error('[audio-bar] Decode error:', e);
+          decoderPending--;
+        }
+      });
+
+      audioDecoder.configure({
+        codec: 'opus',
+        sampleRate: 48000,  // Opus always uses 48kHz internally
+        numberOfChannels: CHANNELS
+      });
+
+      console.log('[audio-bar] Opus decoder initialized');
+      return true;
+    } catch (e) {
+      console.error('[audio-bar] Failed to initialize AudioDecoder:', e);
+      return false;
+    }
+  }
+
+  function playDecodedFrame(frame) {
+    if (!audioCtx) {
+      frame.close();
+      decoderPending--;
+      return;
+    }
+
+    // Convert AudioFrame to AudioBuffer
+    var numFrames = frame.numberOfFrames;
+    var numChannels = frame.numberOfChannels || CHANNELS;
+    var frameSampleRate = frame.sampleRate || SAMPLE_RATE;
+
+    // Create buffer with the frame's actual sample rate
+    var buffer = audioCtx.createBuffer(numChannels, numFrames, frameSampleRate);
+
+    // Use AudioFrame.copyTo() to copy data to our buffer
+    for (var ch = 0; ch < numChannels; ch++) {
+      var channelData = buffer.getChannelData(ch);
+
+      // Get the correct allocation size for this plane
+      var allocationSize = frame.allocationSize({planeIndex: ch});
+      var destArray = new Float32Array(allocationSize / 4); // 4 bytes per float
+
+      // Copy frame data to destination array
+      frame.copyTo(destArray, {planeIndex: ch});
+
+      // Copy only the actual frames (not the entire allocation)
+      for (var i = 0; i < numFrames; i++) {
+        channelData[i] = destArray[i];
+      }
+    }
+    frame.close();
+    decoderPending--;
+
+    // Schedule playback
+    var source = audioCtx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioCtx.destination);
+
+    var now = audioCtx.currentTime;
+    if (nextPlayTime < now) nextPlayTime = now + 0.01;
+    source.start(nextPlayTime);
+    nextPlayTime += buffer.duration;
+
+    // Process queued Opus packets
+    processDecoderQueue();
+  }
+
+  function processDecoderQueue() {
+    while (decoderQueue.length > 0 && decoderPending < MAX_DECODER_QUEUE) {
+      var payload = decoderQueue.shift();
+      decodeOpusPacket(payload);
+    }
+  }
+
+  function decodeOpusPacket(payload) {
+    if (!audioDecoder || decoderPending >= MAX_DECODER_QUEUE) {
+      decoderQueue.push(payload);
+      return;
+    }
+
+    try {
+      var chunk = new EncodedAudioChunk({
+        type: 'key',
+        timestamp: 0,
+        data: new Uint8Array(payload)
+      });
+      audioDecoder.decode(chunk);
+      decoderPending++;
+    } catch (e) {
+      console.error('[audio-bar] Opus decode error:', e);
+    }
+  }
+
+  function handlePCMFrame(data) {
+    if (!audioCtx) return;
+    var raw = new Int16Array(data);
+    var numFrames = raw.length / CHANNELS;
+    if (numFrames < 1) return;
+
+    var buffer = audioCtx.createBuffer(CHANNELS, numFrames, SAMPLE_RATE);
+    for (var ch = 0; ch < CHANNELS; ch++) {
+      var channelData = buffer.getChannelData(ch);
+      for (var i = 0; i < numFrames; i++) {
+        channelData[i] = raw[i * CHANNELS + ch] / 32768.0;
+      }
+    }
+
+    var source = audioCtx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioCtx.destination);
+
+    var now = audioCtx.currentTime;
+    if (nextPlayTime < now) nextPlayTime = now + 0.01;
+    source.start(nextPlayTime);
+    nextPlayTime += buffer.duration;
+  }
+
+  function handleOpusFrame(data) {
+    if (!audioDecoder) {
+      if (!initOpusDecoder()) {
+        // Fallback to PCM if decoder init fails
+        console.warn('[audio-bar] Opus decoder failed, PCM mode required');
+        return;
+      }
+    }
+
+    // Opus frame from OGG container - skip OGG header, extract Opus packet
+    // For simplicity, we assume the payload is the raw Opus data
+    // In practice, we'd need to parse the OGG page structure
+    decodeOpusPacket(data);
   }
 
   function startAudio() {
     active = true;
     setSelected(true);
+    console.log('[audio-bar] startAudio: currentCodec =', currentCodec);
 
     try {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: SAMPLE_RATE });
@@ -233,8 +406,16 @@
       return;
     }
 
+    // Initialize Opus decoder if needed
+    if (currentCodec === 'opus') {
+      if (!initOpusDecoder()) {
+        currentCodec = 'pcm';
+        console.warn('[audio-bar] Falling back to PCM codec');
+      }
+    }
+
     nextPlayTime = audioCtx.currentTime + 0.02;
-    console.log('[audio-bar] Connecting:', AUDIO_WS_URL);
+    console.log('[audio-bar] Connecting:', AUDIO_WS_URL, 'with codec:', currentCodec);
 
     try {
       ws = new WebSocket(AUDIO_WS_URL);
@@ -249,6 +430,20 @@
     ws.onopen = function () {
       setSelected(true);
       console.log('[audio-bar] ✅ Connected');
+      console.log('[audio-bar] Sending codec handshake:', currentCodec);
+      // Send codec negotiation handshake
+      try {
+        var handshake = {
+          version: 2,
+          codec: currentCodec,
+          sampleRate: SAMPLE_RATE,
+          channels: CHANNELS
+        };
+        console.log('[audio-bar] Handshake message:', JSON.stringify(handshake));
+        ws.send(JSON.stringify(handshake));
+      } catch (e) {
+        console.error('[audio-bar] Handshake send failed:', e);
+      }
       try { ws.send(JSON.stringify({action: 'recording_status'})); } catch (e) {}
     };
 
@@ -268,27 +463,25 @@
         handleRecordingMessage(event.data);
         return;
       }
-      if (!audioCtx) return;
-      var raw = new Int16Array(event.data);
-      var numFrames = raw.length / CHANNELS;
-      if (numFrames < 1) return;
 
-      var buffer = audioCtx.createBuffer(CHANNELS, numFrames, SAMPLE_RATE);
-      for (var ch = 0; ch < CHANNELS; ch++) {
-        var channelData = buffer.getChannelData(ch);
-        for (var i = 0; i < numFrames; i++) {
-          channelData[i] = raw[i * CHANNELS + ch] / 32768.0;
-        }
+      // Parse binary message header: [FrameType: 2 bytes][Length: 2 bytes][Payload]
+      var view = new DataView(event.data);
+      if (event.data.byteLength < 4) return;
+
+      var frameType = view.getUint16(0);
+      var payloadLength = view.getUint16(2);
+
+      if (event.data.byteLength < 4 + payloadLength) return;
+
+      var payload = event.data.slice(4);
+
+      if (frameType === 0x0001) {
+        // Opus frame
+        handleOpusFrame(payload);
+      } else if (frameType === 0x0000) {
+        // PCM frame
+        handlePCMFrame(payload);
       }
-
-      var source = audioCtx.createBufferSource();
-      source.buffer = buffer;
-      source.connect(audioCtx.destination);
-
-      var now = audioCtx.currentTime;
-      if (nextPlayTime < now) nextPlayTime = now + 0.01;
-      source.start(nextPlayTime);
-      nextPlayTime += buffer.duration;
     };
   }
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""PulseAudio null-sink -> WebSocket audio stream (s16le, 44100Hz, stereo)
+"""PulseAudio null-sink -> WebSocket audio stream
+Supports both PCM (s16le, 44100Hz, stereo) and Opus (64 Kbps VBR) codecs.
 Full-duplex: also accepts inbound binary messages from browser mic and writes
 them into a webcode_input null-sink via pacat --playback.
 Text frames: JSON control messages for server-side ffmpeg recording.
@@ -12,6 +13,7 @@ import websockets
 import json
 import signal
 import datetime
+import struct
 
 HOST = "127.0.0.1"
 PORT = 10006
@@ -21,6 +23,11 @@ CHUNK_SIZE = 16384  # ~186ms per chunk (16384 / (44100 * 2))
 PULSE_SINK = "webcode_null"
 PULSE_INPUT_SINK = "webcode_input"
 CLIENTS = set()
+CLIENTS_CODEC = {}  # ws -> 'pcm' or 'opus'
+
+# Frame types for message framing
+FRAME_TYPE_PCM = 0x0000
+FRAME_TYPE_OPUS = 0x0001
 
 # PulseAudio socket path
 PULSE_SOCKET = "/run/user/1000/pulse/native"
@@ -33,6 +40,11 @@ pacat_in_proc = None
 ffmpeg_proc = None
 recording_filename = None
 RECORDINGS_DIR = "/home/ubuntu/recordings"
+
+# Opus encoder subprocess
+opus_encoder_proc = None
+opus_encoder_stdin = None
+opus_encoder_stdout = None
 
 
 def _get_display_resolution(display):
@@ -133,8 +145,58 @@ async def stop_recording():
     return fname, None
 
 
+async def start_opus_encoder():
+    """Start FFmpeg Opus encoder subprocess."""
+    global opus_encoder_proc, opus_encoder_stdin, opus_encoder_stdout
+    cmd = [
+        "ffmpeg", "-y",
+        "-f", "s16le", "-ar", str(SAMPLE_RATE), "-ac", str(CHANNELS),
+        "-i", "pipe:0",
+        "-c:a", "libopus",
+        "-application", "voip",
+        "-frame_duration", "5",
+        "-b:a", "64k",
+        "-vbr", "on",
+        "-f", "opus",
+        "pipe:1"
+    ]
+    opus_encoder_proc = await asyncio.create_subprocess_exec(
+        *cmd,
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        env=PULSE_ENV,
+    )
+    opus_encoder_stdin = opus_encoder_proc.stdin
+    opus_encoder_stdout = opus_encoder_proc.stdout
+    print(f"[audio-ws] Opus encoder started (pid={opus_encoder_proc.pid})", flush=True)
+    asyncio.ensure_future(_drain_opus_stderr())
+
+
+async def _drain_opus_stderr():
+    """Drain Opus encoder stderr to avoid blocking."""
+    if not opus_encoder_proc:
+        return
+    try:
+        while True:
+            line = await opus_encoder_proc.stderr.readline()
+            if not line:
+                break
+    except Exception:
+        pass
+
+
+def make_frame(frame_type, payload):
+    """Create a framed message with header."""
+    header = struct.pack('>HH', frame_type, len(payload))
+    return header + payload
+
+
 async def broadcast_audio():
-    """Read audio from pacat and broadcast to all WebSocket clients."""
+    """Read audio from pacat, encode to Opus, and broadcast to all WebSocket clients."""
+    # Start Opus encoder
+    await start_opus_encoder()
+
     cmd = [
         "pacat", "--record",
         "-d", f"{PULSE_SINK}.monitor",
@@ -154,20 +216,20 @@ async def broadcast_audio():
     print(f"[audio-ws] pacat started (pid={proc.pid}), broadcasting on ws://{HOST}:{PORT}", flush=True)
 
     try:
-        while True:
-            data = await proc.stdout.read(CHUNK_SIZE)
-            if not data:
-                print(f"[audio-ws] pacat EOF, exit code={await proc.wait()}", flush=True)
-                break
-            if CLIENTS:
-                dead = set()
-                for client in list(CLIENTS):
-                    try:
-                        await client.send(data)
-                    except Exception as e:
-                        print(f"[audio-ws] send to client failed: {e}", flush=True)
-                        dead.add(client)
-                CLIENTS.difference_update(dead)
+        # Tasks for reading PCM and Opus streams
+        pcm_task = asyncio.create_task(read_pcm_and_encode(proc))
+        opus_task = asyncio.create_task(read_opus_frames())
+
+        # Wait for either task to complete (both should run indefinitely)
+        done, pending = await asyncio.wait(
+            [pcm_task, opus_task],
+            return_when=asyncio.FIRST_COMPLETED
+        )
+
+        # Cancel remaining tasks
+        for task in pending:
+            task.cancel()
+
     except Exception as e:
         print(f"[audio-ws] broadcast_audio error: {e}", flush=True)
     finally:
@@ -176,11 +238,122 @@ async def broadcast_audio():
             await proc.wait()
         except Exception:
             pass
+        try:
+            if opus_encoder_proc:
+                opus_encoder_proc.terminate()
+                await opus_encoder_proc.wait()
+        except Exception:
+            pass
+
+
+async def read_pcm_and_encode(pacat_proc):
+    """Read PCM frames from pacat, send to PCM clients, and feed Opus encoder."""
+    try:
+        while True:
+            data = await pacat_proc.stdout.read(CHUNK_SIZE)
+            if not data:
+                break
+
+            # Send to PCM clients
+            pcm_clients = [ws for ws, codec in CLIENTS_CODEC.items() if codec == 'pcm']
+            if pcm_clients:
+                frame = make_frame(FRAME_TYPE_PCM, data)
+                dead = set()
+                for ws in pcm_clients:
+                    try:
+                        await ws.send(frame)
+                    except Exception as e:
+                        print(f"[audio-ws] PCM send to client failed: {e}", flush=True)
+                        dead.add(ws)
+                CLIENTS.difference_update(dead)
+                for ws in dead:
+                    CLIENTS_CODEC.pop(ws, None)
+
+            # Feed Opus encoder
+            if opus_encoder_stdin and not opus_encoder_stdin.is_closing():
+                try:
+                    opus_encoder_stdin.write(data)
+                    await opus_encoder_stdin.drain()
+                except Exception as e:
+                    print(f"[audio-ws] Opus encoder write error: {e}", flush=True)
+    except Exception as e:
+        print(f"[audio-ws] read_pcm_and_encode error: {e}", flush=True)
+
+
+async def read_opus_frames():
+    """Read Opus frames from encoder and send to Opus clients."""
+    if not opus_encoder_stdout:
+        return
+
+    try:
+        # Opus OGG page size for 5ms frame at 44.1kHz stereo is variable
+        # Read small chunks to get individual frames
+        while True:
+            # Read OGG page header (at least 27 bytes)
+            header = await opus_encoder_stdout.read(27)
+            if not header or len(header) < 27:
+                break
+
+            # Check OGG magic
+            if header[:4] != b'OggS':
+                # Not an OGG page, skip and try again
+                continue
+
+            # Get page segments count
+            page_segments = header[26]
+            segment_table = await opus_encoder_stdout.read(page_segments)
+            if len(segment_table) < page_segments:
+                break
+
+            total_len = sum(segment_table[i] for i in range(page_segments))
+            if total_len == 0 or total_len > 65535:
+                continue
+
+            # Read the payload (contains Opus packet with OGG layer)
+            payload = await opus_encoder_stdout.read(total_len)
+            if len(payload) < total_len:
+                break
+
+            # Extract Opus packet from OGG page
+            # Skip OGG segment headers (first byte of each segment)
+            opus_packet = b''
+            pos = 0
+            for i in range(page_segments):
+                seg_len = segment_table[i]
+                if seg_len > 0 and pos + seg_len <= len(payload):
+                    # Skip the first byte if it's the OGG segment header
+                    packet_data = payload[pos:pos + seg_len]
+                    # Check if this looks like an Opus packet (TOC byte)
+                    if len(packet_data) > 0 and (packet_data[0] & 0xF8) != 0:
+                        opus_packet += packet_data
+                    pos += seg_len
+
+            if not opus_packet:
+                continue
+
+            # Send to Opus clients only
+            opus_clients = [ws for ws, codec in CLIENTS_CODEC.items() if codec == 'opus']
+            if opus_clients:
+                frame = make_frame(FRAME_TYPE_OPUS, opus_packet)
+                dead = set()
+                for ws in opus_clients:
+                    try:
+                        await ws.send(frame)
+                    except Exception as e:
+                        print(f"[audio-ws] Opus send to client failed: {e}", flush=True)
+                        dead.add(ws)
+                CLIENTS.difference_update(dead)
+                for ws in dead:
+                    CLIENTS_CODEC.pop(ws, None)
+    except Exception as e:
+        print(f"[audio-ws] read_opus_frames error: {e}", flush=True)
 
 
 async def handler(ws):
     """Handle WebSocket client connection (full-duplex)."""
     CLIENTS.add(ws)
+    # Default to Opus for new clients
+    CLIENTS_CODEC[ws] = 'opus'
     print(f"[audio-ws] client connected ({len(CLIENTS)} total) from {ws.remote_address}", flush=True)
     try:
         async for message in ws:
@@ -193,10 +366,20 @@ async def handler(ws):
                         print(f"[audio-ws] mic input write error: {e}", flush=True)
             elif isinstance(message, str):
                 try:
-                    cmd = json.loads(message)
+                    msg = json.loads(message)
                 except json.JSONDecodeError:
                     continue
-                action = cmd.get("action")
+
+                # Handle codec negotiation
+                if msg.get("version") == 2 and "codec" in msg:
+                    requested_codec = msg["codec"].lower()
+                    if requested_codec in ("pcm", "opus"):
+                        old_codec = CLIENTS_CODEC.get(ws, 'opus')
+                        CLIENTS_CODEC[ws] = requested_codec
+                        print(f"[audio-ws] client {ws.remote_address} codec: {old_codec} -> {requested_codec}", flush=True)
+                    continue
+
+                action = msg.get("action")
                 if action == "start_recording":
                     fname, err = await start_recording()
                     resp = {"event": "recording_error", "error": err} if err else \
@@ -219,6 +402,7 @@ async def handler(ws):
         pass
     finally:
         CLIENTS.discard(ws)
+        CLIENTS_CODEC.pop(ws, None)
         print(f"[audio-ws] client disconnected ({len(CLIENTS)} remaining)", flush=True)
 
 
