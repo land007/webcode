@@ -609,10 +609,10 @@
         <div><span class="text-muted">当前：</span><span id="container-current">-</span></div>
         <div style="margin-top:4px"><span class="text-muted">最新：</span><span id="container-latest" style="color:var(--accent)">-</span></div>
       </div>
-      <div style="margin-top:12px;padding:8px;background:rgba(245,166,35,.1);border:1px solid var(--warn);border-radius:6px;font-size:11px;color:var(--warn)">
-        ⚠️ 更新前请注意备份重要数据
-      </div>
-      <button id="btn-update-confirm" class="btn-primary btn-sm" data-i18n="btn_update_now" style="width:100%;margin-top:12px">更新容器</button>
+      <a id="btn-update-confirm" href="#" onclick="return false;" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--accent);color:#fff;text-decoration:none;border-radius:4px;font-size:12px;font-weight:500;margin-top:12px">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        <span data-i18n="btn_update_now">更新容器</span>
+      </a>
     </div>
 
     <!-- 启动器更新区域 -->
@@ -2535,7 +2535,14 @@ function performUpdate() {
 
 // Update modal buttons
 document.getElementById('btn-update-confirm').addEventListener('click', function() {
-  performUpdate();
+  // Show confirmation dialog before updating
+  const confirmed = confirm(
+    t('update_confirm_title') + '\n\n' + t('update_confirm_message')
+  );
+
+  if (confirmed) {
+    performUpdate();
+  }
 });
 
 document.getElementById('btn-update-cancel').addEventListener('click', function() {
