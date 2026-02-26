@@ -28,6 +28,8 @@ ENCODER_BITRATE = 64000   # 64 Kbps target
 PULSE_SINK = "webcode_null"
 PULSE_INPUT_SINK = "webcode_input"
 CLIENTS = set()
+# Track which clients want audio output (to avoid pushing when only mic is active)
+AUDIO_PLAYING_CLIENTS = set()
 
 # PulseAudio socket path
 PULSE_SOCKET = "/run/user/1000/pulse/native"
@@ -185,14 +187,14 @@ async def broadcast_audio():
                 print(f"[audio-ws] Opus encode error: {e}", flush=True)
                 continue
 
-            if CLIENTS:
+            if AUDIO_PLAYING_CLIENTS:
                 dead = set()
-                for client in list(CLIENTS):
+                for client in list(AUDIO_PLAYING_CLIENTS):
                     try:
                         await client.send(encoded)
                     except Exception:
                         dead.add(client)
-                CLIENTS.difference_update(dead)
+                AUDIO_PLAYING_CLIENTS.difference_update(dead)
     except Exception as e:
         print(f"[audio-ws] broadcast_audio error: {e}", flush=True)
     finally:
@@ -251,7 +253,17 @@ async def handler(ws):
                     continue
                 action = cmd.get("action")
 
-                if action == "mic_codec":
+                if action == "set_audio":
+                    # Client tells us whether they're playing audio
+                    should_send = cmd.get("enabled", False)
+                    if should_send:
+                        AUDIO_PLAYING_CLIENTS.add(ws)
+                        print(f"[audio-ws] client enabled audio output ({len(AUDIO_PLAYING_CLIENTS)} playing)", flush=True)
+                    else:
+                        AUDIO_PLAYING_CLIENTS.discard(ws)
+                        print(f"[audio-ws] client disabled audio output ({len(AUDIO_PLAYING_CLIENTS)} playing)", flush=True)
+
+                elif action == "mic_codec":
                     # Client announces mic codec support
                     if cmd.get("codec") == "opus":
                         try:
@@ -283,7 +295,8 @@ async def handler(ws):
         pass
     finally:
         CLIENTS.discard(ws)
-        print(f"[audio-ws] client disconnected ({len(CLIENTS)} remaining)", flush=True)
+        AUDIO_PLAYING_CLIENTS.discard(ws)
+        print(f"[audio-ws] client disconnected ({len(CLIENTS)} remaining, {len(AUDIO_PLAYING_CLIENTS)} playing)", flush=True)
 
 
 async def wait_for_pulseaudio(retries=30):
