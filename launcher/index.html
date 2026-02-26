@@ -2649,6 +2649,12 @@ document.getElementById('btn-update-cancel').addEventListener('click', function(
   hideUpdateModal();
 });
 
+// Update progress panel cancel button - hide panel but continue checking in background
+document.getElementById('btn-cancel-update-check').addEventListener('click', function() {
+  console.log('[Update Check] Hiding panel, check continues in background');
+  hideUpdateProgressPanel();
+});
+
 // Close modal on backdrop click
 document.getElementById('update-modal').addEventListener('click', function(e) {
   if (e.target === this) {
