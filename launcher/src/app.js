@@ -144,6 +144,84 @@ async function dockerUp(cfg, onData, onClose) {
 
   const workDir = cfg.WORK_DIR || getWorkDir();
 
+  // ─── Pull image with fallback to ghcr.io ─────────────────────────────────────────────────────────────
+  const imageName = 'land007/webcode:latest';
+  const ghcrImage = 'ghcr.io/land007/webcode:latest';
+
+  onData && onData('正在拉取镜像...\n');
+
+  const pullResult = await new Promise((resolve) => {
+    const pullProc = spawn('docker', ['pull', imageName], { env: buildEnv(cfg) });
+    let pullOutput = '';
+    let pullError = '';
+
+    pullProc.stdout.on('data', (d) => {
+      const text = d.toString();
+      pullOutput += text;
+      onData && onData(text);
+    });
+    pullProc.stderr.on('data', (d) => {
+      const text = d.toString();
+      pullError += text;
+      onData && onData(text);
+    });
+    pullProc.on('close', (code) => {
+      if (code === 0) {
+        resolve({ success: true });
+      } else {
+        resolve({ success: false, error: pullError || pullOutput });
+      }
+    });
+  });
+
+  if (!pullResult.success) {
+    onData && onData('Docker Hub 拉取失败，尝试从 GitHub Container Registry 下载...\n');
+
+    const fallbackResult = await new Promise((resolve) => {
+      const fallbackProc = spawn('docker', ['pull', ghcrImage], { env: buildEnv(cfg) });
+      let fbOutput = '';
+      let fbError = '';
+
+      fallbackProc.stdout.on('data', (d) => {
+        const text = d.toString();
+        fbOutput += text;
+        onData && onData(text);
+      });
+      fallbackProc.stderr.on('data', (d) => {
+        const text = d.toString();
+        fbError += text;
+        onData && onData(text);
+      });
+      fallbackProc.on('close', (code) => {
+        if (code === 0) {
+          // Tag the ghcr.io image as land007/webcode:latest
+          onData && onData('正在标记镜像为 ' + imageName + '...\n');
+          const tagProc = spawn('docker', ['tag', ghcrImage, imageName], { env: buildEnv(cfg) });
+          tagProc.on('close', (tagCode) => {
+            if (tagCode === 0) {
+              onData && onData('✅ 镜像下载成功（使用 GitHub Container Registry 备用源）\n\n');
+              resolve({ success: true });
+            } else {
+              resolve({ success: false, error: 'Tag failed' });
+            }
+          });
+        } else {
+          resolve({ success: false, error: fbError || fbOutput });
+        }
+      });
+    });
+
+    if (!fallbackResult.success) {
+      onData && onData('❌ 镜像拉取失败：Docker Hub 和 GitHub Container Registry 均无法访问\n');
+      onData && onData('请检查网络连接或稍后重试\n\n');
+      // Continue anyway - docker compose will try to pull
+    }
+  } else {
+    onData && onData('✅ 镜像拉取完成\n\n');
+  }
+
+  // ─── Port conflict detection and auto-fix ─────────────────────────────────────────────────────────────────
+
   // 检查端口冲突并自动修复
   let ports = getPortsFromConfig(cfg);
   const checkResults = await checkPorts(ports);
