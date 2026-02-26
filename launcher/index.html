@@ -751,33 +751,65 @@
 // ─── Safe localStorage wrapper ─────────────────────────────────────────────
 // In NW.js environment, localStorage may not be available in all contexts
 var safeLocalStorage = {
-  getItem: function(key, defaultValue) {
+  _cache: {},
+  _loaded: false,
+  _filePath: null,
+
+  _init: function() {
+    if (this._loaded) return;
+
     try {
-      if (typeof localStorage !== 'undefined' && localStorage.getItem) {
-        var value = localStorage.getItem(key);
-        return value !== null ? value : defaultValue;
-      }
-    } catch (e) {
-      console.warn('localStorage.getItem failed:', e);
-    }
-    return defaultValue;
-  },
-  setItem: function(key, value) {
-    try {
-      if (typeof localStorage !== 'undefined' && localStorage.setItem) {
-        localStorage.setItem(key, value);
-        console.log('[safeLocalStorage.setItem] Success:', key, '=', value);
-        return true;
+      var fs = require('fs');
+      var path = require('path');
+
+      // Use NW.js data path
+      if (typeof nw !== 'undefined' && nw.App) {
+        this._filePath = path.join(nw.App.dataPath, 'settings.json');
       } else {
-        console.warn('[safeLocalStorage.setItem] localStorage not available:', {
-          type: typeof localStorage,
-          hasSetItem: typeof localStorage !== 'undefined' && localStorage.setItem
-        });
+        // Fallback for development
+        this._filePath = path.join(require('os').homedir(), '.webcode-launcher-settings.json');
       }
+
+      // Load existing settings
+      if (fs.existsSync(this._filePath)) {
+        var data = fs.readFileSync(this._filePath, 'utf8');
+        this._cache = JSON.parse(data);
+        console.log('[safeLocalStorage] Loaded settings from:', this._filePath);
+      } else {
+        // Create directory if not exists
+        var dir = path.dirname(this._filePath);
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
+        }
+        console.log('[safeLocalStorage] Settings file not found, will create new one');
+      }
+
+      this._loaded = true;
     } catch (e) {
-      console.warn('localStorage.setItem failed:', e);
+      console.warn('[safeLocalStorage] Failed to initialize:', e);
+      this._loaded = true;
     }
-    return false;
+  },
+
+  getItem: function(key, defaultValue) {
+    this._init();
+    var value = this._cache[key];
+    return value !== undefined ? value : defaultValue;
+  },
+
+  setItem: function(key, value) {
+    this._init();
+    this._cache[key] = value;
+
+    try {
+      var fs = require('fs');
+      fs.writeFileSync(this._filePath, JSON.stringify(this._cache, null, 2), 'utf8');
+      console.log('[safeLocalStorage.setItem] Saved to file:', key, '=', value);
+      return true;
+    } catch (e) {
+      console.warn('[safeLocalStorage.setItem] Failed to save:', e);
+      return false;
+    }
   }
 };
 
