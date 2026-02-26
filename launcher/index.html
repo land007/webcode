@@ -2363,6 +2363,7 @@ let updateCheckTimer = null;
 let updateInfo = null;
 let updateCheckInProgress = false;
 let isUpdating = false;
+let currentCheckStep = null;  // Track current check progress step
 
 // ─── Update checking ───────────────────────────────────────────────────────────
 
@@ -2370,10 +2371,15 @@ function showUpdateProgressPanel() {
   const panel = document.getElementById('update-progress-panel');
   panel.style.display = 'block';
 
-  // Reset all steps
-  document.querySelectorAll('.check-step').forEach(function(step) {
-    step.classList.remove('active', 'completed');
-  });
+  // Restore previous step state if available
+  if (currentCheckStep) {
+    updateCheckProgress(currentCheckStep);
+  } else {
+    // Reset all steps if no progress yet
+    document.querySelectorAll('.check-step').forEach(function(step) {
+      step.classList.remove('active', 'completed');
+    });
+  }
 }
 
 function hideUpdateProgressPanel() {
@@ -2381,6 +2387,9 @@ function hideUpdateProgressPanel() {
 }
 
 function updateCheckProgress(step) {
+  // Save current step for restoring when panel is reopened
+  currentCheckStep = step;
+
   // Mark previous steps as completed
   const steps = ['container-local', 'container-remote', 'launcher', 'complete'];
   const stepIndex = steps.indexOf(step);
@@ -2407,6 +2416,7 @@ function checkForUpdates(options) {
 
   if (!silent) {
     updateCheckInProgress = true;
+    currentCheckStep = null;  // Reset progress at start
     showUpdateProgressPanel();
   }
 
@@ -2424,6 +2434,7 @@ function checkForUpdates(options) {
 
     if (!silent) {
       updateCheckInProgress = false;
+      currentCheckStep = null;  // Reset progress state after check completes
       hideUpdateProgressPanel();
 
       // Check if cancelled
@@ -2505,12 +2516,6 @@ function getUpdateTooltipText() {
 function showUpdateModal() {
   if (!updateInfo) return;
 
-  // If update is in progress, show progress panel instead of modal
-  if (isUpdating) {
-    showUpdateProgressPanel();
-    return;
-  }
-
   const modal = document.getElementById('update-modal');
   const containerSection = document.getElementById('container-update-section');
   const launcherSection = document.getElementById('launcher-update-section');
@@ -2519,10 +2524,14 @@ function showUpdateModal() {
   const confirmBtn = document.getElementById('btn-update-confirm');
 
   // Reset state
-  if (progress) progress.style.display = 'none';
-  if (result) result.style.display = 'none';
-  if (result) result.className = '';
-  if (confirmBtn) confirmBtn.disabled = false;
+  if (!isUpdating) {
+    // Only reset progress/result if not currently updating
+    if (progress) progress.style.display = 'none';
+    if (result) result.style.display = 'none';
+    if (result) result.className = '';
+    if (confirmBtn) confirmBtn.disabled = false;
+  }
+  // If updating, keep progress/result visible as-is
 
   // Show/hide container update section
   if (updateInfo.containerUpdate) {
@@ -2646,7 +2655,7 @@ document.getElementById('btn-update-confirm').addEventListener('click', function
 // Update confirm modal buttons
 document.getElementById('btn-confirm-update-ok').addEventListener('click', function() {
   hideUpdateConfirmModal();
-  hideUpdateModal();  // Hide update modal
+  // Don't hide update modal - performUpdate will show progress in it
   performUpdate();
 });
 
@@ -2673,9 +2682,15 @@ document.getElementById('update-modal').addEventListener('click', function(e) {
 
 // Update check button - click to check manually or open modal if updates available
 document.getElementById('btn-check-update').addEventListener('click', function() {
-  // If updating or checking, show progress panel
-  if (isUpdating || updateCheckInProgress) {
+  if (updateCheckInProgress) {
+    // Currently checking for updates - show check progress panel
     showUpdateProgressPanel();
+    return;
+  }
+
+  if (isUpdating) {
+    // Currently updating container - show update modal with progress
+    showUpdateModal();
     return;
   }
 
