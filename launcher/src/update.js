@@ -126,7 +126,7 @@ function getLocalContainerDigest(imageName) {
 
 /**
  * Get the remote container image digest using docker manifest inspect.
- * Tries ghcr.io first (since local images are from ghcr.io), then falls back to Docker Hub.
+ * Tries Docker Hub first, then falls back to ghcr.io.
  * @param {string} imageName  e.g. 'land007/webcode:latest'
  * @returns {Promise<string|null>}  Digest string or null if failed
  */
@@ -144,13 +144,13 @@ function getRemoteContainerDigest(imageName) {
 
     const env = Object.assign({}, process.env, { PATH: buildDockerPath() });
     console.log('[getRemoteContainerDigest] ========== START ==========');
-    console.log('[getRemoteContainerDigest] Trying ghcr.io first (local images are from ghcr.io)...');
+    console.log('[getRemoteContainerDigest] Trying Docker Hub first...');
 
     // Declare proc2 variable before overall timeout references it
     let proc2 = null;
 
-    // Try ghcr.io first (local images are pulled from ghcr.io)
-    const proc = spawn('docker', ['manifest', 'inspect', ghcrImage], { env });
+    // Try Docker Hub first
+    const proc = spawn('docker', ['manifest', 'inspect', imageName], { env });
     let stdout = '';
     let stderr = '';
 
@@ -164,18 +164,18 @@ function getRemoteContainerDigest(imageName) {
 
     proc.stdout.on('data', (d) => {
       const chunk = d.toString();
-      console.log('[getRemoteContainerDigest] ghcr.io stdout:', chunk.length, 'bytes');
+      console.log('[getRemoteContainerDigest] Docker Hub stdout:', chunk.length, 'bytes');
       stdout += chunk;
     });
 
     proc.stderr.on('data', (d) => {
       const chunk = d.toString();
-      console.log('[getRemoteContainerDigest] ghcr.io stderr:', chunk);
+      console.log('[getRemoteContainerDigest] Docker Hub stderr:', chunk);
       stderr += chunk;
     });
 
     proc.on('close', (code) => {
-      console.log('[getRemoteContainerDigest] ghcr.io close, code:', code);
+      console.log('[getRemoteContainerDigest] Docker Hub close, code:', code);
 
       // Check if cancelled
       if (updateCheckCancelled) {
@@ -186,56 +186,56 @@ function getRemoteContainerDigest(imageName) {
       if (code === 0 && stdout.trim()) {
         const digest = parseManifestDigest(stdout);
         if (digest) {
-          console.log('[getRemoteContainerDigest] ✓ ghcr.io SUCCESS, digest:', digest.substring(0, 20) + '...');
+          console.log('[getRemoteContainerDigest] ✓ Docker Hub SUCCESS, digest:', digest.substring(0, 20) + '...');
           finish(digest);
           return;
         }
       }
 
-      // Check if cancelled before trying Docker Hub
+      // Check if cancelled before trying ghcr.io
       if (updateCheckCancelled) {
         finish(null);
         return;
       }
 
-      console.log('[getRemoteContainerDigest] ghcr.io failed, trying Docker Hub...');
+      console.log('[getRemoteContainerDigest] Docker Hub failed, trying ghcr.io...');
 
-      // ghcr.io failed, try Docker Hub
-      const proc2 = spawn('docker', ['manifest', 'inspect', imageName], { env });
+      // Docker Hub failed, try ghcr.io
+      const proc2 = spawn('docker', ['manifest', 'inspect', ghcrImage], { env });
       let stdout2 = '';
       let stderr2 = '';
 
       proc2.stdout.on('data', (d) => {
         const chunk = d.toString();
-        console.log('[getRemoteContainerDigest] Docker Hub stdout:', chunk.length, 'bytes');
+        console.log('[getRemoteContainerDigest] ghcr.io stdout:', chunk.length, 'bytes');
         stdout2 += chunk;
       });
 
       proc2.stderr.on('data', (d) => {
         const chunk = d.toString();
-        console.log('[getRemoteContainerDigest] Docker Hub stderr:', chunk);
+        console.log('[getRemoteContainerDigest] ghcr.io stderr:', chunk);
         stderr2 += chunk;
       });
 
       proc2.on('close', (code2) => {
-        console.log('[getRemoteContainerDigest] Docker Hub close, code:', code2);
+        console.log('[getRemoteContainerDigest] ghcr.io close, code:', code2);
         if (code2 === 0 && stdout2.trim()) {
           const digest = parseManifestDigest(stdout2);
           if (digest) {
-            console.log('[getRemoteContainerDigest] ✓ Docker Hub SUCCESS, digest:', digest.substring(0, 20) + '...');
+            console.log('[getRemoteContainerDigest] ✓ ghcr.io SUCCESS, digest:', digest.substring(0, 20) + '...');
             finish(digest);
           } else {
-            console.log('[getRemoteContainerDigest] ✗ Docker Hub parse failed');
+            console.log('[getRemoteContainerDigest] ✗ ghcr.io parse failed');
             finish(null);
           }
         } else {
-          console.log('[getRemoteContainerDigest] ✗ Docker Hub failed');
+          console.log('[getRemoteContainerDigest] ✗ ghcr.io failed');
           finish(null);
         }
       });
 
       proc2.on('error', (err) => {
-        console.log('[getRemoteContainerDigest] Docker Hub error:', err);
+        console.log('[getRemoteContainerDigest] ghcr.io error:', err);
       });
 
       proc2.on('exit', () => {
@@ -244,7 +244,7 @@ function getRemoteContainerDigest(imageName) {
     });
 
     proc.on('error', (err) => {
-      console.log('[getRemoteContainerDigest] ghcr.io error:', err);
+      console.log('[getRemoteContainerDigest] Docker Hub error:', err);
       finish(null);
     });
 
