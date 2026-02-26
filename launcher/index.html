@@ -600,27 +600,53 @@
 <div id="update-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:10000;align-items:center;justify-content:center">
   <div class="modal-card">
     <h3 data-i18n="modal_update_title">有新版本可用</h3>
-    <div class="update-info">
-      <p id="update-desc"></p>
-      <p class="update-versions" id="update-versions" style="display:none">
-        <span class="text-muted">Current: </span><span id="current-version">-</span><br>
-        <span class="text-muted">Latest: </span><span id="latest-version">-</span>
-      </p>
+
+    <!-- 容器更新区域 -->
+    <div id="container-update-section" class="update-section" style="display:none">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span style="font-size:18px">🐳</span>
+        <span style="font-weight:500">容器更新</span>
+        <span style="color:var(--success);margin-left:auto">有新版本</span>
+      </div>
+      <div style="background:var(--surface2);border-radius:6px;padding:10px;margin-top:8px;font-size:12px;font-family:monospace">
+        <div><span class="text-muted">当前：</span><span id="container-current">-</span></div>
+        <div style="margin-top:4px"><span class="text-muted">最新：</span><span id="container-latest" style="color:var(--accent)">-</span></div>
+      </div>
     </div>
+
+    <!-- 启动器更新区域 -->
+    <div id="launcher-update-section" class="update-section" style="display:none;margin-top:12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span style="font-size:18px">🚀</span>
+        <span style="font-weight:500">启动器更新</span>
+        <span style="color:var(--success);margin-left:auto">有新版本</span>
+      </div>
+      <div style="background:var(--surface2);border-radius:6px;padding:10px;margin-top:8px;font-size:12px">
+        <div style="margin-bottom:8px">
+          <span class="text-muted">当前：</span><span id="launcher-current">-</span>
+          <span style="margin:0 8px">→</span>
+          <span class="text-muted">最新：</span><span id="launcher-latest" style="color:var(--accent)">-</span>
+        </div>
+        <a class="launcher-update-link" id="launcher-update-link" href="#" onclick="return false;" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--accent);color:#fff;text-decoration:none;border-radius:4px;font-size:12px;font-weight:500">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          <span data-i18n="launcher_update_link">下载最新启动器</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- 更新进度 -->
     <div id="update-progress" class="update-progress" style="display:none">
       <div class="progress-bar"><div class="progress-fill"></div></div>
       <p class="progress-text" id="update-progress-text" data-i18n="update_downloading">正在下载镜像...</p>
     </div>
+
+    <!-- 更新结果 -->
     <div id="update-result" style="display:none;margin:12px 0"></div>
-    <div id="launcher-update-section" class="launcher-update-section" style="display:none">
-      <a class="launcher-update-link" id="launcher-update-link" href="#" onclick="return false;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-        <span data-i18n="launcher_update_link">下载最新启动器</span>
-      </a>
-    </div>
-    <div class="action-row" style="margin-top:0">
+
+    <!-- 按钮区域 -->
+    <div class="action-row" style="margin-top:16px">
       <button id="btn-update-cancel" class="btn-secondary btn-sm" data-i18n="btn_update_later">稍后提醒</button>
-      <button id="btn-update-confirm" class="btn-primary btn-sm" data-i18n="btn_update_now">立即更新</button>
+      <button id="btn-update-confirm" class="btn-primary btn-sm" data-i18n="btn_update_now">立即更新容器</button>
     </div>
   </div>
 </div>
@@ -2393,13 +2419,10 @@ function showUpdateModal() {
   if (!updateInfo) return;
 
   const modal = document.getElementById('update-modal');
-  const desc = document.getElementById('update-desc');
-  const versions = document.getElementById('update-versions');
-  const currentVer = document.getElementById('current-version');
-  const latestVer = document.getElementById('latest-version');
+  const containerSection = document.getElementById('container-update-section');
+  const launcherSection = document.getElementById('launcher-update-section');
   const progress = document.getElementById('update-progress');
   const result = document.getElementById('update-result');
-  const launcherSection = document.getElementById('launcher-update-section');
   const confirmBtn = document.getElementById('btn-update-confirm');
 
   // Reset state
@@ -2408,32 +2431,47 @@ function showUpdateModal() {
   result.className = '';
   confirmBtn.disabled = false;
 
-  // Set description
-  if (updateInfo.containerUpdate && updateInfo.launcherUpdate) {
-    desc.textContent = t('update_both_desc');
-  } else if (updateInfo.containerUpdate) {
-    desc.textContent = t('update_container_desc');
-  } else {
-    desc.textContent = t('update_launcher_desc');
-  }
-
-  // Set versions
+  // Show/hide container update section
   if (updateInfo.containerUpdate) {
-    versions.style.display = 'block';
-    currentVer.textContent = (updateInfo.localDigest || '').substring(0, 12) + '...';
-    latestVer.textContent = (updateInfo.remoteDigest || '').substring(0, 12) + '...';
+    containerSection.style.display = 'block';
+    const currentEl = document.getElementById('container-current');
+    const latestEl = document.getElementById('container-latest');
+
+    // Format digest for display - extract just the hash part
+    const currentDigest = updateInfo.localDigest || '';
+    const remoteDigest = updateInfo.remoteDigest || '';
+
+    // Extract short hash from digest
+    let currentHash = 'unknown';
+    if (currentDigest.includes('@')) {
+      currentHash = currentDigest.split('@')[1].substring(0, 12);
+    } else if (currentDigest.includes(':')) {
+      currentHash = currentDigest.split(':')[1].substring(0, 12);
+    }
+
+    let latestHash = 'unknown';
+    if (remoteDigest.includes(':')) {
+      latestHash = remoteDigest.split(':')[1].substring(0, 12);
+    }
+
+    currentEl.textContent = currentHash + '...';
+    latestEl.textContent = latestHash + '...';
   } else {
-    versions.style.display = 'none';
+    containerSection.style.display = 'none';
   }
 
-  // Show/hide launcher update link
+  // Show/hide launcher update section
   if (updateInfo.launcherUpdate) {
     launcherSection.style.display = 'block';
+    const currentEl = document.getElementById('launcher-current');
+    const latestEl = document.getElementById('launcher-latest');
+    currentEl.textContent = updateInfo.localVersion || '-';
+    latestEl.textContent = updateInfo.remoteVersion || '-';
   } else {
     launcherSection.style.display = 'none';
   }
 
-  // Only enable container update button if there's a container update
+  // Only show container update button if there's a container update
   confirmBtn.style.display = updateInfo.containerUpdate ? 'inline-block' : 'none';
 
   modal.style.display = 'flex';

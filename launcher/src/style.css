@@ -1131,6 +1131,14 @@ button .btn-icon svg {
 }
 .launcher-update-link:hover { text-decoration: underline; }
 
+/* ── Update section (new layout) ───────────────────────────────────── */
+.update-section {
+  padding: 12px;
+  background: var(--surface2);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
 /* ── Update progress panel ─────────────────────────────────────────── */
 .check-step {
   display: flex;
