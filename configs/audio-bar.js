@@ -33,25 +33,22 @@
       '<rect x="5" y="5" width="14" height="14" rx="2" fill="white" stroke="white" stroke-width="1.5"/></svg>';
   }
 
-  // ── Port/path detection ─────────────────────────────────
-  function getAudioPort() {
-    var m = location.search.match(/audioPort=(\d+)/);
-    return m ? parseInt(m[1]) : 20004;  // Changed: default to 20004 (noVNC port)
+  // ── Audio WebSocket URL ───────────────────────────────────
+  function getAudioWebSocketUrl() {
+    // Auto-detect protocol (ws:// or wss://) based on current page
+    var protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    // Use current page's host and port, append /audio path
+    return protocol + '//' + location.host + '/audio';
   }
 
-  function getAudioPath() {
-    var m = location.search.match(/audioPath=([^&]+)/);
-    return m ? decodeURIComponent(m[1]) : '/audio';
-  }
+  var AUDIO_WS_URL = getAudioWebSocketUrl();
+  console.log('[audio-bar] WebSocket URL:', AUDIO_WS_URL);
 
-  // ── Check if auto-start is requested ─────────────────────
+  // ── Check if should auto-start ─────────────────────────────
+  // Auto-start if URL has autoconnect=true (noVNC parameter)
   function shouldAutoStart() {
-    return location.search.match(/audioPort=\d+/) !== null;
+    return location.search.match(/autoconnect=true/i) !== null;
   }
-
-  var AUDIO_WS_PORT = getAudioPort();
-  var AUDIO_WS_PATH = getAudioPath();
-  console.log('[audio-bar] Port:', AUDIO_WS_PORT, 'Path:', AUDIO_WS_PATH, 'Auto-start:', shouldAutoStart());
 
   // ── Create audio output button ────────────────────────────
   function createButton() {
@@ -206,8 +203,7 @@
     }
 
     nextPlayTime = audioCtx.currentTime + 0.02;
-    var wsUrl = 'ws://' + location.hostname + ':' + AUDIO_WS_PORT + AUDIO_WS_PATH;
-    console.log('[audio-bar] Connecting:', wsUrl);
+    console.log('[audio-bar] Connecting:', AUDIO_WS_URL);
 
     try {
       ws = new WebSocket(wsUrl);
@@ -340,10 +336,9 @@
     source.connect(micProcessor);
     micProcessor.connect(micAudioCtx.destination);
 
-    var wsUrl = 'ws://' + location.hostname + ':' + AUDIO_WS_PORT + AUDIO_WS_PATH;
-    console.log('[audio-bar] Mic WebSocket connecting:', wsUrl);
+    console.log('[audio-bar] Mic WebSocket connecting:', AUDIO_WS_URL);
     try {
-      micWs = new WebSocket(wsUrl);
+      micWs = new WebSocket(AUDIO_WS_URL);
     } catch (e) {
       console.error('[audio-bar] Mic WebSocket failed:', e);
       stopMicrophone();
