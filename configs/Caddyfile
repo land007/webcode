@@ -32,12 +32,18 @@
 	}
 }
 
-# noVNC (Web VNC client)
+# noVNC (Web VNC client) + Audio WebSocket (path-based routing)
 :20004 {
-	reverse_proxy 127.0.0.1:10004
-}
-
-# Audio WebSocket stream (PulseAudio null-sink -> browser Web Audio API)
-:20006 {
-	reverse_proxy 127.0.0.1:10006
+	# Audio WebSocket stream
+	handle /audio/* {
+		reverse_proxy 127.0.0.1:10006
+	}
+	# noVNC websockify
+	handle /websockify {
+		reverse_proxy 127.0.0.1:10004
+	}
+	# noVNC HTML pages and assets
+	handle /* {
+		reverse_proxy 127.0.0.1:10004
+	}
 }

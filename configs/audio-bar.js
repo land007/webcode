@@ -33,10 +33,15 @@
       '<rect x="5" y="5" width="14" height="14" rx="2" fill="white" stroke="white" stroke-width="1.5"/></svg>';
   }
 
-  // ── Port detection ───────────────────────────────────────
+  // ── Port/path detection ─────────────────────────────────
   function getAudioPort() {
     var m = location.search.match(/audioPort=(\d+)/);
-    return m ? parseInt(m[1]) : 20006;
+    return m ? parseInt(m[1]) : 20004;  // Changed: default to 20004 (noVNC port)
+  }
+
+  function getAudioPath() {
+    var m = location.search.match(/audioPath=([^&]+)/);
+    return m ? decodeURIComponent(m[1]) : '/audio';
   }
 
   // ── Check if auto-start is requested ─────────────────────
@@ -45,7 +50,8 @@
   }
 
   var AUDIO_WS_PORT = getAudioPort();
-  console.log('[audio-bar] Port:', AUDIO_WS_PORT, 'Auto-start:', shouldAutoStart());
+  var AUDIO_WS_PATH = getAudioPath();
+  console.log('[audio-bar] Port:', AUDIO_WS_PORT, 'Path:', AUDIO_WS_PATH, 'Auto-start:', shouldAutoStart());
 
   // ── Create audio output button ────────────────────────────
   function createButton() {
@@ -200,7 +206,7 @@
     }
 
     nextPlayTime = audioCtx.currentTime + 0.02;
-    var wsUrl = 'ws://' + location.hostname + ':' + AUDIO_WS_PORT;
+    var wsUrl = 'ws://' + location.hostname + ':' + AUDIO_WS_PORT + AUDIO_WS_PATH;
     console.log('[audio-bar] Connecting:', wsUrl);
 
     try {
@@ -334,7 +340,7 @@
     source.connect(micProcessor);
     micProcessor.connect(micAudioCtx.destination);
 
-    var wsUrl = 'ws://' + location.hostname + ':' + AUDIO_WS_PORT;
+    var wsUrl = 'ws://' + location.hostname + ':' + AUDIO_WS_PORT + AUDIO_WS_PATH;
     console.log('[audio-bar] Mic WebSocket connecting:', wsUrl);
     try {
       micWs = new WebSocket(wsUrl);
