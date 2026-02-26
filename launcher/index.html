@@ -564,8 +564,32 @@
   </div>
 </div>
 
-<!-- ═══════════════════════ TOAST NOTIFICATIONS ════════════════════ -->
-<div id="toast-container"></div>
+<!-- ═══════════════════════ UPDATE PROGRESS PANEL ══════════════════ -->
+<div id="update-progress-panel" style="display:none;position:fixed;top:60px;right:20px;z-index:20000;width:320px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.3);padding:16px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <h3 style="font-size:14px;font-weight:600;margin:0;display:flex;align-items:center;gap:8px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="checking-icon" style="animation:spin 1s linear infinite"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+      <span data-i18n="update_checking">检查更新中...</span>
+    </h3>
+    <button id="btn-cancel-update-check" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px;border-radius:4px;" title="取消">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+  </div>
+  <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">
+    <div class="check-step" data-step="container">
+      <span class="step-icon">○</span>
+      <span class="step-text" data-i18n="update_checking_container">正在检查容器更新...</span>
+    </div>
+    <div class="check-step" data-step="launcher">
+      <span class="step-icon">○</span>
+      <span class="step-text" data-i18n="update_checking_launcher">正在检查启动器更新...</span>
+    </div>
+    <div class="check-step" data-step="complete">
+      <span class="step-icon">○</span>
+      <span class="step-text" data-i18n="update_check_detail">正在对比 Docker 镜像和 GitHub Releases...</span>
+    </div>
+  </div>
+</div>
 
 <!-- ═══════════════════════ UPDATE MODAL ══════════════════════════ -->
 <div id="update-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:10000;align-items:center;justify-content:center">
@@ -2193,90 +2217,97 @@ document.getElementById('add-instance-modal').addEventListener('click', function
 
 let updateCheckTimer = null;
 let updateInfo = null;
-
-// ─── Toast notifications ─────────────────────────────────────────────────────
-
-function showToast(type, title, message, duration) {
-  const container = document.getElementById('toast-container');
-  if (!container) return;
-
-  const toast = document.createElement('div');
-  toast.className = 'toast toast-' + type;
-
-  const iconSvg = {
-    info: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>',
-    success: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>',
-    warning: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
-    error: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>'
-  };
-
-  toast.innerHTML = `
-    <div class="toast-icon ${type}">${iconSvg[type] || iconSvg.info}</div>
-    <div class="toast-content">
-      <div class="toast-title">${escHtml(title)}</div>
-      ${message ? `<div class="toast-message">${escHtml(message)}</div>` : ''}
-    </div>
-    <button class="toast-close">
-      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-    </button>
-  `;
-
-  container.appendChild(toast);
-
-  // Close button handler
-  const closeBtn = toast.querySelector('.toast-close');
-  closeBtn.addEventListener('click', function() {
-    removeToast(toast);
-  });
-
-  // Auto-remove after duration
-  const autoDuration = duration || (type === 'error' ? 5000 : 3000);
-  setTimeout(function() {
-    removeToast(toast);
-  }, autoDuration);
-}
-
-function removeToast(toast) {
-  if (!toast || !toast.parentNode) return;
-  toast.style.animation = 'toast-fade-out 0.3s ease';
-  setTimeout(function() {
-    if (toast.parentNode) {
-      toast.parentNode.removeChild(toast);
-    }
-  }, 300);
-}
+let updateCheckInProgress = false;
 
 // ─── Update checking ───────────────────────────────────────────────────────────
+
+function showUpdateProgressPanel() {
+  const panel = document.getElementById('update-progress-panel');
+  panel.style.display = 'block';
+
+  // Reset all steps
+  document.querySelectorAll('.check-step').forEach(function(step) {
+    step.classList.remove('active', 'completed');
+  });
+}
+
+function hideUpdateProgressPanel() {
+  document.getElementById('update-progress-panel').style.display = 'none';
+}
+
+function updateCheckProgress(step) {
+  // Mark previous steps as completed
+  const steps = ['container', 'launcher', 'complete'];
+  const stepIndex = steps.indexOf(step);
+
+  document.querySelectorAll('.check-step').forEach(function(el) {
+    const elStep = el.getAttribute('data-step');
+    const elIndex = steps.indexOf(elStep);
+
+    el.classList.remove('active', 'completed');
+
+    if (elIndex < stepIndex) {
+      el.classList.add('completed');
+    } else if (elIndex === stepIndex) {
+      el.classList.add('active');
+    }
+  });
+}
 
 function checkForUpdates(options) {
   if (!cfg) return Promise.resolve();
 
   options = options || {};
   const silent = options.silent || false;
-  const onProgress = options.onProgress || function() {};
 
   if (!silent) {
-    onProgress('check', t('update_checking'));
+    updateCheckInProgress = true;
+    showUpdateProgressPanel();
   }
 
-  return app.checkForUpdates(cfg).then(function(result) {
+  const onProgress = function(step, status) {
+    if (!silent) {
+      updateCheckProgress(step);
+    }
+  };
+
+  return app.checkForUpdates(cfg, onProgress).then(function(result) {
     updateInfo = result;
 
-    if (result.containerUpdate || result.launcherUpdate) {
-      showUpdateBadge();
-      if (!silent) {
-        if (result.containerUpdate && result.launcherUpdate) {
-          onProgress('complete', t('update_both_desc'));
-        } else if (result.containerUpdate) {
-          onProgress('complete', t('update_container_desc'));
-        } else {
-          onProgress('complete', t('update_launcher_desc'));
-        }
+    if (!silent) {
+      updateCheckInProgress = false;
+      hideUpdateProgressPanel();
+
+      // Check if cancelled
+      if (result.cancelled) {
+        return result;
+      }
+
+      // Show result based on updates
+      if (result.containerUpdate || result.launcherUpdate) {
+        showUpdateBadge();
+        // Auto-open update modal
+        setTimeout(function() {
+          showUpdateModal();
+        }, 300);
+      } else {
+        hideUpdateBadge();
+        // Briefly show "no updates" message
+        const statusText = document.getElementById('status-text');
+        const originalText = statusText.textContent;
+        statusText.textContent = t('update_latest');
+        statusText.style.color = 'var(--success)';
+        setTimeout(function() {
+          statusText.textContent = originalText;
+          statusText.style.color = '';
+        }, 2000);
       }
     } else {
-      hideUpdateBadge();
-      if (!silent) {
-        onProgress('complete', '已是最新版本');
+      // Silent mode - just update badge state
+      if (result.containerUpdate || result.launcherUpdate) {
+        showUpdateBadge();
+      } else {
+        hideUpdateBadge();
       }
     }
 
@@ -2420,76 +2451,18 @@ document.getElementById('update-modal').addEventListener('click', function(e) {
 
 // Manual check for updates button
 document.getElementById('btn-check-update').addEventListener('click', function() {
-  const btn = this;
+  if (updateCheckInProgress) return; // Prevent double-click
 
-  // Show checking state
-  btn.classList.add('checking');
-  btn.disabled = true;
+  checkForUpdates({ silent: false });
+});
 
-  // Show progress toast
-  let progressToast = null;
-
-  // Sequential progress messages
-  setTimeout(function() {
-    if (!progressToast) {
-      progressToast = showToast('info', t('update_checking'), t('update_checking_container'), 0);
-    }
-  }, 0);
-
-  setTimeout(function() {
-    if (progressToast && progressToast.parentNode) {
-      progressToast.querySelector('.toast-message').textContent = t('update_checking_launcher');
-    }
-  }, 800);
-
-  setTimeout(function() {
-    if (progressToast && progressToast.parentNode) {
-      progressToast.querySelector('.toast-message').textContent = t('update_check_detail');
-    }
-  }, 1600);
-
-  checkForUpdates({
-    silent: false,
-    onProgress: function(status, message) {
-      if (status === 'complete') {
-        // Remove progress toast
-        if (progressToast) {
-          removeToast(progressToast);
-          progressToast = null;
-        }
-
-        // Show result toast
-        if (updateInfo && (updateInfo.containerUpdate || updateInfo.launcherUpdate)) {
-          let detailMessage = '';
-          if (updateInfo.containerUpdate && updateInfo.launcherUpdate) {
-            detailMessage = '容器和启动器都有新版本';
-          } else if (updateInfo.containerUpdate) {
-            detailMessage = '容器有新版本';
-          } else {
-            detailMessage = '启动器有新版本';
-          }
-
-          showToast(
-            'warning',
-            '发现新版本',
-            detailMessage,
-            6000
-          );
-        } else {
-          showToast(
-            'success',
-            t('update_latest'),
-            '容器和启动器都是最新版本',
-            3000
-          );
-        }
-      }
-    }
-  }).then(function() {
-    // Remove checking state
-    btn.classList.remove('checking');
-    btn.disabled = false;
-  });
+// Cancel update check button
+document.getElementById('btn-cancel-update-check').addEventListener('click', function() {
+  if (updateCheckInProgress) {
+    app.cancelUpdateCheck();
+    updateCheckInProgress = false;
+    hideUpdateProgressPanel();
+  }
 });
 
 // Auto-check for updates every 10 minutes (only when container is running)

@@ -1149,7 +1149,51 @@ button .btn-icon svg {
 }
 .launcher-update-link:hover { text-decoration: underline; }
 
-/* ── Toast notifications ───────────────────────────────────────────── */
+/* ── Update progress panel ─────────────────────────────────────────── */
+.check-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  opacity: 0.4;
+  transition: opacity 0.3s;
+}
+
+.check-step.active {
+  opacity: 1;
+}
+
+.check-step.completed .step-icon {
+  color: var(--success);
+}
+
+.check-step.completed .step-icon::before {
+  content: '✓';
+  font-weight: bold;
+}
+
+.step-icon {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.step-text {
+  flex: 1;
+}
+
+.checking-icon {
+  color: var(--accent);
+}
+
+/* Remove old toast styles */
+#toast-container {
+  display: none !important;
+}
 #toast-container {
   position: fixed;
   top: 20px;

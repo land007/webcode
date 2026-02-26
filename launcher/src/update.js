@@ -4,6 +4,23 @@ const { spawn } = require('child_process');
 const https = require('https');
 const { buildDockerPath } = require('./app.js');
 
+// Global cancellation flag for update checks
+let updateCheckCancelled = false;
+
+/**
+ * Cancel the ongoing update check.
+ */
+function cancelUpdateCheck() {
+  updateCheckCancelled = true;
+}
+
+/**
+ * Reset the cancellation flag.
+ */
+function resetUpdateCheckCancel() {
+  updateCheckCancelled = false;
+}
+
 // ─── Container Version Detection ───────────────────────────────────────────────
 
 /**
@@ -46,6 +63,12 @@ function getRemoteContainerDigest(imageName) {
   const ghcrImage = 'ghcr.io/land007/webcode:latest';
 
   return new Promise((resolve) => {
+    // Check if cancelled before starting
+    if (updateCheckCancelled) {
+      resolve(null);
+      return;
+    }
+
     const env = Object.assign({}, process.env, { PATH: buildDockerPath() });
 
     // Try Docker Hub first
@@ -56,12 +79,24 @@ function getRemoteContainerDigest(imageName) {
     proc.stdout.on('data', (d) => { stdout += d.toString(); });
     proc.stderr.on('data', (d) => { stderr += d.toString(); });
     proc.on('close', (code) => {
+      // Check if cancelled
+      if (updateCheckCancelled) {
+        resolve(null);
+        return;
+      }
+
       if (code === 0 && stdout.trim()) {
         const digest = parseManifestDigest(stdout);
         if (digest) {
           resolve(digest);
           return;
         }
+      }
+
+      // Check if cancelled before trying ghcr.io
+      if (updateCheckCancelled) {
+        resolve(null);
+        return;
       }
 
       // Docker Hub failed, try ghcr.io
@@ -80,17 +115,27 @@ function getRemoteContainerDigest(imageName) {
         }
       });
 
-      setTimeout(() => {
-        proc2.kill();
+      const timeout2 = setTimeout(() => {
+        if (!updateCheckCancelled) {
+          proc2.kill();
+        }
         resolve(null);
       }, 15000);
+
+      // Cleanup timeout if process completes early
+      proc2.on('exit', () => clearTimeout(timeout2));
     });
 
     // Timeout after 15 seconds (network request)
-    setTimeout(() => {
-      proc.kill();
+    const timeout1 = setTimeout(() => {
+      if (!updateCheckCancelled) {
+        proc.kill();
+      }
       resolve(null);
     }, 15000);
+
+    // Cleanup timeout if process completes early
+    proc.on('exit', () => clearTimeout(timeout1));
   });
 }
 
@@ -155,6 +200,12 @@ function getLauncherVersion() {
  */
 function getLatestLauncherRelease() {
   return new Promise((resolve) => {
+    // Check if cancelled before starting
+    if (updateCheckCancelled) {
+      resolve(null);
+      return;
+    }
+
     const options = {
       hostname: 'api.github.com',
       path: '/repos/land007/webcode/releases/latest',
@@ -166,8 +217,20 @@ function getLatestLauncherRelease() {
 
     const req = https.request(options, (res) => {
       let data = '';
-      res.on('data', (chunk) => { data += chunk; });
+      res.on('data', (chunk) => {
+        // Check if cancelled during data reception
+        if (updateCheckCancelled) {
+          req.destroy();
+          resolve(null);
+          return;
+        }
+        data += chunk;
+      });
       res.on('end', () => {
+        if (updateCheckCancelled) {
+          resolve(null);
+          return;
+        }
         if (res.statusCode === 200) {
           try {
             const release = JSON.parse(data);
@@ -189,7 +252,9 @@ function getLatestLauncherRelease() {
     });
 
     req.setTimeout(10000, () => {
-      req.destroy();
+      if (!updateCheckCancelled) {
+        req.destroy();
+      }
       resolve(null);
     });
 
@@ -221,6 +286,7 @@ function versionsDiffer(v1, v2) {
 /**
  * Check for both container and launcher updates.
  * @param {Object} cfg  Configuration object
+ * @param {Function} onProgress  Optional callback for progress updates (step: string, message: string)
  * @returns {Promise<Object>}  Update status object:
  *   - containerUpdate: boolean
  *   - launcherUpdate: boolean
@@ -228,19 +294,55 @@ function versionsDiffer(v1, v2) {
  *   - remoteVersion: string|null
  *   - localDigest: string|null
  *   - localVersion: string|null
+ *   - cancelled: boolean
  */
-async function checkForUpdates(cfg) {
+async function checkForUpdates(cfg, onProgress) {
   const imageName = 'land007/webcode:latest';
 
+  // Reset cancellation flag at start
+  resetUpdateCheckCancel();
+
   // Check container update
+  if (onProgress) onProgress('container', 'checking');
   const localDigest = await getLocalContainerDigest(imageName);
   const remoteDigest = await getRemoteContainerDigest(imageName);
+
+  // Check if cancelled after container check
+  if (updateCheckCancelled) {
+    return {
+      containerUpdate: false,
+      launcherUpdate: false,
+      remoteDigest: null,
+      remoteVersion: null,
+      localDigest,
+      localVersion: getLauncherVersion(),
+      cancelled: true
+    };
+  }
+
   const containerUpdate = digestsDiffer(localDigest, remoteDigest);
 
   // Check launcher update
+  if (onProgress) onProgress('launcher', 'checking');
   const localVersion = getLauncherVersion();
   const remoteVersion = await getLatestLauncherRelease();
+
+  // Check if cancelled after launcher check
+  if (updateCheckCancelled) {
+    return {
+      containerUpdate: false,
+      launcherUpdate: false,
+      remoteDigest,
+      remoteVersion: null,
+      localDigest,
+      localVersion,
+      cancelled: true
+    };
+  }
+
   const launcherUpdate = remoteVersion && versionsDiffer(localVersion, remoteVersion);
+
+  if (onProgress) onProgress('complete', 'done');
 
   return {
     containerUpdate,
@@ -248,7 +350,8 @@ async function checkForUpdates(cfg) {
     remoteDigest,
     remoteVersion,
     localDigest,
-    localVersion
+    localVersion,
+    cancelled: false
   };
 }
 
@@ -317,4 +420,6 @@ module.exports = {
   getLatestLauncherRelease,
   digestsDiffer,
   versionsDiffer,
+  cancelUpdateCheck,
+  resetUpdateCheckCancel,
 };

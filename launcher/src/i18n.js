@@ -180,6 +180,7 @@ const translations = {
     update_checking_launcher:  '正在检查启动器更新...',
     update_latest:           '已是最新版本',
     update_check_detail:     '正在对比 Docker 镜像和 GitHub Releases...',
+    update_cancelled:        '检查已取消',
   },
 
   'en': {
@@ -359,6 +360,7 @@ const translations = {
     update_checking_launcher:  'Checking launcher updates...',
     update_latest:           'You are up to date',
     update_check_detail:     'Comparing Docker images and GitHub Releases...',
+    update_cancelled:        'Check cancelled',
   },
 };
 
