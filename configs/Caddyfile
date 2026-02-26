@@ -43,7 +43,5 @@
 		reverse_proxy 127.0.0.1:10004
 	}
 	# noVNC HTML pages and assets
-	handle /* {
-		reverse_proxy 127.0.0.1:10004
-	}
+	reverse_proxy 127.0.0.1:10004
 }

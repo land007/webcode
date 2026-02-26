@@ -35,16 +35,7 @@
 
   // ── Audio WebSocket URL ───────────────────────────────────
   function getAudioWebSocketUrl() {
-    var port = parseInt(location.port) || 80;
-
-    // NW.js launcher ports (11001-11004) don't support path routing
-    // Use dedicated audio port (20006) for these
-    if (port >= 11001 && port <= 11004) {
-      var protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-      return protocol + '//localhost:20006/';
-    }
-
-    // For other ports, use path-based routing on current port
+    // Use current page's protocol, host, and port with /audio path
     var protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
     return protocol + '//' + location.host + '/audio';
   }
