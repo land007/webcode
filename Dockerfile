@@ -205,6 +205,9 @@ COPY configs/audio-bar.js /opt/noVNC/audio-bar.js
 RUN chmod +x /opt/audio-ws-server.py /opt/audio-ws-wrapper.sh \
     && sed -i 's|</body>|<script src="audio-bar.js"></script>\n</body>|' /opt/noVNC/vnc.html
 
+COPY configs/touch-handler.js /opt/noVNC/touch-handler.js
+RUN sed -i 's|</body>|<script src="touch-handler.js"></script>\n</body>|' /opt/noVNC/vnc.html
+
 COPY configs/xsession /opt/xsession
 RUN chmod +x /opt/xsession
 
