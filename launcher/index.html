@@ -2362,6 +2362,7 @@ document.getElementById('add-instance-modal').addEventListener('click', function
 let updateCheckTimer = null;
 let updateInfo = null;
 let updateCheckInProgress = false;
+let isUpdating = false;
 
 // ─── Update checking ───────────────────────────────────────────────────────────
 
@@ -2504,18 +2505,24 @@ function getUpdateTooltipText() {
 function showUpdateModal() {
   if (!updateInfo) return;
 
+  // If update is in progress, show progress panel instead of modal
+  if (isUpdating) {
+    showUpdateProgressPanel();
+    return;
+  }
+
   const modal = document.getElementById('update-modal');
   const containerSection = document.getElementById('container-update-section');
   const launcherSection = document.getElementById('launcher-update-section');
-  const progress = document.getElementById('update-progress');
-  const result = document.getElementById('update-result');
+  const progress = document.getElementById('update-progress-container');
+  const result = document.getElementById('update-result-container');
   const confirmBtn = document.getElementById('btn-update-confirm');
 
   // Reset state
-  progress.style.display = 'none';
-  result.style.display = 'none';
-  result.className = '';
-  confirmBtn.disabled = false;
+  if (progress) progress.style.display = 'none';
+  if (result) result.style.display = 'none';
+  if (result) result.className = '';
+  if (confirmBtn) confirmBtn.disabled = false;
 
   // Show/hide container update section
   if (updateInfo.containerUpdate) {
@@ -2576,6 +2583,8 @@ function hideUpdateConfirmModal() {
 }
 
 function performUpdate() {
+  isUpdating = true;
+
   const progress = document.getElementById('update-progress-container');
   const progressText = document.getElementById('update-progress-text');
   const result = document.getElementById('update-result-container');
@@ -2621,6 +2630,7 @@ function performUpdate() {
       confirmBtn.disabled = false;
     }
     cancelBtn.disabled = false;
+    isUpdating = false;
   });
 }
 
@@ -2636,6 +2646,7 @@ document.getElementById('btn-update-confirm').addEventListener('click', function
 // Update confirm modal buttons
 document.getElementById('btn-confirm-update-ok').addEventListener('click', function() {
   hideUpdateConfirmModal();
+  hideUpdateModal();  // Hide update modal
   performUpdate();
 });
 
@@ -2662,7 +2673,11 @@ document.getElementById('update-modal').addEventListener('click', function(e) {
 
 // Update check button - click to check manually or open modal if updates available
 document.getElementById('btn-check-update').addEventListener('click', function() {
-  if (updateCheckInProgress) return;
+  // If updating or checking, show progress panel
+  if (isUpdating || updateCheckInProgress) {
+    showUpdateProgressPanel();
+    return;
+  }
 
   if (updateInfo && (updateInfo.containerUpdate || updateInfo.launcherUpdate)) {
     // Has updates - open modal directly
