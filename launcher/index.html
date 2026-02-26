@@ -654,6 +654,43 @@
   </div>
 </div>
 
+<!-- ═══════════════════════ UPDATE CONFIRM MODAL ════════════════════════ -->
+<div id="update-confirm-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:10001;align-items:center;justify-content:center">
+  <div class="modal-card" style="max-width:480px">
+    <h3 data-i18n="update_confirm_title">确认运行最新容器</h3>
+
+    <div style="margin:16px 0">
+      <p style="margin-bottom:12px;color:var(--text);font-size:13px">更新容器将会：</p>
+      <ul style="margin:0;padding-left:20px;font-size:13px;color:var(--text);line-height:1.8">
+        <li>停止并删除当前容器</li>
+        <li>拉取最新镜像</li>
+        <li>重新创建并启动容器</li>
+      </ul>
+    </div>
+
+    <div style="background:rgba(245,166,35,.1);border:1px solid var(--warn);border-radius:8px;padding:12px;margin:16px 0">
+      <div style="display:flex;align-items:start;gap:8px;margin-bottom:8px">
+        <span style="font-size:16px">⚠️</span>
+        <span style="font-weight:500;color:var(--warn);font-size:13px">请确保以下数据已备份</span>
+      </div>
+      <div style="background:var(--surface2);border-radius:6px;padding:10px;font-size:12px;font-family:monospace;line-height:1.8">
+        <div>📁 /home/ubuntu/projects - 项目代码</div>
+        <div>📁 /home/ubuntu/dna - DNA 源码</div>
+        <div>📁 /home/ubuntu/.theia - Theia 配置</div>
+        <div>📁 其他重要数据</div>
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:var(--text-muted)">
+        注意：所有命名卷（projects、dna-data、theia-data 等）会保留，但建议提前备份以防万一。
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:16px">
+      <button id="btn-confirm-update-cancel" class="btn-secondary btn-sm" data-i18n="update_confirm_cancel">取消</button>
+      <button id="btn-confirm-update-ok" class="btn-primary btn-sm" data-i18n="update_confirm_btn">确认更新</button>
+    </div>
+  </div>
+</div>
+
 <!-- Process Logs Modal -->
 <div id="process-logs-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:10000;align-items:center;justify-content:center">
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;width:90vw;max-width:800px;max-height:80vh;display:flex;flex-direction:column">
@@ -2484,6 +2521,14 @@ function hideUpdateModal() {
   document.getElementById('update-modal').style.display = 'none';
 }
 
+function showUpdateConfirmModal() {
+  document.getElementById('update-confirm-modal').style.display = 'flex';
+}
+
+function hideUpdateConfirmModal() {
+  document.getElementById('update-confirm-modal').style.display = 'none';
+}
+
 function performUpdate() {
   const progress = document.getElementById('update-progress');
   const progressText = document.getElementById('update-progress-text');
@@ -2538,14 +2583,18 @@ function performUpdate() {
 
 // Update modal buttons
 document.getElementById('btn-update-confirm').addEventListener('click', function() {
-  // Show confirmation dialog before updating
-  const confirmed = confirm(
-    t('update_confirm_title') + '\n\n' + t('update_confirm_message')
-  );
+  // Show custom confirmation modal before updating
+  showUpdateConfirmModal();
+});
 
-  if (confirmed) {
-    performUpdate();
-  }
+// Update confirm modal buttons
+document.getElementById('btn-confirm-update-ok').addEventListener('click', function() {
+  hideUpdateConfirmModal();
+  performUpdate();
+});
+
+document.getElementById('btn-confirm-update-cancel').addEventListener('click', function() {
+  hideUpdateConfirmModal();
 });
 
 document.getElementById('btn-update-cancel').addEventListener('click', function() {
