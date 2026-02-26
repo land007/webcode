@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     permissions:
       contents: read
       packages: write
@@ -23,6 +24,18 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Wait for GitHub registry to be ready
+        run: |
+          echo "Waiting for ghcr.io to be accessible..."
+          for i in {1..5}; do
+            if curl -sS --max-time 10 https://ghcr.io/v2/ > /dev/null 2>&1; then
+              echo "ghcr.io is accessible"
+              break
+            fi
+            echo "Attempt $i/5 failed, retrying in 5s..."
+            sleep 5
+          done
 
       - uses: docker/login-action@v3
         with:
