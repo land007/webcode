@@ -593,6 +593,9 @@
       <span class="step-text">完成检查</span>
     </div>
   </div>
+  <div style="font-size:11px;color:var(--text-muted);margin-top:10px;text-align:center;">
+    如检查时间过长可点击右上角取消
+  </div>
 </div>
 
 <!-- ═══════════════════════ UPDATE MODAL ══════════════════════════ -->
@@ -2270,12 +2273,15 @@ function checkForUpdates(options) {
   }
 
   const onProgress = function(step, status) {
+    console.log('[Update Check] Step:', step, 'Status:', status);
     if (!silent) {
       updateCheckProgress(step);
     }
   };
 
+  console.log('[Update Check] Starting...');
   return app.checkForUpdates(cfg, onProgress).then(function(result) {
+    console.log('[Update Check] Complete:', result);
     updateInfo = result;
 
     if (!silent) {

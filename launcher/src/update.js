@@ -34,10 +34,13 @@ function getLocalContainerDigest(imageName) {
     const proc = spawn('docker', ['inspect', '--format={{index .RepoDigests 0}}', imageName], { env });
     let stdout = '';
     let stderr = '';
+    let completed = false;
 
     proc.stdout.on('data', (d) => { stdout += d.toString(); });
     proc.stderr.on('data', (d) => { stderr += d.toString(); });
+
     proc.on('close', (code) => {
+      completed = true;
       if (code === 0 && stdout.trim()) {
         resolve(stdout.trim());
       } else {
@@ -45,12 +48,23 @@ function getLocalContainerDigest(imageName) {
       }
     });
 
-    // Timeout after 5 seconds (local operation should be fast)
-    const timeout = setTimeout(() => {
-      proc.kill();
+    proc.on('error', (err) => {
+      completed = true;
+      console.error('docker inspect error:', err);
       resolve(null);
-    }, 5000);
-    proc.on('exit', () => clearTimeout(timeout));
+    });
+
+    // Timeout after 2 seconds (local operation should be fast)
+    const timeout = setTimeout(() => {
+      if (!completed) {
+        proc.kill('SIGKILL');
+        resolve(null);
+      }
+    }, 2000);
+
+    proc.on('exit', () => {
+      clearTimeout(timeout);
+    });
   });
 }
 
@@ -64,6 +78,8 @@ function getRemoteContainerDigest(imageName) {
   const ghcrImage = 'ghcr.io/land007/webcode:latest';
 
   return new Promise((resolve) => {
+    let completed = false;
+
     // Check if cancelled before starting
     if (updateCheckCancelled) {
       resolve(null);
@@ -77,26 +93,33 @@ function getRemoteContainerDigest(imageName) {
     let stdout = '';
     let stderr = '';
 
+    const finish = (result) => {
+      if (!completed) {
+        completed = true;
+        resolve(result);
+      }
+    };
+
     proc.stdout.on('data', (d) => { stdout += d.toString(); });
     proc.stderr.on('data', (d) => { stderr += d.toString(); });
     proc.on('close', (code) => {
       // Check if cancelled
       if (updateCheckCancelled) {
-        resolve(null);
+        finish(null);
         return;
       }
 
       if (code === 0 && stdout.trim()) {
         const digest = parseManifestDigest(stdout);
         if (digest) {
-          resolve(digest);
+          finish(digest);
           return;
         }
       }
 
       // Check if cancelled before trying ghcr.io
       if (updateCheckCancelled) {
-        resolve(null);
+        finish(null);
         return;
       }
 
@@ -110,32 +133,38 @@ function getRemoteContainerDigest(imageName) {
       proc2.on('close', (code2) => {
         if (code2 === 0 && stdout2.trim()) {
           const digest = parseManifestDigest(stdout2);
-          resolve(digest);
+          finish(digest);
         } else {
-          resolve(null);
+          finish(null);
         }
       });
 
-      const timeout2 = setTimeout(() => {
-        if (!updateCheckCancelled) {
-          proc2.kill();
-        }
-        resolve(null);
-      }, 5000);  // 5 seconds for ghcr.io
+      proc2.on('error', () => {
+        finish(null);
+      });
 
-      // Cleanup timeout if process completes early
+      const timeout2 = setTimeout(() => {
+        if (!completed) {
+          proc2.kill('SIGKILL');
+        }
+        finish(null);
+      }, 2000);  // 2 seconds for ghcr.io
+
       proc2.on('exit', () => clearTimeout(timeout2));
     });
 
-    // Timeout after 5 seconds (Docker Hub might be blocked)
-    const timeout1 = setTimeout(() => {
-      if (!updateCheckCancelled) {
-        proc.kill();
-      }
-      resolve(null);
-    }, 5000);  // 5 seconds for Docker Hub
+    proc.on('error', () => {
+      finish(null);
+    });
 
-    // Cleanup timeout if process completes early
+    // Timeout after 2 seconds (Docker Hub might be blocked)
+    const timeout1 = setTimeout(() => {
+      if (!completed) {
+        proc.kill('SIGKILL');
+      }
+      finish(null);
+    }, 2000);  // 2 seconds for Docker Hub
+
     proc.on('exit', () => clearTimeout(timeout1));
   });
 }
