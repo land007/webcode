@@ -20,8 +20,20 @@
 (function () {
   'use strict';
 
+  console.log('[touch-handler] Script loaded');
+  console.log('[touch-handler] ontouchstart:', 'ontouchstart' in window);
+  console.log('[touch-handler] maxTouchPoints:', navigator.maxTouchPoints);
+  console.log('[touch-handler] userAgent:', navigator.userAgent);
+
   // Only activate on touch-capable devices
-  if (!('ontouchstart' in window) && navigator.maxTouchPoints === 0) return;
+  // Also activate if URL parameter ?touch=1 is present for debugging
+  var forceTouch = location.search.match(/touch=1/);
+  var hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  if (!hasTouch && !forceTouch) {
+    console.log('[touch-handler] No touch detected, skipping initialization');
+    return;
+  }
+  console.log('[touch-handler] Touch detected or forced, initializing...');
 
   // ── Constants ─────────────────────────────────────────────
   var TAP_DURATION   = 200;   // ms — max duration for a tap
@@ -138,6 +150,7 @@
 
   // ── Touch event handlers ──────────────────────────────────
   function onTouchStart(e) {
+    console.log('[touch-handler] touchstart, touches:', e.touches.length);
     e.preventDefault();
     e.stopPropagation();
 
@@ -323,15 +336,22 @@
 
   // ── Initialise once canvas is available ──────────────────
   function init() {
+    console.log('[touch-handler] init() called');
     canvas = document.getElementById('noVNC_canvas');
-    if (!canvas) return false;
+    if (!canvas) {
+      console.log('[touch-handler] Canvas not found yet');
+      return false;
+    }
+    console.log('[touch-handler] Canvas found:', canvas);
 
     // Position virtual cursor at canvas centre
     var rect = canvas.getBoundingClientRect();
+    console.log('[touch-handler] Canvas rect:', rect);
     virtualX = rect.width  / 2;
     virtualY = rect.height / 2;
 
     cursor = createCursor();
+    console.log('[touch-handler] Cursor created:', cursor);
     updateCursorPos();
 
     // Overlay sits above the canvas, intercepts all touch events
@@ -345,8 +365,10 @@
     ].join(';');
 
     var container = canvas.parentElement || document.body;
+    console.log('[touch-handler] Container:', container);
     container.style.position = 'relative';
     container.appendChild(overlay);
+    console.log('[touch-handler] Overlay appended to container');
 
     overlay.addEventListener('touchstart',  onTouchStart,  {passive: false});
     overlay.addEventListener('touchmove',   onTouchMove,   {passive: false});
