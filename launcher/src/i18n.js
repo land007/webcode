@@ -162,6 +162,7 @@ const translations = {
     // Update feature
     update_available:        '有更新',
     btn_update:              '更新',
+    btn_check_update:        '检查更新',
     modal_update_title:      '有新版本可用',
     update_container_desc:   '容器有新版本可用。',
     update_launcher_desc:    '启动器有新版本可用。',
@@ -336,6 +337,7 @@ const translations = {
     // Update feature
     update_available:        'Update',
     btn_update:              'Update',
+    btn_check_update:        'Check for Updates',
     modal_update_title:      'Update Available',
     update_container_desc:   'A new container version is available.',
     update_launcher_desc:    'A new launcher version is available.',

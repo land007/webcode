@@ -306,6 +306,9 @@
       <span class="dot dot-gray" id="status-dot"></span>
       <span id="status-text" data-i18n="status_detecting">检测中…</span>
     </div>
+    <button id="btn-check-update" class="btn-check-update" data-i18n-title="btn_check_update" title="检查更新">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+    </button>
     <div id="update-badge" class="update-badge" style="display:none">
       <span class="update-dot"></span>
       <span data-i18n="update_available">有更新</span>
@@ -2202,10 +2205,12 @@ function checkForUpdates() {
 
 function showUpdateBadge() {
   document.getElementById('update-badge').style.display = 'flex';
+  document.getElementById('btn-check-update').classList.add('has-update');
 }
 
 function hideUpdateBadge() {
   document.getElementById('update-badge').style.display = 'none';
+  document.getElementById('btn-check-update').classList.remove('has-update');
 }
 
 function showUpdateModal() {
@@ -2330,6 +2335,30 @@ document.getElementById('update-modal').addEventListener('click', function(e) {
   if (e.target === this) {
     hideUpdateModal();
   }
+});
+
+// Manual check for updates button
+document.getElementById('btn-check-update').addEventListener('click', function() {
+  const btn = this;
+
+  // Show checking state
+  btn.classList.add('checking');
+  btn.disabled = true;
+
+  // Perform check
+  checkForUpdates();
+
+  // Remove checking state after a delay
+  setTimeout(function() {
+    btn.classList.remove('checking');
+    btn.disabled = false;
+
+    // If no updates found, show a brief message
+    if (!updateInfo || (!updateInfo.containerUpdate && !updateInfo.launcherUpdate)) {
+      // Could show a toast message here if needed
+      console.log('No updates found');
+    }
+  }, 2000);
 });
 
 // Auto-check for updates every 10 minutes (only when container is running)

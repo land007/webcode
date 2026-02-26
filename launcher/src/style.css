@@ -1010,6 +1010,39 @@ button .btn-icon svg {
   margin: 0;
 }
 
+/* ── Check update button ───────────────────────────────────────────── */
+.btn-check-update {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-check-update:hover {
+  background: var(--surface);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn-check-update:active {
+  transform: scale(0.95);
+}
+.btn-check-update svg {
+  transition: transform 0.5s ease;
+}
+.btn-check-update.checking svg {
+  animation: spin 1s linear infinite;
+}
+.btn-check-update.has-update {
+  display: none;
+}
+
 /* ── Update badge ───────────────────────────────────────────────── */
 .update-badge {
   display: flex;
