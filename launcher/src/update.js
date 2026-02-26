@@ -143,6 +143,8 @@ function getRemoteContainerDigest(imageName) {
     }
 
     const env = Object.assign({}, process.env, { PATH: buildDockerPath() });
+    console.log('[getRemoteContainerDigest] ========== START ==========');
+    console.log('[getRemoteContainerDigest] Trying Docker Hub first...');
 
     // Try Docker Hub first
     const proc = spawn('docker', ['manifest', 'inspect', imageName], { env });
@@ -152,13 +154,26 @@ function getRemoteContainerDigest(imageName) {
     const finish = (result) => {
       if (!completed) {
         completed = true;
+        console.log('[getRemoteContainerDigest] Finished, result:', result ? 'SUCCESS' : 'FAILED');
         resolve(result);
       }
     };
 
-    proc.stdout.on('data', (d) => { stdout += d.toString(); });
-    proc.stderr.on('data', (d) => { stderr += d.toString(); });
+    proc.stdout.on('data', (d) => {
+      const chunk = d.toString();
+      console.log('[getRemoteContainerDigest] Docker Hub stdout:', chunk.length, 'bytes');
+      stdout += chunk;
+    });
+
+    proc.stderr.on('data', (d) => {
+      const chunk = d.toString();
+      console.log('[getRemoteContainerDigest] Docker Hub stderr:', chunk);
+      stderr += chunk;
+    });
+
     proc.on('close', (code) => {
+      console.log('[getRemoteContainerDigest] Docker Hub close, code:', code);
+
       // Check if cancelled
       if (updateCheckCancelled) {
         finish(null);
@@ -168,6 +183,7 @@ function getRemoteContainerDigest(imageName) {
       if (code === 0 && stdout.trim()) {
         const digest = parseManifestDigest(stdout);
         if (digest) {
+          console.log('[getRemoteContainerDigest] ✓ Docker Hub SUCCESS, digest:', digest.substring(0, 20) + '...');
           finish(digest);
           return;
         }
@@ -179,47 +195,71 @@ function getRemoteContainerDigest(imageName) {
         return;
       }
 
+      console.log('[getRemoteContainerDigest] Docker Hub failed, trying ghcr.io...');
+
       // Docker Hub failed, try ghcr.io
       const proc2 = spawn('docker', ['manifest', 'inspect', ghcrImage], { env });
       let stdout2 = '';
       let stderr2 = '';
 
-      proc2.stdout.on('data', (d) => { stdout2 += d.toString(); });
-      proc2.stderr.on('data', (d) => { stderr2 += d.toString(); });
+      proc2.stdout.on('data', (d) => {
+        const chunk = d.toString();
+        console.log('[getRemoteContainerDigest] ghcr.io stdout:', chunk.length, 'bytes');
+        stdout2 += chunk;
+      });
+
+      proc2.stderr.on('data', (d) => {
+        const chunk = d.toString();
+        console.log('[getRemoteContainerDigest] ghcr.io stderr:', chunk);
+        stderr2 += chunk;
+      });
+
       proc2.on('close', (code2) => {
+        console.log('[getRemoteContainerDigest] ghcr.io close, code:', code2);
         if (code2 === 0 && stdout2.trim()) {
           const digest = parseManifestDigest(stdout2);
-          finish(digest);
+          if (digest) {
+            console.log('[getRemoteContainerDigest] ✓ ghcr.io SUCCESS, digest:', digest.substring(0, 20) + '...');
+            finish(digest);
+          } else {
+            console.log('[getRemoteContainerDigest] ✗ ghcr.io parse failed');
+            finish(null);
+          }
         } else {
+          console.log('[getRemoteContainerDigest] ✗ ghcr.io failed');
           finish(null);
         }
       });
 
-      proc2.on('error', () => {
+      proc2.on('error', (err) => {
+        console.log('[getRemoteContainerDigest] ghcr.io error:', err);
         finish(null);
       });
 
       const timeout2 = setTimeout(() => {
         if (!completed) {
+          console.log('[getRemoteContainerDigest] ghcr.io TIMEOUT');
           proc2.kill('SIGKILL');
         }
         finish(null);
-      }, 2000);  // 2 seconds for ghcr.io
+      }, 5000);  // 5 seconds for ghcr.io
 
       proc2.on('exit', () => clearTimeout(timeout2));
     });
 
-    proc.on('error', () => {
+    proc.on('error', (err) => {
+      console.log('[getRemoteContainerDigest] Docker Hub error:', err);
       finish(null);
     });
 
-    // Timeout after 2 seconds (Docker Hub might be blocked)
+    // Timeout after 5 seconds (Docker Hub might be blocked)
     const timeout1 = setTimeout(() => {
       if (!completed) {
+        console.log('[getRemoteContainerDigest] Docker Hub TIMEOUT, killing process');
         proc.kill('SIGKILL');
+        // Don't call finish here - let the close handler try ghcr.io
       }
-      finish(null);
-    }, 2000);  // 2 seconds for Docker Hub
+    }, 5000);  // 5 seconds for Docker Hub
 
     proc.on('exit', () => clearTimeout(timeout1));
   });
