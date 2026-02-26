@@ -1017,8 +1017,14 @@ button .btn-icon svg {
   background: linear-gradient(135deg, rgba(245,166,35,.15) 0%, rgba(245,158,11,.1) 100%);
   border: 1px solid var(--warn);
   border-radius: 8px;
+  cursor: pointer;
   overflow: hidden;
   animation: update-banner-slide 0.3s ease;
+  transition: opacity 0.2s;
+}
+
+.update-banner:hover {
+  opacity: 0.9;
 }
 
 @keyframes update-banner-slide {
@@ -1035,12 +1041,12 @@ button .btn-icon svg {
 .update-banner-content {
   display: flex;
   align-items: center;
-  padding: 6px 12px;
+  padding: 8px 16px;
   gap: 10px;
 }
 
 .update-banner-icon {
-  font-size: 16px;
+  font-size: 18px;
   animation: bounce 1s infinite;
 }
 
@@ -1052,106 +1058,15 @@ button .btn-icon svg {
 .update-banner-text {
   flex: 1;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--warn);
 }
 
-.update-banner-btn {
-  padding: 4px 12px;
-  font-size: 12px;
-  font-weight: 500;
-  background: var(--warn);
-  color: #000;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-.update-banner-btn:hover {
-  opacity: 0.9;
-}
-
-.update-banner-close {
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 18px;
-  line-height: 1;
-  padding: 0;
-  border-radius: 4px;
-}
-.update-banner-close:hover {
-  background: rgba(255,255,255,0.1);
-  color: var(--text);
-}
-
-/* ── Check update button (text version) ─────────────────────────────── */
-.btn-check-update-text {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text-muted);
-  font-size: 12px;
-  cursor: pointer;
-  transition: all .15s;
-}
-.btn-check-update-text:hover {
-  background: var(--surface);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.btn-check-update-text svg {
-  transition: transform 0.5s ease;
-}
-.btn-check-update-text.checking svg {
-  animation: spin 1s linear infinite;
-}
-.btn-check-update-text.has-update {
-  display: none;
-}
-
-/* ── Update badge ───────────────────────────────────────────────── */
-.update-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  background: rgba(245,166,35,.12);
-  border: 1px solid var(--warn);
-  border-radius: 6px;
+.update-banner-hint {
   font-size: 11px;
-  color: var(--warn);
-  font-weight: 500;
+  color: var(--text-muted);
+  font-weight: 400;
 }
-
-.update-dot {
-  width: 6px; height: 6px;
-  background: var(--warn);
-  border-radius: 50%;
-  animation: pulse 1.2s infinite;
-}
-
-.btn-update-sm {
-  padding: 2px 8px;
-  font-size: 11px;
-  background: var(--warn);
-  color: #000;
-  border: none;
-  border-radius: 4px;
-  font-weight: 500;
-  cursor: pointer;
-}
-.btn-update-sm:hover { opacity: 0.85; }
 
 /* ── Update modal ───────────────────────────────────────────────── */
 .update-info {

@@ -306,18 +306,13 @@
       <span class="dot dot-gray" id="status-dot"></span>
       <span id="status-text" data-i18n="status_detecting">检测中…</span>
     </div>
-    <div id="update-banner" class="update-banner" style="display:none">
+    <div id="update-banner" class="update-banner" style="display:none" onclick="showUpdateModal()">
       <div class="update-banner-content">
         <span class="update-banner-icon">📦</span>
         <span class="update-banner-text">有新版本可用</span>
-        <button id="btn-update-banner" class="update-banner-btn" data-i18n="btn_update_now">立即更新</button>
-        <button id="btn-close-banner" class="update-banner-close">×</button>
+        <span class="update-banner-hint">点击查看</span>
       </div>
     </div>
-    <button id="btn-check-update" class="btn-check-update-text" data-i18n-title="btn_check_update" title="检查更新">
-      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
-      <span style="margin-left:4px" data-i18n="btn_check_update">检查更新</span>
-    </button>
     <button class="theme-cycle-btn" id="theme-cycle-btn-ws" title="切换主题" style="margin-right:4px">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
       <span>暗色</span>
@@ -2358,32 +2353,28 @@ function checkForUpdates(options) {
 
 function showUpdateBadge() {
   const banner = document.getElementById('update-banner');
-  const checkBtn = document.getElementById('btn-check-update');
+  if (!banner) return;
 
   if (updateInfo) {
     // Update banner text based on what's available
     const bannerText = banner.querySelector('.update-banner-text');
-    if (updateInfo.containerUpdate && updateInfo.launcherUpdate) {
-      bannerText.textContent = '容器和启动器都有新版本';
-    } else if (updateInfo.containerUpdate) {
-      bannerText.textContent = '容器有新版本可用';
-    } else {
-      bannerText.textContent = '启动器有新版本可用';
+    if (bannerText) {
+      if (updateInfo.containerUpdate && updateInfo.launcherUpdate) {
+        bannerText.textContent = '容器和启动器都有新版本';
+      } else if (updateInfo.containerUpdate) {
+        bannerText.textContent = '容器有新版本可用';
+      } else {
+        bannerText.textContent = '启动器有新版本可用';
+      }
     }
     banner.style.display = 'block';
-  }
-
-  // Hide check button when updates are available
-  if (checkBtn) {
-    checkBtn.classList.add('has-update');
   }
 }
 
 function hideUpdateBadge() {
-  document.getElementById('update-banner').style.display = 'none';
-  const checkBtn = document.getElementById('btn-check-update');
-  if (checkBtn) {
-    checkBtn.classList.remove('has-update');
+  const banner = document.getElementById('update-banner');
+  if (banner) {
+    banner.style.display = 'none';
   }
 }
 
@@ -2490,10 +2481,8 @@ function performUpdate() {
   });
 }
 
-// Update badge click
-document.getElementById('btn-update').addEventListener('click', function() {
-  showUpdateModal();
-});
+// Update banner click - opens modal
+// (Inline onclick handler used)
 
 // Update modal buttons
 document.getElementById('btn-update-confirm').addEventListener('click', function() {
@@ -2509,31 +2498,6 @@ document.getElementById('update-modal').addEventListener('click', function(e) {
   if (e.target === this) {
     hideUpdateModal();
   }
-});
-
-// Manual check for updates button
-document.getElementById('btn-check-update').addEventListener('click', function() {
-  if (updateCheckInProgress) return; // Prevent double-click
-
-  checkForUpdates({ silent: false });
-});
-
-// Cancel update check button
-document.getElementById('btn-cancel-update-check').addEventListener('click', function() {
-  if (updateCheckInProgress) {
-    app.cancelUpdateCheck();
-    updateCheckInProgress = false;
-    hideUpdateProgressPanel();
-  }
-});
-
-// Update banner buttons
-document.getElementById('btn-update-banner').addEventListener('click', function() {
-  showUpdateModal();
-});
-
-document.getElementById('btn-close-banner').addEventListener('click', function() {
-  hideUpdateBadge();
 });
 
 // Launcher download link - open in external browser
