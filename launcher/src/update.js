@@ -146,6 +146,9 @@ function getRemoteContainerDigest(imageName) {
     console.log('[getRemoteContainerDigest] ========== START ==========');
     console.log('[getRemoteContainerDigest] Trying Docker Hub first...');
 
+    // Declare proc2 variable before overall timeout references it
+    let proc2 = null;
+
     // Try Docker Hub first
     const proc = spawn('docker', ['manifest', 'inspect', imageName], { env });
     let stdout = '';
@@ -233,18 +236,11 @@ function getRemoteContainerDigest(imageName) {
 
       proc2.on('error', (err) => {
         console.log('[getRemoteContainerDigest] ghcr.io error:', err);
-        finish(null);
       });
 
-      const timeout2 = setTimeout(() => {
-        if (!completed) {
-          console.log('[getRemoteContainerDigest] ghcr.io TIMEOUT');
-          proc2.kill('SIGKILL');
-        }
-        finish(null);
-      }, 5000);  // 5 seconds for ghcr.io
-
-      proc2.on('exit', () => clearTimeout(timeout2));
+      proc2.on('exit', () => {
+        clearTimeout(overallTimeout);
+      });
     });
 
     proc.on('error', (err) => {
@@ -252,16 +248,21 @@ function getRemoteContainerDigest(imageName) {
       finish(null);
     });
 
-    // Timeout after 5 seconds (Docker Hub might be blocked)
-    const timeout1 = setTimeout(() => {
+    // Overall timeout: 15 seconds for both attempts
+    const overallTimeout = setTimeout(() => {
       if (!completed) {
-        console.log('[getRemoteContainerDigest] Docker Hub TIMEOUT, killing process');
+        console.log('[getRemoteContainerDigest] OVERALL TIMEOUT (15s)');
         proc.kill('SIGKILL');
-        // Don't call finish here - let the close handler try ghcr.io
+        if (proc2) {
+          proc2.kill('SIGKILL');
+        }
+        finish(null);
       }
-    }, 5000);  // 5 seconds for Docker Hub
+    }, 15000);
 
-    proc.on('exit', () => clearTimeout(timeout1));
+    proc.on('exit', () => {
+      // Don't clear timeout here - proc2 might still be running
+    });
   });
 }
 
