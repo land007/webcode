@@ -9,13 +9,45 @@
 (function () {
   'use strict';
 
+  // ── i18n (Internationalization) ─────────────────────────────
+  function getLanguage() {
+    // Check browser language, default to 'en'
+    var lang = navigator.language || navigator.userLanguage || 'en';
+    // Return 'zh' for Chinese, 'en' for others
+    return lang.toLowerCase().startsWith('zh') ? 'zh' : 'en';
+  }
+
+  var i18n = {
+    en: {
+      audioAlt: 'Audio',
+      audioTitle: 'Desktop Audio',
+      micAlt: 'Mic',
+      micTitle: 'Microphone Input',
+      recordAlt: 'Record',
+      recordTitle: 'Record Desktop Video',
+      stopRecordingTitle: 'Stop Recording'
+    },
+    zh: {
+      audioAlt: '音频',
+      audioTitle: '桌面音频',
+      micAlt: '麦克风',
+      micTitle: '麦克风输入',
+      recordAlt: '录制',
+      recordTitle: '录制桌面视频',
+      stopRecordingTitle: '停止录制'
+    }
+  };
+
+  var t = i18n[getLanguage()];
+  console.log('[audio-bar] Language:', getLanguage());
+
   // ── SVG Icons (white) ─────────────────────────────────────
   function getIcon() {
-    return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>';
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>';
   }
 
   function getMicIcon() {
-    return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
       '<rect x="9" y="2" width="6" height="11" rx="3"></rect>' +
       '<path d="M19 10a7 7 0 0 1-14 0"></path>' +
       '<line x1="12" y1="19" x2="12" y2="22"></line>' +
@@ -24,12 +56,12 @@
   }
 
   function getRecordIcon() {   // white circle = ready to record
-    return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">' +
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">' +
       '<circle cx="12" cy="12" r="7" fill="white" stroke="white" stroke-width="1.5"/></svg>';
   }
 
   function getRecordingIcon() {  // white square = recording (click to stop)
-    return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">' +
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">' +
       '<rect x="5" y="5" width="14" height="14" rx="2" fill="white" stroke="white" stroke-width="1.5"/></svg>';
   }
 
@@ -66,8 +98,8 @@
     btn.type = 'image';
     btn.id = 'noVNC_audio_button';
     btn.className = 'noVNC_button';
-    btn.alt = '音频';
-    btn.title = '桌面音频';
+    btn.alt = t.audioAlt;
+    btn.title = t.audioTitle;
     btn.src = 'data:image/svg+xml;base64,' + btoa(getIcon());
 
     fsBtn.parentNode.insertBefore(btn, fsBtn);
@@ -75,7 +107,7 @@
     return true;
   }
 
-  // ── Create microphone button (inserted before audio button) ──
+  // ── Create microphone button (inserted after audio button) ──
   function createMicButton() {
     var audioBtn = document.getElementById('noVNC_audio_button');
     if (!audioBtn) return false;
@@ -86,11 +118,11 @@
     btn.type = 'image';
     btn.id = 'noVNC_mic_button';
     btn.className = 'noVNC_button';
-    btn.alt = '麦克风';
-    btn.title = '麦克风输入';
+    btn.alt = t.micAlt;
+    btn.title = t.micTitle;
     btn.src = 'data:image/svg+xml;base64,' + btoa(getMicIcon());
 
-    audioBtn.parentNode.insertBefore(btn, audioBtn);
+    audioBtn.parentNode.insertBefore(btn, audioBtn.nextSibling);
     console.log('[audio-bar] ✅ Mic button created in noVNC toolbar');
     return true;
   }
@@ -106,8 +138,8 @@
     btn.type = 'image';
     btn.id = 'noVNC_record_button';
     btn.className = 'noVNC_button';
-    btn.alt = '录制';
-    btn.title = '录制桌面视频';
+    btn.alt = t.recordAlt;
+    btn.title = t.recordTitle;
     btn.src = 'data:image/svg+xml;base64,' + btoa(getRecordIcon());
 
     micBtn.parentNode.insertBefore(btn, micBtn.nextSibling);
@@ -158,7 +190,7 @@
     if (!btn) return;
     btn.className = selected ? 'noVNC_button noVNC_selected' : 'noVNC_button';
     btn.src = 'data:image/svg+xml;base64,' + btoa(selected ? getRecordingIcon() : getRecordIcon());
-    btn.title = selected ? '停止录制' : '录制桌面视频';
+    btn.title = selected ? t.stopRecordingTitle : t.recordTitle;
   }
 
   function handleRecordingMessage(text) {
