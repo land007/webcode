@@ -463,10 +463,6 @@ function getLatestLauncherRelease() {
   });
 }
 
-    req.end();
-  });
-}
-
 /**
  * Compare two version strings using semver-like comparison.
  * @param {string} v1  Current version
