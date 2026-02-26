@@ -766,7 +766,13 @@ var safeLocalStorage = {
     try {
       if (typeof localStorage !== 'undefined' && localStorage.setItem) {
         localStorage.setItem(key, value);
+        console.log('[safeLocalStorage.setItem] Success:', key, '=', value);
         return true;
+      } else {
+        console.warn('[safeLocalStorage.setItem] localStorage not available:', {
+          type: typeof localStorage,
+          hasSetItem: typeof localStorage !== 'undefined' && localStorage.setItem
+        });
       }
     } catch (e) {
       console.warn('localStorage.setItem failed:', e);
@@ -946,8 +952,10 @@ function syncTheiaTheme(theme) {
 }
 
 function applyTheme(theme) {
+  console.log('[applyTheme] Applying theme:', theme);
   document.documentElement.setAttribute('data-theme', theme);
-  safeLocalStorage.setItem(THEME_KEY, theme);
+  var saved = safeLocalStorage.setItem(THEME_KEY, theme);
+  console.log('[applyTheme] Saved to localStorage:', saved, 'Theme:', THEME_KEY, '=', theme);
   // 使用统一的辅助函数更新主题按钮
   updateThemeButtons(theme);
   // 同步 Theia 主题
