@@ -31,12 +31,12 @@
 采用 **WebSocket + PulseAudio pipe-source** 方案：
 
 **架构设计**：
-- 单个 WebSocket 连接（端口 20006）同时处理音频输入和输出
+- 单个 WebSocket 连接（端口 20004，路径 `/audio`）同时处理音频输入和输出
 - 服务器 → 客户端：音频输出（已有）
 - 客户端 → 服务器：音频输入（新增）
 
 **组件说明**：
-1. **WebSocket 服务器** (端口 20006)
+1. **WebSocket 服务器** (端口 10006 容器内部，通过 Caddy 在 20004 端口暴露为 `/audio` 路径)
    - 输出：从 `webcode_null.monitor` 读取 → 广播给所有客户端
    - 输入：接收客户端音频 → 写入 pipe sink → PulseAudio
 
@@ -155,8 +155,9 @@ async function startMicrophone() {
     micWs.send(pcm.buffer);
   };
 
-  // 5. 连接 WebSocket（复用端口 20006）
-  micWs = new WebSocket('ws://' + location.hostname + ':20006');
+  // 5. 连接 WebSocket（使用 /audio 路径在当前端口）
+  var protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  micWs = new WebSocket(protocol + '//' + location.host + '/audio');
   micWs.binaryType = 'arraybuffer';
 }
 ```

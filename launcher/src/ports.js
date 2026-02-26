@@ -10,8 +10,8 @@ const DEFAULT_PORTS = {
   kanban: 20002,
   openclaw: 20003,
   novnc: 20004,
-  vnc: 20005,
-  audio: 20006
+  vnc: 20005
+  // Audio now uses /audio path on port 20004, no separate port needed
 };
 
 // 端口配置名称映射
@@ -19,9 +19,8 @@ const PORT_NAMES = {
   theia: 'Theia IDE',
   kanban: 'Vibe Kanban',
   openclaw: 'OpenClaw AI',
-  novnc: 'noVNC',
-  vnc: 'TigerVNC',
-  audio: 'Audio WebSocket'
+  novnc: 'noVNC (includes Audio on /audio path)',
+  vnc: 'TigerVNC'
 };
 
 /**
@@ -161,7 +160,7 @@ function updateComposePorts(workDir, ports) {
   content = content.replace(/"(\d+):20003"/, `"${ports.openclaw}:20003"`);
   content = content.replace(/"(\d+):20004"/, `"${ports.novnc}:20004"`);
   content = content.replace(/"(\d+):10005"/, `"${ports.vnc}:10005"`);
-  if (ports.audio) content = content.replace(/"(\d+):20006"/, `"${ports.audio}:20006"`);
+  // Audio uses /audio path on port 20004, no separate port mapping needed
 
   fs.writeFileSync(composePath, content, 'utf8');
 }
