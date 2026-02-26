@@ -5,7 +5,7 @@
   <title>webcode</title>
   <!-- 主题初始化：在 CSS 加载前设置 data-theme，防止页面闪烁 -->
   <script>(function(){
-    var t = localStorage.getItem('webcode-theme') || 'dark';
+    var t = safeLocalStorage.getItem('webcode-theme', 'dark');
     document.documentElement.setAttribute('data-theme', t);
   })();</script>
   <link rel="stylesheet" href="src/style.css">
@@ -684,6 +684,33 @@
 
 <!-- 早期脚本：在页面上显示 JS 错误（不依赖 DevTools） -->
 <script>
+// ─── Safe localStorage wrapper ─────────────────────────────────────────────
+// In NW.js environment, localStorage may not be available in all contexts
+var safeLocalStorage = {
+  getItem: function(key, defaultValue) {
+    try {
+      if (typeof localStorage !== 'undefined' && localStorage.getItem) {
+        var value = localStorage.getItem(key);
+        return value !== null ? value : defaultValue;
+      }
+    } catch (e) {
+      console.warn('localStorage.getItem failed:', e);
+    }
+    return defaultValue;
+  },
+  setItem: function(key, value) {
+    try {
+      if (typeof localStorage !== 'undefined' && localStorage.setItem) {
+        localStorage.setItem(key, value);
+        return true;
+      }
+    } catch (e) {
+      console.warn('localStorage.setItem failed:', e);
+    }
+    return false;
+  }
+};
+
 window.onerror = function(msg, src, line, col, err) {
   var d = document.getElementById('_err_overlay');
   if (!d) {
@@ -822,7 +849,7 @@ function applyTranslations() {
   document.documentElement.lang = getLang();
 
   // 更新主题按钮和语言按钮
-  var currentTheme = localStorage.getItem(THEME_KEY) || 'dark';
+  var currentTheme = safeLocalStorage.getItem(THEME_KEY, 'dark');
   updateThemeButtons(currentTheme);
   updateLangButtons();
 }
@@ -856,7 +883,7 @@ function syncTheiaTheme(theme) {
 
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem(THEME_KEY, theme);
+  safeLocalStorage.setItem(THEME_KEY, theme);
   // 使用统一的辅助函数更新主题按钮
   updateThemeButtons(theme);
   // 同步 Theia 主题
@@ -865,7 +892,7 @@ function applyTheme(theme) {
 
 // 监听系统主题变化，当选择"系统"时实时响应
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
-  if ((localStorage.getItem(THEME_KEY) || 'dark') === 'system') {
+  if ((safeLocalStorage.getItem(THEME_KEY, 'dark')) === 'system') {
     applyTheme('system');
   }
 });
@@ -874,7 +901,7 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', fun
 document.addEventListener('click', function(e) {
   var btn = e.target.closest('.theme-cycle-btn');
   if (!btn) return;
-  var current = localStorage.getItem(THEME_KEY) || 'dark';
+  var current = safeLocalStorage.getItem(THEME_KEY, 'dark');
   var idx = THEME_ORDER.indexOf(current);
   var next = THEME_ORDER[(idx + 1) % THEME_ORDER.length];
   applyTheme(next);
@@ -970,7 +997,7 @@ function showWorkspace() {
   startStatusPolling();
   startLogStream();
   // 进入工作区时同步 Theia 主题（写入 settings.json，下次打开 IDE 自动生效）
-  syncTheiaTheme(localStorage.getItem(THEME_KEY) || 'dark');
+  syncTheiaTheme(safeLocalStorage.getItem(THEME_KEY, 'dark'));
   if (!proxyStarted) {
     app.startProxies(cfg);
     proxyStarted = true;
@@ -2504,7 +2531,7 @@ function boot() {
   initInstances();
 
   // 初始化主题（head 脚本已设 data-theme，这里同步按钮状态）
-  applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
+  applyTheme(safeLocalStorage.getItem(THEME_KEY, 'dark'));
   // 渲染标签页图标
   renderTabIcons();
   // 初始化眼睛图标
