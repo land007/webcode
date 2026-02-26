@@ -967,7 +967,15 @@ document.addEventListener('click', function(e) {
   if (!btn) return;
   var current = safeLocalStorage.getItem(THEME_KEY, 'dark');
   var idx = THEME_ORDER.indexOf(current);
+
+  // 如果当前主题不在列表中（防御性编程）
+  if (idx === -1) {
+    console.warn('[Theme] Invalid theme value:', current, 'Resetting to dark');
+    idx = 0;
+  }
+
   var next = THEME_ORDER[(idx + 1) % THEME_ORDER.length];
+  console.log('[Theme] Current:', current, 'Idx:', idx, 'Next:', next);
   applyTheme(next);
 });
 
