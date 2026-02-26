@@ -257,11 +257,23 @@ function parseManifestDigest(output) {
  * @returns {boolean}
  */
 function digestsDiffer(digest1, digest2) {
-  if (!digest1 || !digest2) return false;
-  // Digests are like "sha256:abc123..." - compare just the hash part
+  // If local digest is null (no local image), consider it as "update available"
+  // User needs to pull the image
+  if (!digest1 && digest2) {
+    console.log('[digestsDiffer] No local image found, update available');
+    return true;
+  }
+  // If remote digest is null (network error), can't determine
+  if (!digest2) {
+    console.log('[digestsDiffer] Remote digest unavailable, skipping check');
+    return false;
+  }
+  // Compare digests
   const hash1 = digest1.replace(/^sha256:/, '').substring(0, 12);
   const hash2 = digest2.replace(/^sha256:/, '').substring(0, 12);
-  return hash1 !== hash2;
+  const differs = hash1 !== hash2;
+  console.log('[digestsDiffer] Comparing digests:', hash1, 'vs', hash2, '→', differs);
+  return differs;
 }
 
 // ─── Launcher Version Detection ─────────────────────────────────────────────────
@@ -410,6 +422,11 @@ async function checkForUpdates(cfg, onProgress) {
   }
 
   const containerUpdate = digestsDiffer(localDigest, remoteDigest);
+
+  console.log('[checkForUpdates] Container update check:');
+  console.log('[checkForUpdates]   localDigest:', localDigest ? localDigest.substring(0, 30) + '...' : 'null');
+  console.log('[checkForUpdates]   remoteDigest:', remoteDigest ? remoteDigest.substring(0, 30) + '...' : 'null');
+  console.log('[checkForUpdates]   containerUpdate:', containerUpdate);
 
   // Check launcher update
   if (onProgress) onProgress('launcher', 'checking');

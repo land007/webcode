@@ -1010,36 +1010,113 @@ button .btn-icon svg {
   margin: 0;
 }
 
-/* ── Check update button ───────────────────────────────────────────── */
-.btn-check-update {
+/* ── Update banner ─────────────────────────────────────────────────── */
+.update-banner {
+  flex: 1;
+  margin: 0 12px;
+  background: linear-gradient(135deg, rgba(245,166,35,.15) 0%, rgba(245,158,11,.1) 100%);
+  border: 1px solid var(--warn);
+  border-radius: 8px;
+  overflow: hidden;
+  animation: update-banner-slide 0.3s ease;
+}
+
+@keyframes update-banner-slide {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.update-banner-content {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  gap: 10px;
+}
+
+.update-banner-icon {
+  font-size: 16px;
+  animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.update-banner-text {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--warn);
+}
+
+.update-banner-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--warn);
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.update-banner-btn:hover {
+  opacity: 0.9;
+}
+
+.update-banner-close {
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
   padding: 0;
+  border-radius: 4px;
+}
+.update-banner-close:hover {
+  background: rgba(255,255,255,0.1);
+  color: var(--text);
+}
+
+/* ── Check update button (text version) ─────────────────────────────── */
+.btn-check-update-text {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text-muted);
+  font-size: 12px;
   cursor: pointer;
   transition: all .15s;
 }
-.btn-check-update:hover {
+.btn-check-update-text:hover {
   background: var(--surface);
   border-color: var(--accent);
   color: var(--accent);
 }
-.btn-check-update:active {
-  transform: scale(0.95);
-}
-.btn-check-update svg {
+.btn-check-update-text svg {
   transition: transform 0.5s ease;
 }
-.btn-check-update.checking svg {
+.btn-check-update-text.checking svg {
   animation: spin 1s linear infinite;
 }
-.btn-check-update.has-update {
+.btn-check-update-text.has-update {
   display: none;
 }
 
