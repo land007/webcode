@@ -41,6 +41,9 @@
   var DOUBLE_TAP_GAP = 300;   // ms — max gap between two taps
   var LONG_PRESS_MS  = 500;   // ms — long press threshold
   var SPEED_FACTOR   = 0.4;   // velocity scale coefficient
+  var EDGE_THRESHOLD = 0;     // px — cursor can reach true edge (0 or viewport.w/h)
+  var EDGE_SCROLL_SPEED = 2.0; // px/frame per overflow px (faster)
+  var MAX_SCROLL_SPEED = 30;  // px/frame maximum scroll speed (faster)
 
   // ── State ─────────────────────────────────────────────────
   var canvas = null;
@@ -148,6 +151,97 @@
     }
   }
 
+  // ── Get noVNC Display instance for viewport control ────────
+  function getDisplay() {
+    // Method 1: Try window.UI_imported from dynamic import
+    if (window.UI_imported && UI_imported.rfb) {
+      if (UI_imported.rfb._display) {
+        return UI_imported.rfb._display;
+      }
+      if (UI_imported.rfb.display) {
+        return UI_imported.rfb.display;
+      }
+    }
+
+    // Method 2: Check canvas._rfb._display (RFB attaches itself to target element)
+    if (canvas && canvas._rfb) {
+      if (canvas._rfb._display) {
+        return canvas._rfb._display;
+      }
+      if (canvas._rfb.display) {
+        return canvas._rfb.display;
+      }
+    }
+
+    // Method 3: Try to find RFB on container
+    var container = document.getElementById('noVNC_container');
+    if (container && container._rfb) {
+      if (container._rfb._display) {
+        return container._rfb._display;
+      }
+      if (container._rfb.display) {
+        return container._rfb.display;
+      }
+    }
+
+    return null;
+  }
+
+  // ── Edge auto-scroll when cursor reaches viewport edges ─────
+  function handleEdgeScroll() {
+    var display = getDisplay();
+    if (!display) {
+      // Silently skip if display not ready yet (dynamic import pending)
+      return;
+    }
+
+    var viewport = display._viewportLoc;
+    if (!viewport) {
+      console.log('[edge-scroll] No viewport on display');
+      return;
+    }
+
+    var scrollX = 0, scrollY = 0;
+    var cursorUpdated = false;
+
+    // Right edge: cursor went past viewport width
+    if (virtualX > viewport.w) {
+      var overflow = virtualX - viewport.w;
+      scrollX = Math.min(overflow * EDGE_SCROLL_SPEED, MAX_SCROLL_SPEED);
+      virtualX = viewport.w; // Clamp to edge
+      cursorUpdated = true;
+    }
+    // Left edge: cursor went past 0
+    else if (virtualX < 0) {
+      var overflow = -virtualX;
+      scrollX = -Math.min(overflow * EDGE_SCROLL_SPEED, MAX_SCROLL_SPEED);
+      virtualX = 0; // Clamp to edge
+      cursorUpdated = true;
+    }
+
+    // Bottom edge: cursor went past viewport height
+    if (virtualY > viewport.h) {
+      var overflow = virtualY - viewport.h;
+      scrollY = Math.min(overflow * EDGE_SCROLL_SPEED, MAX_SCROLL_SPEED);
+      virtualY = viewport.h; // Clamp to edge
+      cursorUpdated = true;
+    }
+    // Top edge: cursor went past 0
+    else if (virtualY < 0) {
+      var overflow = -virtualY;
+      scrollY = -Math.min(overflow * EDGE_SCROLL_SPEED, MAX_SCROLL_SPEED);
+      virtualY = 0; // Clamp to edge
+      cursorUpdated = true;
+    }
+
+    // Apply scrolling if needed
+    if (scrollX !== 0 || scrollY !== 0) {
+      console.log('[edge-scroll] Scrolling:', scrollX.toFixed(1), scrollY.toFixed(1));
+      display.viewportChangePos(scrollX, scrollY);
+      updateCursorPos();
+    }
+  }
+
   // ── Touch event handlers ──────────────────────────────────
   function onTouchStart(e) {
     console.log('[touch-handler] touchstart, touches:', e.touches.length);
@@ -221,15 +315,19 @@
       var velocity = dt > 0 ? (Math.abs(dx) + Math.abs(dy)) / dt : 0;
       var scale = 1 + velocity * SPEED_FACTOR;
 
-      var rect = canvas.getBoundingClientRect();
-      virtualX = clamp(virtualX + dx * scale, 0, rect.width);
-      virtualY = clamp(virtualY + dy * scale, 0, rect.height);
+      // Allow cursor to move beyond viewport bounds for edge scrolling
+      virtualX = virtualX + dx * scale;
+      virtualY = virtualY + dy * scale;
+      // Note: No clamp - cursor can go outside viewport to trigger edge scroll
 
       lastTouchX    = t.clientX;
       lastTouchY    = t.clientY;
       lastTouchTime = now;
 
       updateCursorPos();
+
+      // Edge auto-scroll when cursor reaches viewport boundaries
+      handleEdgeScroll();
 
       if (buttonDown) {
         // Drag mode: send mousemove with button held
@@ -337,7 +435,8 @@
   // ── Initialise once canvas is available ──────────────────
   function init() {
     console.log('[touch-handler] init() called');
-    canvas = document.getElementById('noVNC_canvas');
+    // noVNC creates canvas dynamically without an ID, so we query it
+    canvas = document.querySelector('#noVNC_container canvas');
     if (!canvas) {
       console.log('[touch-handler] Canvas not found yet');
       return false;
@@ -360,7 +459,7 @@
     overlay.style.cssText = [
       'position:absolute',
       'inset:0',
-      'z-index:9999',
+      'z-index:5',
       'touch-action:none',
     ].join(';');
 
@@ -374,6 +473,15 @@
     overlay.addEventListener('touchmove',   onTouchMove,   {passive: false});
     overlay.addEventListener('touchend',    onTouchEnd,    {passive: false});
     overlay.addEventListener('touchcancel', onTouchCancel, {passive: false});
+
+    // Start dynamic import of UI module to enable edge scrolling
+    console.log('[touch-handler] Starting UI module import...');
+    import('./app/ui.js').then(function(module) {
+      console.log('[touch-handler] ✓ UI imported, rfb:', !!module.default.rfb);
+      window.UI_imported = module.default;
+    }).catch(function(e) {
+      console.log('[touch-handler] ❌ UI import failed:', e.message);
+    });
 
     console.log('[touch-handler] ✅ Trackpad mode active');
     return true;
