@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-"""PulseAudio null-sink -> WebSocket audio stream (s16le, 44100Hz, stereo)
+"""PulseAudio null-sink -> WebSocket audio stream (Opus 64kbps, 48000Hz, stereo)
 Full-duplex: also accepts inbound binary messages from browser mic and writes
 them into a webcode_input null-sink via pacat --playback.
 Text frames: JSON control messages for server-side ffmpeg recording.
+
+Compression: Opus @ 64 Kbps, 20ms frames (960 samples/ch @ 48000Hz).
+Bandwidth: 1.37 Mbps (raw PCM) -> 64 Kbps (Opus) = ~95% reduction.
+Latency:   ~186ms (raw chunk) -> ~20ms (Opus frame) = ~89% reduction.
 """
 import asyncio
 import os
@@ -12,12 +16,15 @@ import websockets
 import json
 import signal
 import datetime
+import opuslib
 
 HOST = "127.0.0.1"
 PORT = 10006
-SAMPLE_RATE = 44100
+SAMPLE_RATE = 48000       # Opus native rate (upsample from 44100)
 CHANNELS = 2
-CHUNK_SIZE = 16384  # ~186ms per chunk (16384 / (44100 * 2))
+FRAME_SIZE = 960          # 20ms per frame at 48000Hz
+CHUNK_BYTES = FRAME_SIZE * CHANNELS * 2  # raw PCM bytes per Opus frame
+ENCODER_BITRATE = 64000   # 64 Kbps target
 PULSE_SINK = "webcode_null"
 PULSE_INPUT_SINK = "webcode_input"
 CLIENTS = set()
@@ -134,16 +141,22 @@ async def stop_recording():
 
 
 async def broadcast_audio():
-    """Read audio from pacat and broadcast to all WebSocket clients."""
+    """Read audio from pacat, encode with Opus, broadcast to all WebSocket clients.
+
+    Codec: Opus, 48000Hz stereo, 64 Kbps, 20ms frames (APPLICATION_RESTRICTED_LOWDELAY).
+    Each WebSocket message is one raw Opus packet (~160 bytes vs 3840 bytes raw PCM).
+    """
+    encoder = opuslib.Encoder(SAMPLE_RATE, CHANNELS, 'restricted_lowdelay')
+    encoder.bitrate = ENCODER_BITRATE
+    encoder.complexity = 5  # balance quality vs CPU for real-time use
+
     cmd = [
         "pacat", "--record",
         "-d", f"{PULSE_SINK}.monitor",
         "--format=s16le",
         f"--rate={SAMPLE_RATE}",
         f"--channels={CHANNELS}",
-        "--latency-msec=10",
-        "--property=buffer_time=25000",  # 25ms buffer
-        "--property=fragment_time=8533",  # ~8.5ms fragment (1/3 buffer)
+        "--latency-msec=5",
     ]
     proc = await asyncio.create_subprocess_exec(
         *cmd,
@@ -151,21 +164,33 @@ async def broadcast_audio():
         stderr=asyncio.subprocess.PIPE,
         env=PULSE_ENV,
     )
-    print(f"[audio-ws] pacat started (pid={proc.pid}), broadcasting on ws://{HOST}:{PORT}", flush=True)
+    print(
+        f"[audio-ws] pacat started (pid={proc.pid}), "
+        f"Opus {ENCODER_BITRATE // 1000}kbps @ {SAMPLE_RATE}Hz "
+        f"20ms frames → ws://{HOST}:{PORT}",
+        flush=True,
+    )
 
     try:
         while True:
-            data = await proc.stdout.read(CHUNK_SIZE)
-            if not data:
+            try:
+                frame_pcm = await proc.stdout.readexactly(CHUNK_BYTES)
+            except asyncio.IncompleteReadError:
                 print(f"[audio-ws] pacat EOF, exit code={await proc.wait()}", flush=True)
                 break
+
+            try:
+                encoded = encoder.encode(frame_pcm, FRAME_SIZE)
+            except Exception as e:
+                print(f"[audio-ws] Opus encode error: {e}", flush=True)
+                continue
+
             if CLIENTS:
                 dead = set()
                 for client in list(CLIENTS):
                     try:
-                        await client.send(data)
-                    except Exception as e:
-                        print(f"[audio-ws] send to client failed: {e}", flush=True)
+                        await client.send(encoded)
+                    except Exception:
                         dead.add(client)
                 CLIENTS.difference_update(dead)
     except Exception as e:
@@ -182,6 +207,20 @@ async def handler(ws):
     """Handle WebSocket client connection (full-duplex)."""
     CLIENTS.add(ws)
     print(f"[audio-ws] client connected ({len(CLIENTS)} total) from {ws.remote_address}", flush=True)
+
+    # Send codec negotiation so the client knows to use Opus decoder
+    try:
+        await ws.send(json.dumps({
+            "event": "codec_info",
+            "codec": "opus",
+            "sample_rate": SAMPLE_RATE,
+            "channels": CHANNELS,
+            "frame_size": FRAME_SIZE,
+            "bitrate": ENCODER_BITRATE,
+        }))
+    except Exception as e:
+        print(f"[audio-ws] codec_info send failed: {e}", flush=True)
+
     try:
         async for message in ws:
             if isinstance(message, bytes):
@@ -235,7 +274,7 @@ async def wait_for_pulseaudio(retries=30):
             if result.returncode == 0:
                 print("[audio-ws] PulseAudio is ready", flush=True)
                 return True
-        except Exception as e:
+        except Exception:
             pass
         print(f"[audio-ws] waiting for PulseAudio ({i+1}/{retries})...", flush=True)
         await asyncio.sleep(1)
@@ -257,7 +296,7 @@ async def wait_for_null_sink(retries=10):
             if PULSE_SINK in result.stdout:
                 print(f"[audio-ws] null-sink '{PULSE_SINK}' is available", flush=True)
                 return True
-        except Exception as e:
+        except Exception:
             pass
         print(f"[audio-ws] waiting for null-sink '{PULSE_SINK}' ({i+1}/{retries})...", flush=True)
         await asyncio.sleep(1)

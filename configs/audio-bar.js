@@ -171,9 +171,11 @@
 
   // ── Audio output logic ───────────────────────────────────
   var audioCtx, ws, nextPlayTime = 0, active = false;
-  var SAMPLE_RATE = 44100, CHANNELS = 2;
+  var SAMPLE_RATE = 48000, CHANNELS = 2;  // 48000Hz = Opus native rate
   var autoStartAttempted = false;
   var recordActive = false;
+  // Opus / WebCodecs state
+  var audioDecoder = null, opusFrameTimestamp = 0, codecOpus = false;
 
   function setSelected(selected) {
     var btn = document.getElementById('noVNC_audio_button');
@@ -217,6 +219,12 @@
   function stopAudio() {
     active = false;
     setSelected(false);
+    codecOpus = false;
+    opusFrameTimestamp = 0;
+    if (audioDecoder) {
+      try { audioDecoder.close(); } catch (e) {}
+      audioDecoder = null;
+    }
     if (ws) { ws.close(); ws = null; }
     if (audioCtx) { audioCtx.close(); audioCtx = null; }
   }
@@ -249,6 +257,7 @@
     ws.onopen = function () {
       setSelected(true);
       console.log('[audio-bar] ✅ Connected');
+      // codec_info will arrive as first text frame; then query recording status
       try { ws.send(JSON.stringify({action: 'recording_status'})); } catch (e) {}
     };
 
@@ -265,31 +274,95 @@
 
     ws.onmessage = function (event) {
       if (typeof event.data === 'string') {
+        var msg;
+        try { msg = JSON.parse(event.data); } catch (e) { return; }
+        if (msg.event === 'codec_info') {
+          initOpusDecoder(msg);
+          return;
+        }
         handleRecordingMessage(event.data);
         return;
       }
       if (!audioCtx) return;
-      var raw = new Int16Array(event.data);
-      var numFrames = raw.length / CHANNELS;
-      if (numFrames < 1) return;
-
-      var buffer = audioCtx.createBuffer(CHANNELS, numFrames, SAMPLE_RATE);
-      for (var ch = 0; ch < CHANNELS; ch++) {
-        var channelData = buffer.getChannelData(ch);
-        for (var i = 0; i < numFrames; i++) {
-          channelData[i] = raw[i * CHANNELS + ch] / 32768.0;
+      if (codecOpus && audioDecoder && audioDecoder.state === 'configured') {
+        // ── Opus path (WebCodecs AudioDecoder) ──────────────────
+        try {
+          audioDecoder.decode(new EncodedAudioChunk({
+            type: 'key',
+            timestamp: opusFrameTimestamp,
+            data: event.data,
+          }));
+          opusFrameTimestamp += 20000; // 20ms per frame in microseconds
+        } catch (e) {
+          console.error('[audio-bar] AudioDecoder.decode error:', e);
         }
+      } else {
+        // ── Fallback: raw PCM Int16 ──────────────────────────────
+        var raw = new Int16Array(event.data);
+        var numFrames = raw.length / CHANNELS;
+        if (numFrames < 1) return;
+        var buffer = audioCtx.createBuffer(CHANNELS, numFrames, SAMPLE_RATE);
+        for (var ch = 0; ch < CHANNELS; ch++) {
+          var channelData = buffer.getChannelData(ch);
+          for (var i = 0; i < numFrames; i++) {
+            channelData[i] = raw[i * CHANNELS + ch] / 32768.0;
+          }
+        }
+        var source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(audioCtx.destination);
+        var now = audioCtx.currentTime;
+        if (nextPlayTime < now) nextPlayTime = now + 0.01;
+        source.start(nextPlayTime);
+        nextPlayTime += buffer.duration;
       }
-
-      var source = audioCtx.createBufferSource();
-      source.buffer = buffer;
-      source.connect(audioCtx.destination);
-
-      var now = audioCtx.currentTime;
-      if (nextPlayTime < now) nextPlayTime = now + 0.01;
-      source.start(nextPlayTime);
-      nextPlayTime += buffer.duration;
     };
+  }
+
+  // ── Opus decoder via WebCodecs AudioDecoder ──────────────
+  function initOpusDecoder(codecInfo) {
+    if (!window.AudioDecoder) {
+      console.warn('[audio-bar] AudioDecoder not available; Opus playback disabled');
+      return;
+    }
+    var sr = codecInfo.sample_rate || 48000;
+    var ch = codecInfo.channels || 2;
+    console.log('[audio-bar] Initialising Opus decoder: ' + sr + 'Hz ' + ch + 'ch @ ' + codecInfo.bitrate + 'bps');
+
+    if (audioDecoder) {
+      try { audioDecoder.close(); } catch (e) {}
+    }
+    opusFrameTimestamp = 0;
+
+    audioDecoder = new AudioDecoder({
+      output: function (audioData) {
+        if (!audioCtx) { audioData.close(); return; }
+        var numFrames = audioData.numberOfFrames;
+        var numChannels = audioData.numberOfChannels;
+        var sampleRate = audioData.sampleRate;
+        var buffer = audioCtx.createBuffer(numChannels, numFrames, sampleRate);
+        for (var c = 0; c < numChannels; c++) {
+          var plane = new Float32Array(numFrames);
+          audioData.copyTo(plane, { planeIndex: c, format: 'f32-planar' });
+          buffer.copyToChannel(plane, c);
+        }
+        audioData.close();
+        var source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(audioCtx.destination);
+        var now = audioCtx.currentTime;
+        if (nextPlayTime < now) nextPlayTime = now + 0.005; // 5ms resync
+        source.start(nextPlayTime);
+        nextPlayTime += buffer.duration;
+      },
+      error: function (e) {
+        console.error('[audio-bar] AudioDecoder error:', e);
+      },
+    });
+
+    audioDecoder.configure({ codec: 'opus', sampleRate: sr, numberOfChannels: ch });
+    codecOpus = true;
+    console.log('[audio-bar] ✅ Opus decoder ready');
   }
 
   // ── Microphone input logic ───────────────────────────────

@@ -51,31 +51,78 @@
 <h1>🖥️ Webcode Desktop Audio</h1>
 <button id="toggle-btn">🔇 开启音频</button>
 <div id="status">点击按钮开始播放容器桌面音频</div>
-<p class="hint">浏览器安全策略要求用户主动点击才能播放音频。<br>音频经由 PulseAudio → WebSocket 实时传输，延迟约 50ms。</p>
+<p class="hint">浏览器安全策略要求用户主动点击才能播放音频。<br>音频经由 PulseAudio → Opus 64kbps → WebSocket 实时传输，延迟约 30ms。</p>
 
 <script>
 (function () {
   'use strict';
-  var SAMPLE_RATE = 44100;
+  var SAMPLE_RATE = 48000;  // Opus native rate
   var CHANNELS = 2;
 
   var btn    = document.getElementById('toggle-btn');
   var status = document.getElementById('status');
 
-  var audioCtx    = null;
-  var ws          = null;
-  var nextPlayTime = 0;
-  var active      = false;
+  var audioCtx       = null;
+  var ws             = null;
+  var nextPlayTime   = 0;
+  var active         = false;
+  var audioDecoder   = null;
+  var opusTimestamp  = 0;
+  var codecOpus      = false;
 
   function setStatus(msg) { status.textContent = msg; }
 
   function stopAudio() {
     active = false;
+    codecOpus = false;
+    opusTimestamp = 0;
     btn.textContent = '🔇 开启音频';
     btn.className = '';
     setStatus('已停止');
-    if (ws)        { ws.close(); ws = null; }
-    if (audioCtx)  { audioCtx.close(); audioCtx = null; }
+    if (audioDecoder) { try { audioDecoder.close(); } catch (e) {} audioDecoder = null; }
+    if (ws)           { ws.close(); ws = null; }
+    if (audioCtx)     { audioCtx.close(); audioCtx = null; }
+  }
+
+  // ── Opus decoder via WebCodecs AudioDecoder ──────────────
+  function initOpusDecoder(info) {
+    if (!window.AudioDecoder) {
+      console.warn('[audio-player] AudioDecoder not available, falling back to raw PCM');
+      return;
+    }
+    var sr = info.sample_rate || 48000;
+    var ch = info.channels || 2;
+    setStatus('Opus ' + (info.bitrate / 1000) + 'kbps @ ' + sr + 'Hz — 正在播放…');
+
+    if (audioDecoder) { try { audioDecoder.close(); } catch (e) {} }
+    opusTimestamp = 0;
+
+    audioDecoder = new AudioDecoder({
+      output: function (audioData) {
+        if (!audioCtx) { audioData.close(); return; }
+        var numFrames   = audioData.numberOfFrames;
+        var numChannels = audioData.numberOfChannels;
+        var sampleRate  = audioData.sampleRate;
+        var buffer = audioCtx.createBuffer(numChannels, numFrames, sampleRate);
+        for (var c = 0; c < numChannels; c++) {
+          var plane = new Float32Array(numFrames);
+          audioData.copyTo(plane, { planeIndex: c, format: 'f32-planar' });
+          buffer.copyToChannel(plane, c);
+        }
+        audioData.close();
+        var source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(audioCtx.destination);
+        var now = audioCtx.currentTime;
+        if (nextPlayTime < now) nextPlayTime = now + 0.005;
+        source.start(nextPlayTime);
+        nextPlayTime += buffer.duration;
+      },
+      error: function (e) { console.error('[audio-player] AudioDecoder error:', e); },
+    });
+
+    audioDecoder.configure({ codec: 'opus', sampleRate: sr, numberOfChannels: ch });
+    codecOpus = true;
   }
 
   function startAudio() {
@@ -85,16 +132,14 @@
     setStatus('正在连接 WebSocket 音频服务…');
 
     try {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)({
-        sampleRate: SAMPLE_RATE,
-      });
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: SAMPLE_RATE });
     } catch (e) {
       setStatus('错误：无法创建 AudioContext — ' + e.message);
       stopAudio();
       return;
     }
 
-    nextPlayTime = audioCtx.currentTime + 0.02; // 20ms initial buffer for low latency
+    nextPlayTime = audioCtx.currentTime + 0.02;
 
     var protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
     var wsUrl = protocol + '//' + location.host + '/audio';
@@ -111,7 +156,7 @@
     ws.onopen = function () {
       btn.textContent = '🔊 停止音频';
       btn.className = 'active';
-      setStatus('正在播放… (' + wsUrl + ')');
+      setStatus('已连接，等待音频流…');
     };
 
     ws.onerror = function () {
@@ -129,27 +174,46 @@
     };
 
     ws.onmessage = function (event) {
-      if (!audioCtx) return;
-      var raw = new Int16Array(event.data);
-      var numFrames = raw.length / CHANNELS;
-      if (numFrames < 1) return;
-
-      var buffer = audioCtx.createBuffer(CHANNELS, numFrames, SAMPLE_RATE);
-      for (var ch = 0; ch < CHANNELS; ch++) {
-        var channelData = buffer.getChannelData(ch);
-        for (var i = 0; i < numFrames; i++) {
-          channelData[i] = raw[i * CHANNELS + ch] / 32768.0;
-        }
+      // Text frame: codec negotiation or control message
+      if (typeof event.data === 'string') {
+        var msg;
+        try { msg = JSON.parse(event.data); } catch (e) { return; }
+        if (msg.event === 'codec_info') { initOpusDecoder(msg); }
+        return;
       }
-
-      var source = audioCtx.createBufferSource();
-      source.buffer = buffer;
-      source.connect(audioCtx.destination);
-
-      var now = audioCtx.currentTime;
-      if (nextPlayTime < now) { nextPlayTime = now + 0.01; } // 10ms resync buffer for low latency
-      source.start(nextPlayTime);
-      nextPlayTime += buffer.duration;
+      if (!audioCtx) return;
+      if (codecOpus && audioDecoder && audioDecoder.state === 'configured') {
+        // ── Opus path ────────────────────────────────────────
+        try {
+          audioDecoder.decode(new EncodedAudioChunk({
+            type: 'key',
+            timestamp: opusTimestamp,
+            data: event.data,
+          }));
+          opusTimestamp += 20000; // 20ms per frame in µs
+        } catch (e) {
+          console.error('[audio-player] decode error:', e);
+        }
+      } else {
+        // ── Fallback: raw PCM Int16 ──────────────────────────
+        var raw = new Int16Array(event.data);
+        var numFrames = raw.length / CHANNELS;
+        if (numFrames < 1) return;
+        var buffer = audioCtx.createBuffer(CHANNELS, numFrames, SAMPLE_RATE);
+        for (var ch = 0; ch < CHANNELS; ch++) {
+          var channelData = buffer.getChannelData(ch);
+          for (var i = 0; i < numFrames; i++) {
+            channelData[i] = raw[i * CHANNELS + ch] / 32768.0;
+          }
+        }
+        var source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(audioCtx.destination);
+        var now = audioCtx.currentTime;
+        if (nextPlayTime < now) nextPlayTime = now + 0.01;
+        source.start(nextPlayTime);
+        nextPlayTime += buffer.duration;
+      }
     };
   }
 
