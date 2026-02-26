@@ -2518,7 +2518,7 @@ function performUpdate() {
       // Refresh container status after a short delay
       setTimeout(function() {
         app.startPolling(cfg, function(containers) {
-          updateContainerStatus(containers);
+          updateStatusUI(containers);
         });
       }, 2000);
     } else {
