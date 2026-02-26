@@ -335,6 +335,7 @@ function getLauncherVersion() {
 
 /**
  * Get the latest launcher release version from GitHub releases API.
+ * Tries direct GitHub API first, then falls back to ghproxy mirror.
  * @returns {Promise<string|null>}  Latest version string or null if failed
  */
 function getLatestLauncherRelease() {
@@ -345,6 +346,7 @@ function getLatestLauncherRelease() {
       return;
     }
 
+    console.log('[getLatestLauncherRelease] Trying GitHub API directly...');
     const options = {
       hostname: 'api.github.com',
       path: '/repos/land007/webcode/releases/latest',
@@ -376,26 +378,90 @@ function getLatestLauncherRelease() {
             const tagName = release.tag_name || '';
             // Remove 'v' prefix if present
             const version = tagName.replace(/^v/, '');
+            console.log('[getLatestLauncherRelease] ✓ GitHub API SUCCESS, version:', version);
             resolve(version);
           } catch (e) {
-            resolve(null);
+            console.log('[getLatestLauncherRelease] ✗ GitHub API parse failed');
+            tryGhproxyMirror();
           }
         } else {
-          resolve(null);
+          console.log('[getLatestLauncherRelease] ✗ GitHub API status:', res.statusCode);
+          tryGhproxyMirror();
         }
       });
     });
 
-    req.on('error', () => {
-      resolve(null);
+    req.on('error', (err) => {
+      console.log('[getLatestLauncherRelease] ✗ GitHub API error:', err.message);
+      tryGhproxyMirror();
     });
 
     req.setTimeout(10000, () => {
       if (!updateCheckCancelled) {
         req.destroy();
       }
-      resolve(null);
+      console.log('[getLatestLauncherRelease] ✗ GitHub API TIMEOUT');
+      tryGhproxyMirror();
     });
+
+    req.end();
+
+    // Fallback to ghproxy mirror
+    function tryGhproxyMirror() {
+      if (updateCheckCancelled) {
+        resolve(null);
+        return;
+      }
+
+      console.log('[getLatestLauncherRelease] Trying ghproxy mirror...');
+      // Use ghproxy to access GitHub API
+      const mirrorUrl = 'https://mirror.ghproxy.com/https://api.github.com/repos/land007/webcode/releases/latest';
+
+      https.get(mirrorUrl, {
+        headers: {
+          'User-Agent': 'webcode-launcher'
+        }
+      }, (res) => {
+        let data = '';
+        res.on('data', (chunk) => {
+          if (updateCheckCancelled) {
+            res.destroy();
+            resolve(null);
+            return;
+          }
+          data += chunk;
+        });
+        res.on('end', () => {
+          if (updateCheckCancelled) {
+            resolve(null);
+            return;
+          }
+          if (res.statusCode === 200) {
+            try {
+              const release = JSON.parse(data);
+              const tagName = release.tag_name || '';
+              const version = tagName.replace(/^v/, '');
+              console.log('[getLatestLauncherRelease] ✓ ghproxy SUCCESS, version:', version);
+              resolve(version);
+            } catch (e) {
+              console.log('[getLatestLauncherRelease] ✗ ghproxy parse failed');
+              resolve(null);
+            }
+          } else {
+            console.log('[getLatestLauncherRelease] ✗ ghproxy status:', res.statusCode);
+            resolve(null);
+          }
+        });
+      }).on('error', (err) => {
+        console.log('[getLatestLauncherRelease] ✗ ghproxy error:', err.message);
+        resolve(null);
+      }).setTimeout(15000, () => {
+        console.log('[getLatestLauncherRelease] ✗ ghproxy TIMEOUT');
+        resolve(null);
+      });
+    }
+  });
+}
 
     req.end();
   });
