@@ -306,12 +306,11 @@
       <span class="dot dot-gray" id="status-dot"></span>
       <span id="status-text" data-i18n="status_detecting">检测中…</span>
     </div>
-    <div id="update-banner" class="update-banner" style="display:none" onclick="showUpdateModal()">
-      <div class="update-banner-content">
-        <span class="update-banner-icon">📦</span>
-        <span class="update-banner-text">有新版本可用</span>
-        <span class="update-banner-hint">点击查看</span>
-      </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button id="btn-check-update" class="btn-icon-update" data-i18n-title="btn_check_update" title="检查更新">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+        <span id="update-badge-dot" class="update-badge-dot" style="display:none"></span>
+      </button>
     </div>
     <button class="theme-cycle-btn" id="theme-cycle-btn-ws" title="切换主题" style="margin-right:4px">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
@@ -2352,30 +2351,42 @@ function checkForUpdates(options) {
 }
 
 function showUpdateBadge() {
-  const banner = document.getElementById('update-banner');
-  if (!banner) return;
+  const badgeDot = document.getElementById('update-badge-dot');
+  const checkBtn = document.getElementById('btn-check-update');
 
-  if (updateInfo) {
-    // Update banner text based on what's available
-    const bannerText = banner.querySelector('.update-banner-text');
-    if (bannerText) {
-      if (updateInfo.containerUpdate && updateInfo.launcherUpdate) {
-        bannerText.textContent = '容器和启动器都有新版本';
-      } else if (updateInfo.containerUpdate) {
-        bannerText.textContent = '容器有新版本可用';
-      } else {
-        bannerText.textContent = '启动器有新版本可用';
-      }
-    }
-    banner.style.display = 'block';
+  if (badgeDot) {
+    badgeDot.style.display = 'block';
+  }
+
+  if (checkBtn) {
+    checkBtn.title = getUpdateTooltipText();
   }
 }
 
 function hideUpdateBadge() {
-  const banner = document.getElementById('update-banner');
-  if (banner) {
-    banner.style.display = 'none';
+  const badgeDot = document.getElementById('update-badge-dot');
+  const checkBtn = document.getElementById('btn-check-update');
+
+  if (badgeDot) {
+    badgeDot.style.display = 'none';
   }
+
+  if (checkBtn) {
+    checkBtn.title = t('btn_check_update');
+  }
+}
+
+function getUpdateTooltipText() {
+  if (!updateInfo) return t('btn_check_update');
+
+  if (updateInfo.containerUpdate && updateInfo.launcherUpdate) {
+    return '容器和启动器有新版本（点击查看）';
+  } else if (updateInfo.containerUpdate) {
+    return '容器有新版本（点击查看）';
+  } else if (updateInfo.launcherUpdate) {
+    return '启动器有新版本（点击查看）';
+  }
+  return t('btn_check_update');
 }
 
 function showUpdateModal() {
@@ -2497,6 +2508,19 @@ document.getElementById('btn-update-cancel').addEventListener('click', function(
 document.getElementById('update-modal').addEventListener('click', function(e) {
   if (e.target === this) {
     hideUpdateModal();
+  }
+});
+
+// Update check button - click to check manually or open modal if updates available
+document.getElementById('btn-check-update').addEventListener('click', function() {
+  if (updateCheckInProgress) return;
+
+  if (updateInfo && (updateInfo.containerUpdate || updateInfo.launcherUpdate)) {
+    // Has updates - open modal directly
+    showUpdateModal();
+  } else {
+    // No updates yet - check for updates
+    checkForUpdates({ silent: false });
   }
 });
 

@@ -1010,62 +1010,52 @@ button .btn-icon svg {
   margin: 0;
 }
 
-/* ── Update banner ─────────────────────────────────────────────────── */
-.update-banner {
-  flex: 1;
-  margin: 0 12px;
-  background: linear-gradient(135deg, rgba(245,166,35,.15) 0%, rgba(245,158,11,.1) 100%);
-  border: 1px solid var(--warn);
-  border-radius: 8px;
-  cursor: pointer;
-  overflow: hidden;
-  animation: update-banner-slide 0.3s ease;
-  transition: opacity 0.2s;
-}
-
-.update-banner:hover {
-  opacity: 0.9;
-}
-
-@keyframes update-banner-slide {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.update-banner-content {
+/* ── Update icon button with badge ─────────────────────────────────── */
+.btn-icon-update {
   display: flex;
   align-items: center;
-  padding: 8px 16px;
-  gap: 10px;
-}
-
-.update-banner-icon {
-  font-size: 18px;
-  animation: bounce 1s infinite;
-}
-
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
-}
-
-.update-banner-text {
-  flex: 1;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--warn);
-}
-
-.update-banner-hint {
-  font-size: 11px;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
   color: var(--text-muted);
-  font-weight: 400;
+  cursor: pointer;
+  transition: all .2s;
+  position: relative;
+}
+.btn-icon-update:hover {
+  background: var(--surface);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn-icon-update.checking svg {
+  animation: spin 1s linear infinite;
+}
+
+.update-badge-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  background: var(--danger);
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
 }
 
 /* ── Update modal ───────────────────────────────────────────────── */
