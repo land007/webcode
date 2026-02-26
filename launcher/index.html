@@ -2735,6 +2735,8 @@ boot();
 // Debug logging to screen
 var debugLog = [];
 var originalConsoleLog = console.log;
+var originalConsoleWarn = console.warn;
+var originalConsoleError = console.error;
 var debugPanelVisible = false;
 
 function addToDebugLog(message) {
@@ -2759,13 +2761,17 @@ console.log = function() {
 
 console.error = function() {
   var message = 'ERROR: ' + Array.prototype.slice.call(arguments).join(' ');
-  originalConsoleError.apply(console, arguments);
+  if (originalConsoleError) {
+    originalConsoleError.apply(console, arguments);
+  }
   addToDebugLog(message);
 };
 
 console.warn = function() {
   var message = 'WARN: ' + Array.prototype.slice.call(arguments).join(' ');
-  originalConsoleWarn.apply(console, arguments);
+  if (originalConsoleWarn) {
+    originalConsoleWarn.apply(console, arguments);
+  }
   addToDebugLog(message);
 };
 
