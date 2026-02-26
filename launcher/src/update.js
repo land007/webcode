@@ -2,7 +2,22 @@
 
 const { spawn } = require('child_process');
 const https = require('https');
-const { buildDockerPath } = require('./app.js');
+
+// ─── Helper functions ─────────────────────────────────────────────────────────────
+
+/** macOS GUI apps get a minimal PATH; prepend all common Docker locations. */
+function buildDockerPath() {
+  const extra = [
+    '/usr/local/bin',
+    '/opt/homebrew/bin',
+    '/opt/homebrew/sbin',
+    '/Applications/Docker.app/Contents/Resources/bin',
+  ];
+  const current = process.env.PATH || '';
+  const parts = current ? current.split(':') : [];
+  const merged = [...extra.filter(p => !parts.includes(p)), ...parts];
+  return merged.join(':');
+}
 
 // Global cancellation flag for update checks
 let updateCheckCancelled = false;

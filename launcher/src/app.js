@@ -562,4 +562,5 @@ module.exports = {
   updateContainer,
   getLocalContainerDigest,
   getRemoteContainerDigest,
+  buildDockerPath,
 };
