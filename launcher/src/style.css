@@ -1155,11 +1155,13 @@ button .btn-icon svg {
 
 .check-step.completed .step-icon {
   color: var(--success);
+  font-size: 0; /* Hide the original ○ */
 }
 
 .check-step.completed .step-icon::before {
   content: '✓';
   font-weight: bold;
+  font-size: 12px; /* Restore size for the checkmark */
 }
 
 .step-icon {
