@@ -122,8 +122,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         pulseaudio pulseaudio-utils \
         python3-websockets \
         ffmpeg \
-        libopus0 \
-    && pip3 install --break-system-packages opuslib \
+        python3-opuslib \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # ─── 9. Docker CLI (client only, auto-detect arch) ──────────────────
