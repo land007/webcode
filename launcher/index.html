@@ -616,6 +616,13 @@
           <span data-i18n="btn_update_now">运行最新容器</span>
         </a>
       </div>
+      <!-- 容器更新进度 -->
+      <div id="update-progress-container" style="margin-top:12px;display:none">
+        <div class="progress-bar"><div class="progress-fill"></div></div>
+        <p class="progress-text" id="update-progress-text" data-i18n="update_downloading">正在下载镜像...</p>
+      </div>
+      <!-- 容器更新结果 -->
+      <div id="update-result-container" style="margin-top:12px;display:none"></div>
     </div>
 
     <!-- 启动器更新区域 -->
@@ -637,15 +644,6 @@
         </a>
       </div>
     </div>
-
-    <!-- 更新进度 -->
-    <div id="update-progress" class="update-progress" style="display:none">
-      <div class="progress-bar"><div class="progress-fill"></div></div>
-      <p class="progress-text" id="update-progress-text" data-i18n="update_downloading">正在下载镜像...</p>
-    </div>
-
-    <!-- 更新结果 -->
-    <div id="update-result" style="display:none;margin:12px 0"></div>
 
     <!-- 按钮区域 -->
     <div style="margin-top:16px;text-align:center">
@@ -2578,9 +2576,9 @@ function hideUpdateConfirmModal() {
 }
 
 function performUpdate() {
-  const progress = document.getElementById('update-progress');
+  const progress = document.getElementById('update-progress-container');
   const progressText = document.getElementById('update-progress-text');
-  const result = document.getElementById('update-result');
+  const result = document.getElementById('update-result-container');
   const confirmBtn = document.getElementById('btn-update-confirm');
   const cancelBtn = document.getElementById('btn-update-cancel');
 
