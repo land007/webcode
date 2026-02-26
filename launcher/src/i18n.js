@@ -162,6 +162,8 @@ const translations = {
     // Update feature
     update_available:        '有更新',
     update_available_badge:   '有新版本',
+    container_update_label:  '容器更新',
+    launcher_update_label:   '启动器更新',
     btn_update:              '更新',
     btn_check_update:        '检查更新',
     update_tooltip_available: '有新版本（点击查看）',
@@ -360,6 +362,8 @@ const translations = {
     // Update feature
     update_available:        'Update',
     update_available_badge:   'New Version',
+    container_update_label:  'Container Update',
+    launcher_update_label:   'Launcher Update',
     btn_update:              'Update',
     btn_check_update:        'Check for Updates',
     update_tooltip_available: 'Update available (click to view)',
