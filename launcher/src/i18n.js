@@ -161,6 +161,7 @@ const translations = {
     dyn_confirm_remove_instance: '确定要删除实例 "{name}"？\n其配置和工作目录将被永久删除。',
     // Update feature
     update_available:        '有更新',
+    update_available_badge:   '有新版本',
     btn_update:              '更新',
     btn_check_update:        '检查更新',
     update_tooltip_available: '有新版本（点击查看）',
@@ -358,6 +359,7 @@ const translations = {
     dyn_confirm_remove_instance: 'Delete instance "{name}"?\nIts config and work directory will be permanently removed.',
     // Update feature
     update_available:        'Update',
+    update_available_badge:   'New Version',
     btn_update:              'Update',
     btn_check_update:        'Check for Updates',
     update_tooltip_available: 'Update available (click to view)',
