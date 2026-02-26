@@ -564,6 +564,9 @@
   </div>
 </div>
 
+<!-- ═══════════════════════ TOAST NOTIFICATIONS ════════════════════ -->
+<div id="toast-container"></div>
+
 <!-- ═══════════════════════ UPDATE MODAL ══════════════════════════ -->
 <div id="update-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:10000;align-items:center;justify-content:center">
   <div class="modal-card">
@@ -2191,15 +2194,93 @@ document.getElementById('add-instance-modal').addEventListener('click', function
 let updateCheckTimer = null;
 let updateInfo = null;
 
-function checkForUpdates() {
-  if (!cfg) return;
-  app.checkForUpdates(cfg).then(function(result) {
+// ─── Toast notifications ─────────────────────────────────────────────────────
+
+function showToast(type, title, message, duration) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = 'toast toast-' + type;
+
+  const iconSvg = {
+    info: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>',
+    success: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>',
+    warning: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
+    error: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>'
+  };
+
+  toast.innerHTML = `
+    <div class="toast-icon ${type}">${iconSvg[type] || iconSvg.info}</div>
+    <div class="toast-content">
+      <div class="toast-title">${escHtml(title)}</div>
+      ${message ? `<div class="toast-message">${escHtml(message)}</div>` : ''}
+    </div>
+    <button class="toast-close">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+  `;
+
+  container.appendChild(toast);
+
+  // Close button handler
+  const closeBtn = toast.querySelector('.toast-close');
+  closeBtn.addEventListener('click', function() {
+    removeToast(toast);
+  });
+
+  // Auto-remove after duration
+  const autoDuration = duration || (type === 'error' ? 5000 : 3000);
+  setTimeout(function() {
+    removeToast(toast);
+  }, autoDuration);
+}
+
+function removeToast(toast) {
+  if (!toast || !toast.parentNode) return;
+  toast.style.animation = 'toast-fade-out 0.3s ease';
+  setTimeout(function() {
+    if (toast.parentNode) {
+      toast.parentNode.removeChild(toast);
+    }
+  }, 300);
+}
+
+// ─── Update checking ───────────────────────────────────────────────────────────
+
+function checkForUpdates(options) {
+  if (!cfg) return Promise.resolve();
+
+  options = options || {};
+  const silent = options.silent || false;
+  const onProgress = options.onProgress || function() {};
+
+  if (!silent) {
+    onProgress('check', t('update_checking'));
+  }
+
+  return app.checkForUpdates(cfg).then(function(result) {
     updateInfo = result;
+
     if (result.containerUpdate || result.launcherUpdate) {
       showUpdateBadge();
+      if (!silent) {
+        if (result.containerUpdate && result.launcherUpdate) {
+          onProgress('complete', t('update_both_desc'));
+        } else if (result.containerUpdate) {
+          onProgress('complete', t('update_container_desc'));
+        } else {
+          onProgress('complete', t('update_launcher_desc'));
+        }
+      }
     } else {
       hideUpdateBadge();
+      if (!silent) {
+        onProgress('complete', '已是最新版本');
+      }
     }
+
+    return result;
   });
 }
 
@@ -2345,31 +2426,81 @@ document.getElementById('btn-check-update').addEventListener('click', function()
   btn.classList.add('checking');
   btn.disabled = true;
 
-  // Perform check
-  checkForUpdates();
+  // Show progress toast
+  let progressToast = null;
 
-  // Remove checking state after a delay
+  // Sequential progress messages
   setTimeout(function() {
+    if (!progressToast) {
+      progressToast = showToast('info', t('update_checking'), t('update_checking_container'), 0);
+    }
+  }, 0);
+
+  setTimeout(function() {
+    if (progressToast && progressToast.parentNode) {
+      progressToast.querySelector('.toast-message').textContent = t('update_checking_launcher');
+    }
+  }, 800);
+
+  setTimeout(function() {
+    if (progressToast && progressToast.parentNode) {
+      progressToast.querySelector('.toast-message').textContent = t('update_check_detail');
+    }
+  }, 1600);
+
+  checkForUpdates({
+    silent: false,
+    onProgress: function(status, message) {
+      if (status === 'complete') {
+        // Remove progress toast
+        if (progressToast) {
+          removeToast(progressToast);
+          progressToast = null;
+        }
+
+        // Show result toast
+        if (updateInfo && (updateInfo.containerUpdate || updateInfo.launcherUpdate)) {
+          let detailMessage = '';
+          if (updateInfo.containerUpdate && updateInfo.launcherUpdate) {
+            detailMessage = '容器和启动器都有新版本';
+          } else if (updateInfo.containerUpdate) {
+            detailMessage = '容器有新版本';
+          } else {
+            detailMessage = '启动器有新版本';
+          }
+
+          showToast(
+            'warning',
+            '发现新版本',
+            detailMessage,
+            6000
+          );
+        } else {
+          showToast(
+            'success',
+            t('update_latest'),
+            '容器和启动器都是最新版本',
+            3000
+          );
+        }
+      }
+    }
+  }).then(function() {
+    // Remove checking state
     btn.classList.remove('checking');
     btn.disabled = false;
-
-    // If no updates found, show a brief message
-    if (!updateInfo || (!updateInfo.containerUpdate && !updateInfo.launcherUpdate)) {
-      // Could show a toast message here if needed
-      console.log('No updates found');
-    }
-  }, 2000);
+  });
 });
 
 // Auto-check for updates every 10 minutes (only when container is running)
 function startUpdatePolling() {
   if (updateCheckTimer) clearInterval(updateCheckTimer);
 
-  // Check immediately when starting
+  // Check immediately when starting (silent mode)
   setTimeout(function() {
     app.dockerPs(cfg, function(err, containers) {
       if (!err && containerRunning(containers)) {
-        checkForUpdates();
+        checkForUpdates({ silent: true });
       }
     });
   }, 5000);
@@ -2377,7 +2508,7 @@ function startUpdatePolling() {
   updateCheckTimer = setInterval(function() {
     app.dockerPs(cfg, function(err, containers) {
       if (!err && containerRunning(containers)) {
-        checkForUpdates();
+        checkForUpdates({ silent: true });
       }
     });
   }, 10 * 60 * 1000); // 10 minutes

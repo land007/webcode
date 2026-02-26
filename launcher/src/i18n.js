@@ -176,6 +176,10 @@ const translations = {
     btn_update_later:        '稍后提醒',
     launcher_update_link:    '下载最新启动器',
     update_checking:         '检查更新中...',
+    update_checking_container: '正在检查容器更新...',
+    update_checking_launcher:  '正在检查启动器更新...',
+    update_latest:           '已是最新版本',
+    update_check_detail:     '正在对比 Docker 镜像和 GitHub Releases...',
   },
 
   'en': {
@@ -351,6 +355,10 @@ const translations = {
     btn_update_later:        'Remind Me Later',
     launcher_update_link:    'Download latest launcher',
     update_checking:         'Checking for updates...',
+    update_checking_container: 'Checking container updates...',
+    update_checking_launcher:  'Checking launcher updates...',
+    update_latest:           'You are up to date',
+    update_check_detail:     'Comparing Docker images and GitHub Releases...',
   },
 };
 
