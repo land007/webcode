@@ -2610,7 +2610,10 @@ boot();
 <div id="debug-panel" style="display:none;position:fixed;bottom:0;left:0;right:0;height:200px;background:rgba(0,0,0,0.95);color:#0f0;font-family:monospace;font-size:12px;padding:10px;z-index:99999;overflow-y:auto;border-top:2px solid #0f0;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
     <strong style="color:#ff0;">🐛 DEBUG LOG (Shift+F12 切换)</strong>
-    <button onclick="toggleDebugPanel()" style="background:#333;color:#fff;border:1px solid #0f0;padding:4px 12px;cursor:pointer;border-radius:4px;">关闭</button>
+    <div style="display:flex;gap:8px;">
+      <button onclick="copyDebugLog()" style="background:#333;color:#fff;border:1px solid #0f0;padding:4px 12px;cursor:pointer;border-radius:4px;">拷贝日志</button>
+      <button onclick="toggleDebugPanel()" style="background:#333;color:#fff;border:1px solid #0f0;padding:4px 12px;cursor:pointer;border-radius:4px;">关闭</button>
+    </div>
   </div>
   <div id="debug-log"></div>
 </div>
@@ -2667,6 +2670,25 @@ function toggleDebugPanel() {
       }
     }
   }
+}
+
+function copyDebugLog() {
+  var logText = debugLog.join('\n');
+  var textarea = document.createElement('textarea');
+  textarea.value = logText;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  try {
+    document.execCommand('copy');
+    console.log('[Debug] Log copied to clipboard');
+    alert('日志已拷贝到剪贴板');
+  } catch (err) {
+    console.error('[Debug] Failed to copy log:', err);
+    alert('拷贝失败: ' + err.message);
+  }
+  document.body.removeChild(textarea);
 }
 
 // Keyboard shortcut to toggle debug panel
