@@ -124,8 +124,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-pip \
         ffmpeg \
         libopus0 \
-    && pip3 install opuslib \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+        gcc python3-dev \
+    && apt-get clean && rm -rf /var/lib/apt/lists/* \
+    && pip3 install --no-cache-dir opuslib
 
 # ─── 9. Docker CLI (client only, auto-detect arch) ──────────────────
 RUN install -m 0755 -d /etc/apt/keyrings \
