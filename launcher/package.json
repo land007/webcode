@@ -8,7 +8,9 @@
     "height": 800,
     "min_width": 900,
     "min_height": 580,
-    "icon": "assets/icon.png"
+    "icon": "assets/icon.png",
+    "toolbar": true,
+    "show": true
   },
   "chromium-args": "--disable-web-security --allow-running-insecure-content --mixed-context",
   "dependencies": {

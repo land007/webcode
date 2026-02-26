@@ -2566,5 +2566,78 @@ function boot() {
 
 boot();
 </script>
+
+<!-- ═══════════════════════ DEBUG PANEL ═══════════════════════ -->
+<div id="debug-panel" style="display:none;position:fixed;bottom:0;left:0;right:0;height:200px;background:rgba(0,0,0,0.95);color:#0f0;font-family:monospace;font-size:12px;padding:10px;z-index:99999;overflow-y:auto;border-top:2px solid #0f0;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+    <strong style="color:#ff0;">🐛 DEBUG LOG (Shift+F12 切换)</strong>
+    <button onclick="toggleDebugPanel()" style="background:#333;color:#fff;border:1px solid #0f0;padding:4px 12px;cursor:pointer;border-radius:4px;">关闭</button>
+  </div>
+  <div id="debug-log"></div>
+</div>
+
+<script>
+// Debug logging to screen
+var debugLog = [];
+var originalConsoleLog = console.log;
+var debugPanelVisible = false;
+
+function addToDebugLog(message) {
+  var timestamp = new Date().toLocaleTimeString();
+  debugLog.push('[' + timestamp + '] ' + message);
+
+  if (debugPanelVisible) {
+    var logDiv = document.getElementById('debug-log');
+    if (logDiv) {
+      logDiv.innerHTML = debugLog.join('<br>');
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+  }
+}
+
+// Override console.log to also capture output
+console.log = function() {
+  var message = Array.prototype.slice.call(arguments).join(' ');
+  originalConsoleLog.apply(console, arguments);
+  addToDebugLog(message);
+};
+
+console.error = function() {
+  var message = 'ERROR: ' + Array.prototype.slice.call(arguments).join(' ');
+  originalConsoleError.apply(console, arguments);
+  addToDebugLog(message);
+};
+
+console.warn = function() {
+  var message = 'WARN: ' + Array.prototype.slice.call(arguments).join(' ');
+  originalConsoleWarn.apply(console, arguments);
+  addToDebugLog(message);
+};
+
+function toggleDebugPanel() {
+  var panel = document.getElementById('debug-panel');
+  if (panel) {
+    debugPanelVisible = !debugPanelVisible;
+    panel.style.display = debugPanelVisible ? 'block' : 'none';
+
+    if (debugPanelVisible) {
+      var logDiv = document.getElementById('debug-log');
+      if (logDiv) {
+        logDiv.innerHTML = debugLog.join('<br>');
+        logDiv.scrollTop = logDiv.scrollHeight;
+      }
+    }
+  }
+}
+
+// Keyboard shortcut to toggle debug panel
+document.addEventListener('keydown', function(e) {
+  if (e.shiftKey && e.key === 'F12') {
+    e.preventDefault();
+    toggleDebugPanel();
+  }
+});
+</script>
+
 </body>
 </html>

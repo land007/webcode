@@ -29,62 +29,83 @@ function resetUpdateCheckCancel() {
  * @returns {Promise<string|null>}  Digest string or null if not found
  */
 function getLocalContainerDigest(imageName) {
-  console.log('[getLocalContainerDigest] Starting for:', imageName);
+  console.log('[getLocalContainerDigest] ========== START ==========');
+  console.log('[getLocalContainerDigest] imageName:', imageName);
+
   return new Promise((resolve) => {
-    const env = Object.assign({}, process.env, { PATH: buildDockerPath() });
-    console.log('[getLocalContainerDigest] PATH:', env.PATH ? 'OK' : 'MISSING');
+    try {
+      const env = Object.assign({}, process.env, { PATH: buildDockerPath() });
+      console.log('[getLocalContainerDigest] PATH set, length:', env.PATH ? env.PATH.length : 0);
 
-    const proc = spawn('docker', ['inspect', '--format={{index .RepoDigests 0}}', imageName], { env });
-    let stdout = '';
-    let stderr = '';
-    let completed = false;
+      console.log('[getLocalContainerDigest] About to spawn docker command...');
+      const proc = spawn('docker', ['inspect', '--format={{index .RepoDigests 0}}', imageName], { env });
+      let stdout = '';
+      let stderr = '';
+      let completed = false;
 
-    console.log('[getLocalContainerDigest] Process spawned, PID:', proc.pid);
+      console.log('[getLocalContainerDigest] Process spawned, PID:', proc.pid);
+      console.log('[getLocalContainerDigest] Waiting for events...');
 
-    proc.stdout.on('data', (d) => {
-      const chunk = d.toString();
-      console.log('[getLocalContainerDigest] stdout:', chunk.length, 'bytes');
-      stdout += chunk;
-    });
+      proc.stdout.on('data', (d) => {
+        const chunk = d.toString();
+        console.log('[getLocalContainerDigest] stdout data:', chunk.length, 'bytes, content:', chunk.substring(0, 50));
+        stdout += chunk;
+      });
 
-    proc.stderr.on('data', (d) => {
-      const chunk = d.toString();
-      console.log('[getLocalContainerDigest] stderr:', chunk);
-      stderr += chunk;
-    });
+      proc.stderr.on('data', (d) => {
+        const chunk = d.toString();
+        console.log('[getLocalContainerDigest] stderr data:', chunk);
+        stderr += chunk;
+      });
 
-    proc.on('close', (code) => {
-      console.log('[getLocalContainerDigest] close event, code:', code, 'stdout length:', stdout.length);
-      completed = true;
-      if (code === 0 && stdout.trim()) {
-        resolve(stdout.trim());
-      } else {
+      proc.on('close', (code) => {
+        console.log('[getLocalContainerDigest] ========== CLOSE ===========');
+        console.log('[getLocalContainerDigest] exit code:', code);
+        console.log('[getLocalContainerDigest] stdout total:', stdout.length, 'bytes');
+        console.log('[getLocalContainerDigest] stdout:', stdout);
+        console.log('[getLocalContainerDigest] stderr:', stderr);
+        completed = true;
+        if (code === 0 && stdout.trim()) {
+          console.log('[getLocalContainerDigest] ✓ SUCCESS, resolving digest');
+          resolve(stdout.trim());
+        } else {
+          console.log('[getLocalContainerDigest] ✗ FAILED, resolving null');
+          resolve(null);
+        }
+      });
+
+      proc.on('exit', (code) => {
+        console.log('[getLocalContainerDigest] exit event, code:', code);
+      });
+
+      proc.on('error', (err) => {
+        console.log('[getLocalContainerDigest] ========== ERROR ============');
+        console.log('[getLocalContainerDigest] error:', err);
+        console.log('[getLocalContainerDigest] error message:', err.message);
+        console.log('[getLocalContainerDigest] error code:', err.code);
+        completed = true;
         resolve(null);
-      }
-    });
+      });
 
-    proc.on('exit', (code) => {
-      console.log('[getLocalContainerDigest] exit event, code:', code);
-    });
+      // Timeout after 2 seconds
+      const timeout = setTimeout(() => {
+        console.log('[getLocalContainerDigest] ========== TIMEOUT ==========');
+        console.log('[getLocalContainerDigest] Timeout! completed:', completed);
+        if (!completed) {
+          console.log('[getLocalContainerDigest] Killing process...');
+          proc.kill('SIGKILL');
+          resolve(null);
+        }
+      }, 2000);
 
-    proc.on('error', (err) => {
-      console.log('[getLocalContainerDigest] error event:', err);
-      completed = true;
+      proc.on('exit', () => {
+        clearTimeout(timeout);
+      });
+    } catch (err) {
+      console.log('[getLocalContainerDigest] ========== EXCEPTION ========');
+      console.log('[getLocalContainerDigest] Exception during spawn:', err);
       resolve(null);
-    });
-
-    // Timeout after 2 seconds (local operation should be fast)
-    const timeout = setTimeout(() => {
-      console.log('[getLocalContainerDigest] Timeout! completed:', completed);
-      if (!completed) {
-        proc.kill('SIGKILL');
-        resolve(null);
-      }
-    }, 2000);
-
-    proc.on('exit', () => {
-      clearTimeout(timeout);
-    });
+    }
   });
 }
 
