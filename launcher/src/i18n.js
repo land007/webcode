@@ -162,6 +162,8 @@ const translations = {
     // Update feature
     update_available:        '有更新',
     update_available_badge:   '有新版本',
+    update_version_current:   '当前：',
+    update_version_latest:    '最新：',
     container_update_label:  '容器更新',
     launcher_update_label:   '启动器更新',
     btn_update:              '更新',
@@ -362,6 +364,8 @@ const translations = {
     // Update feature
     update_available:        'Update',
     update_available_badge:   'New Version',
+    update_version_current:   'Current: ',
+    update_version_latest:    'Latest: ',
     container_update_label:  'Container Update',
     launcher_update_label:   'Launcher Update',
     btn_update:              'Update',
