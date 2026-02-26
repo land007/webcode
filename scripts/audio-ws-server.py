@@ -221,13 +221,27 @@ async def handler(ws):
     except Exception as e:
         print(f"[audio-ws] codec_info send failed: {e}", flush=True)
 
+    # Mic decoder state for this client
+    mic_decoder = None
+    mic_codec_opus = False
+
     try:
         async for message in ws:
             if isinstance(message, bytes):
                 if pacat_in_proc and pacat_in_proc.stdin:
                     try:
-                        pacat_in_proc.stdin.write(message)
-                        await pacat_in_proc.stdin.drain()
+                        if mic_codec_opus and mic_decoder:
+                            # Decode Opus packet to PCM
+                            try:
+                                pcm = mic_decoder.decode(bytes(message), FRAME_SIZE)
+                                pacat_in_proc.stdin.write(pcm)
+                                await pacat_in_proc.stdin.drain()
+                            except Exception as e:
+                                print(f"[audio-ws] mic Opus decode error: {e}", flush=True)
+                        else:
+                            # Raw PCM (fallback)
+                            pacat_in_proc.stdin.write(message)
+                            await pacat_in_proc.stdin.drain()
                     except Exception as e:
                         print(f"[audio-ws] mic input write error: {e}", flush=True)
             elif isinstance(message, str):
@@ -236,7 +250,18 @@ async def handler(ws):
                 except json.JSONDecodeError:
                     continue
                 action = cmd.get("action")
-                if action == "start_recording":
+
+                if action == "mic_codec":
+                    # Client announces mic codec support
+                    if cmd.get("codec") == "opus":
+                        try:
+                            mic_decoder = opuslib.Decoder(SAMPLE_RATE, CHANNELS)
+                            mic_codec_opus = True
+                            print(f"[audio-ws] client mic Opus decoder ready", flush=True)
+                        except Exception as e:
+                            print(f"[audio-ws] failed to create mic Opus decoder: {e}", flush=True)
+
+                elif action == "start_recording":
                     fname, err = await start_recording()
                     resp = {"event": "recording_error", "error": err} if err else \
                            {"event": "recording_started", "filename": os.path.basename(fname)}

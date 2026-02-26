@@ -174,8 +174,10 @@
   var SAMPLE_RATE = 48000, CHANNELS = 2;  // 48000Hz = Opus native rate
   var autoStartAttempted = false;
   var recordActive = false;
-  // Opus / WebCodecs state
+  // Opus / WebCodecs state (output)
   var audioDecoder = null, opusFrameTimestamp = 0, codecOpus = false;
+  // Opus / WebCodecs state (microphone input)
+  var micEncoder = null, micTimestamp = 0, codecOpusMic = false;
 
   function setSelected(selected) {
     var btn = document.getElementById('noVNC_audio_button');
@@ -380,12 +382,55 @@
 
   function stopMicrophone() {
     micActive = false;
+    codecOpusMic = false;
+    micTimestamp = 0;
+    if (micEncoder) {
+      try { micEncoder.close(); } catch (e) {}
+      micEncoder = null;
+    }
     if (micProcessor) { micProcessor.disconnect(); micProcessor = null; }
     if (micStream) { micStream.getTracks().forEach(function(t) { t.stop(); }); micStream = null; }
     if (micAudioCtx) { micAudioCtx.close(); micAudioCtx = null; }
     if (micWs) { micWs.close(); micWs = null; }
     setMicSelected(false);
     console.log('[audio-bar] Microphone stopped');
+  }
+
+  // ── Opus encoder for microphone upload ────────────────────
+  function initOpusEncoder() {
+    if (!window.AudioEncoder) {
+      console.warn('[audio-bar] AudioEncoder not available; mic upload will use raw PCM');
+      return false;
+    }
+    console.log('[audio-bar] Initialising Opus encoder for mic upload: ' + SAMPLE_RATE + 'Hz ' + CHANNELS + 'ch');
+
+    micTimestamp = 0;
+
+    micEncoder = new AudioEncoder({
+      output: function(encodedChunk) {
+        if (micWs && micWs.readyState === WebSocket.OPEN) {
+          try {
+            micWs.send(encodedChunk.data);
+          } catch (e) {
+            console.error('[audio-bar] mic Opus send error:', e);
+          }
+        }
+        encodedChunk.close();
+      },
+      error: function(e) {
+        console.error('[audio-bar] mic AudioEncoder error:', e);
+      }
+    });
+
+    micEncoder.configure({
+      codec: 'opus',
+      sampleRate: SAMPLE_RATE,
+      numberOfChannels: CHANNELS,
+      bitrate: 64000  // 64 Kbps
+    });
+    codecOpusMic = true;
+    console.log('[audio-bar] ✅ Opus encoder ready for mic');
+    return true;
   }
 
   async function startMicrophone() {
@@ -419,22 +464,55 @@
       return;
     }
 
+    // Try to initialise Opus encoder for upload compression
+    var opusReady = initOpusEncoder();
+
     var source = micAudioCtx.createMediaStreamSource(micStream);
-    // bufferSize=2048 → ~46ms @ 44100Hz
+    // Use smaller buffer for lower latency (~21ms @ 48000Hz stereo)
     micProcessor = micAudioCtx.createScriptProcessor(2048, CHANNELS, CHANNELS);
 
     micProcessor.onaudioprocess = function(e) {
       if (!micWs || micWs.readyState !== WebSocket.OPEN) return;
-      var numFrames = e.inputBuffer.length;
-      var buf = new Int16Array(numFrames * CHANNELS);
-      for (var ch = 0; ch < CHANNELS; ch++) {
-        var channelData = e.inputBuffer.getChannelData(ch);
-        for (var i = 0; i < numFrames; i++) {
-          var sample = Math.max(-1, Math.min(1, channelData[i]));
-          buf[i * CHANNELS + ch] = sample < 0 ? sample * 32768 : sample * 32767;
+
+      if (codecOpusMic && micEncoder && micEncoder.state === 'configured') {
+        // ── Opus encoding path ───────────────────────────────
+        var numFrames = e.inputBuffer.length;
+        var numChannels = e.inputBuffer.numberOfChannels;
+
+        // Convert AudioBuffer to Float32Array planes for AudioData
+        var planes = [];
+        for (var ch = 0; ch < numChannels; ch++) {
+          planes.push(new Float32Array(e.inputBuffer.getChannelData(ch)));
         }
+
+        try {
+          var audioData = new AudioData({
+            format: 'f32-planar',
+            sampleRate: SAMPLE_RATE,
+            numberOfFrames: numFrames,
+            numberOfChannels: numChannels,
+            timestamp: micTimestamp,
+            data: planes
+          });
+          micEncoder.encode(audioData);
+          micTimestamp += (numFrames * 1000000 / SAMPLE_RATE);  // microseconds
+          audioData.close();
+        } catch (err) {
+          console.error('[audio-bar] mic encode error:', err);
+        }
+      } else {
+        // ── Fallback: raw PCM Int16 ─────────────────────────────
+        var numFrames = e.inputBuffer.length;
+        var buf = new Int16Array(numFrames * CHANNELS);
+        for (var ch = 0; ch < CHANNELS; ch++) {
+          var channelData = e.inputBuffer.getChannelData(ch);
+          for (var i = 0; i < numFrames; i++) {
+            var sample = Math.max(-1, Math.min(1, channelData[i]));
+            buf[i * CHANNELS + ch] = sample < 0 ? sample * 32768 : sample * 32767;
+          }
+        }
+        micWs.send(buf.buffer);
       }
-      micWs.send(buf.buffer);
     };
 
     source.connect(micProcessor);
@@ -451,6 +529,24 @@
 
     micWs.binaryType = 'arraybuffer';
 
+    micWs.onopen = function() {
+      // Tell server we support Opus upload
+      if (codecOpusMic) {
+        try {
+          micWs.send(JSON.stringify({
+            action: 'mic_codec',
+            codec: 'opus',
+            sample_rate: SAMPLE_RATE,
+            channels: CHANNELS,
+            bitrate: 64000
+          }));
+          console.log('[audio-bar] ✅ Mic Opus codec announced to server');
+        } catch (e) {
+          console.error('[audio-bar] mic codec announcement failed:', e);
+        }
+      }
+    };
+
     micWs.onerror = function(e) {
       console.error('[audio-bar] Mic WebSocket error:', e);
       stopMicrophone();
@@ -460,7 +556,7 @@
       if (micActive) stopMicrophone();
     };
 
-    console.log('[audio-bar] ✅ Microphone started');
+    console.log('[audio-bar] ✅ Microphone started (' + (codecOpusMic ? 'Opus 64kbps' : 'raw PCM') + ')');
   }
 
   // ── Click handlers ────────────────────────────────────────
