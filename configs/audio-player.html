@@ -56,7 +56,6 @@
 <script>
 (function () {
   'use strict';
-  var AUDIO_WS_PORT = 20006;
   var SAMPLE_RATE = 44100;
   var CHANNELS = 2;
 
@@ -97,7 +96,8 @@
 
     nextPlayTime = audioCtx.currentTime + 0.02; // 20ms initial buffer for low latency
 
-    var wsUrl = 'ws://' + location.hostname + ':' + AUDIO_WS_PORT;
+    var protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    var wsUrl = protocol + '//' + location.host + '/audio';
     try {
       ws = new WebSocket(wsUrl);
     } catch (e) {
