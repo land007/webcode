@@ -306,6 +306,11 @@
       <span class="dot dot-gray" id="status-dot"></span>
       <span id="status-text" data-i18n="status_detecting">检测中…</span>
     </div>
+    <div id="update-badge" class="update-badge" style="display:none">
+      <span class="update-dot"></span>
+      <span data-i18n="update_available">有更新</span>
+      <button id="btn-update" class="btn-update-sm" data-i18n="btn_update">更新</button>
+    </div>
     <button class="theme-cycle-btn" id="theme-cycle-btn-ws" title="切换主题" style="margin-right:4px">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
       <span>暗色</span>
@@ -552,6 +557,35 @@
     <div class="action-row" style="margin-top:0">
       <button class="btn-secondary btn-sm" id="modal-cancel" data-i18n="btn_cancel">取消</button>
       <button class="btn-primary btn-sm"   id="modal-confirm" data-i18n="btn_confirm">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ UPDATE MODAL ══════════════════════════ -->
+<div id="update-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:10000;align-items:center;justify-content:center">
+  <div class="modal-card">
+    <h3 data-i18n="modal_update_title">有新版本可用</h3>
+    <div class="update-info">
+      <p id="update-desc"></p>
+      <p class="update-versions" id="update-versions" style="display:none">
+        <span class="text-muted">Current: </span><span id="current-version">-</span><br>
+        <span class="text-muted">Latest: </span><span id="latest-version">-</span>
+      </p>
+    </div>
+    <div id="update-progress" class="update-progress" style="display:none">
+      <div class="progress-bar"><div class="progress-fill"></div></div>
+      <p class="progress-text" id="update-progress-text" data-i18n="update_downloading">正在下载镜像...</p>
+    </div>
+    <div id="update-result" style="display:none;margin:12px 0"></div>
+    <div id="launcher-update-section" class="launcher-update-section" style="display:none">
+      <a class="launcher-update-link" id="launcher-update-link" href="https://github.com/land007/webcode/releases/latest" target="_blank">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        <span data-i18n="launcher_update_link">下载最新启动器</span>
+      </a>
+    </div>
+    <div class="action-row" style="margin-top:0">
+      <button id="btn-update-cancel" class="btn-secondary btn-sm" data-i18n="btn_update_later">稍后提醒</button>
+      <button id="btn-update-confirm" class="btn-primary btn-sm" data-i18n="btn_update_now">立即更新</button>
     </div>
   </div>
 </div>
@@ -2149,6 +2183,177 @@ document.getElementById('add-instance-modal').addEventListener('click', function
   if (e.target === this) document.getElementById('modal-cancel').click();
 });
 
+// ─── Update feature ─────────────────────────────────────────────────────────────
+
+let updateCheckTimer = null;
+let updateInfo = null;
+
+function checkForUpdates() {
+  if (!cfg) return;
+  app.checkForUpdates(cfg).then(function(result) {
+    updateInfo = result;
+    if (result.containerUpdate || result.launcherUpdate) {
+      showUpdateBadge();
+    } else {
+      hideUpdateBadge();
+    }
+  });
+}
+
+function showUpdateBadge() {
+  document.getElementById('update-badge').style.display = 'flex';
+}
+
+function hideUpdateBadge() {
+  document.getElementById('update-badge').style.display = 'none';
+}
+
+function showUpdateModal() {
+  if (!updateInfo) return;
+
+  const modal = document.getElementById('update-modal');
+  const desc = document.getElementById('update-desc');
+  const versions = document.getElementById('update-versions');
+  const currentVer = document.getElementById('current-version');
+  const latestVer = document.getElementById('latest-version');
+  const progress = document.getElementById('update-progress');
+  const result = document.getElementById('update-result');
+  const launcherSection = document.getElementById('launcher-update-section');
+  const confirmBtn = document.getElementById('btn-update-confirm');
+
+  // Reset state
+  progress.style.display = 'none';
+  result.style.display = 'none';
+  result.className = '';
+  confirmBtn.disabled = false;
+
+  // Set description
+  if (updateInfo.containerUpdate && updateInfo.launcherUpdate) {
+    desc.textContent = t('update_both_desc');
+  } else if (updateInfo.containerUpdate) {
+    desc.textContent = t('update_container_desc');
+  } else {
+    desc.textContent = t('update_launcher_desc');
+  }
+
+  // Set versions
+  if (updateInfo.containerUpdate) {
+    versions.style.display = 'block';
+    currentVer.textContent = (updateInfo.localDigest || '').substring(0, 12) + '...';
+    latestVer.textContent = (updateInfo.remoteDigest || '').substring(0, 12) + '...';
+  } else {
+    versions.style.display = 'none';
+  }
+
+  // Show/hide launcher update link
+  if (updateInfo.launcherUpdate) {
+    launcherSection.style.display = 'block';
+  } else {
+    launcherSection.style.display = 'none';
+  }
+
+  // Only enable container update button if there's a container update
+  confirmBtn.style.display = updateInfo.containerUpdate ? 'inline-block' : 'none';
+
+  modal.style.display = 'flex';
+}
+
+function hideUpdateModal() {
+  document.getElementById('update-modal').style.display = 'none';
+}
+
+function performUpdate() {
+  const progress = document.getElementById('update-progress');
+  const progressText = document.getElementById('update-progress-text');
+  const result = document.getElementById('update-result');
+  const confirmBtn = document.getElementById('btn-update-confirm');
+  const cancelBtn = document.getElementById('btn-update-cancel');
+
+  progress.style.display = 'block';
+  result.style.display = 'none';
+  confirmBtn.disabled = true;
+  cancelBtn.disabled = true;
+
+  progressText.textContent = t('update_stopping');
+
+  app.updateContainer(cfg, function(data) {
+    // Update progress text based on data
+    const text = data.toString().toLowerCase();
+    if (text.includes('stopping') || text.includes('down')) {
+      progressText.textContent = t('update_stopping');
+    } else if (text.includes('pulling') || text.includes('download')) {
+      progressText.textContent = t('update_downloading');
+    } else if (text.includes('starting') || text.includes('create')) {
+      progressText.textContent = t('update_starting');
+    }
+  }, function(code) {
+    progress.style.display = 'none';
+    result.style.display = 'block';
+
+    if (code === 0) {
+      result.className = 'update-success';
+      result.textContent = t('update_success');
+      hideUpdateBadge();
+      updateInfo = null;
+
+      // Refresh container status after a short delay
+      setTimeout(function() {
+        app.startPolling(cfg, function(containers) {
+          updateContainerStatus(containers);
+        });
+      }, 2000);
+    } else {
+      result.className = 'update-error';
+      result.textContent = t('update_failed', { error: 'exit ' + code });
+      confirmBtn.disabled = false;
+    }
+    cancelBtn.disabled = false;
+  });
+}
+
+// Update badge click
+document.getElementById('btn-update').addEventListener('click', function() {
+  showUpdateModal();
+});
+
+// Update modal buttons
+document.getElementById('btn-update-confirm').addEventListener('click', function() {
+  performUpdate();
+});
+
+document.getElementById('btn-update-cancel').addEventListener('click', function() {
+  hideUpdateModal();
+});
+
+// Close modal on backdrop click
+document.getElementById('update-modal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    hideUpdateModal();
+  }
+});
+
+// Auto-check for updates every 10 minutes (only when container is running)
+function startUpdatePolling() {
+  if (updateCheckTimer) clearInterval(updateCheckTimer);
+
+  // Check immediately when starting
+  setTimeout(function() {
+    app.dockerPs(cfg, function(err, containers) {
+      if (!err && containerRunning(containers)) {
+        checkForUpdates();
+      }
+    });
+  }, 5000);
+
+  updateCheckTimer = setInterval(function() {
+    app.dockerPs(cfg, function(err, containers) {
+      if (!err && containerRunning(containers)) {
+        checkForUpdates();
+      }
+    });
+  }, 10 * 60 * 1000); // 10 minutes
+}
+
 // ─── Boot logic ───────────────────────────────────────────────────────────────
 
 function boot() {
@@ -2186,6 +2391,7 @@ function boot() {
   }
 
   startSidebarPolling();
+  startUpdatePolling();
 }
 
 boot();

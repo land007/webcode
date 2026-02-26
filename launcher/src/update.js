@@ -1,0 +1,320 @@
+'use strict';
+
+const { spawn } = require('child_process');
+const https = require('https');
+const { buildDockerPath } = require('./app.js');
+
+// ─── Container Version Detection ───────────────────────────────────────────────
+
+/**
+ * Get the local container image digest using docker inspect.
+ * @param {string} imageName  e.g. 'land007/webcode:latest'
+ * @returns {Promise<string|null>}  Digest string or null if not found
+ */
+function getLocalContainerDigest(imageName) {
+  return new Promise((resolve) => {
+    const env = Object.assign({}, process.env, { PATH: buildDockerPath() });
+    const proc = spawn('docker', ['inspect', '--format={{index .RepoDigests 0}}', imageName], { env });
+    let stdout = '';
+    let stderr = '';
+
+    proc.stdout.on('data', (d) => { stdout += d.toString(); });
+    proc.stderr.on('data', (d) => { stderr += d.toString(); });
+    proc.on('close', (code) => {
+      if (code === 0 && stdout.trim()) {
+        resolve(stdout.trim());
+      } else {
+        resolve(null);
+      }
+    });
+
+    // Timeout after 10 seconds
+    setTimeout(() => {
+      proc.kill();
+      resolve(null);
+    }, 10000);
+  });
+}
+
+/**
+ * Get the remote container image digest using docker manifest inspect.
+ * Tries Docker Hub first, then falls back to ghcr.io.
+ * @param {string} imageName  e.g. 'land007/webcode:latest'
+ * @returns {Promise<string|null>}  Digest string or null if failed
+ */
+function getRemoteContainerDigest(imageName) {
+  const ghcrImage = 'ghcr.io/land007/webcode:latest';
+
+  return new Promise((resolve) => {
+    const env = Object.assign({}, process.env, { PATH: buildDockerPath() });
+
+    // Try Docker Hub first
+    const proc = spawn('docker', ['manifest', 'inspect', imageName], { env });
+    let stdout = '';
+    let stderr = '';
+
+    proc.stdout.on('data', (d) => { stdout += d.toString(); });
+    proc.stderr.on('data', (d) => { stderr += d.toString(); });
+    proc.on('close', (code) => {
+      if (code === 0 && stdout.trim()) {
+        const digest = parseManifestDigest(stdout);
+        if (digest) {
+          resolve(digest);
+          return;
+        }
+      }
+
+      // Docker Hub failed, try ghcr.io
+      const proc2 = spawn('docker', ['manifest', 'inspect', ghcrImage], { env });
+      let stdout2 = '';
+      let stderr2 = '';
+
+      proc2.stdout.on('data', (d) => { stdout2 += d.toString(); });
+      proc2.stderr.on('data', (d) => { stderr2 += d.toString(); });
+      proc2.on('close', (code2) => {
+        if (code2 === 0 && stdout2.trim()) {
+          const digest = parseManifestDigest(stdout2);
+          resolve(digest);
+        } else {
+          resolve(null);
+        }
+      });
+
+      setTimeout(() => {
+        proc2.kill();
+        resolve(null);
+      }, 15000);
+    });
+
+    // Timeout after 15 seconds (network request)
+    setTimeout(() => {
+      proc.kill();
+      resolve(null);
+    }, 15000);
+  });
+}
+
+/**
+ * Parse digest from docker manifest inspect output.
+ * @param {string} output  JSON output from docker manifest inspect
+ * @returns {string|null}  Digest string or null
+ */
+function parseManifestDigest(output) {
+  try {
+    const manifest = JSON.parse(output.trim());
+    // Get the digest for the current platform (amd64 or arm64)
+    const platform = process.arch === 'arm64' ? 'arm64' : 'amd64';
+    for (const manifestData of manifest.manifests || []) {
+      if (manifestData.platform && manifestData.platform.architecture === platform) {
+        return manifestData.digest;
+      }
+    }
+    // Fallback to first manifest if platform not found
+    if (manifest.manifests && manifest.manifests[0]) {
+      return manifest.manifests[0].digest;
+    }
+  } catch (e) {
+    // Ignore parse errors
+  }
+  return null;
+}
+
+/**
+ * Compare two digest strings to check if they represent different images.
+ * @param {string} digest1
+ * @param {string} digest2
+ * @returns {boolean}
+ */
+function digestsDiffer(digest1, digest2) {
+  if (!digest1 || !digest2) return false;
+  // Digests are like "sha256:abc123..." - compare just the hash part
+  const hash1 = digest1.replace(/^sha256:/, '').substring(0, 12);
+  const hash2 = digest2.replace(/^sha256:/, '').substring(0, 12);
+  return hash1 !== hash2;
+}
+
+// ─── Launcher Version Detection ─────────────────────────────────────────────────
+
+/**
+ * Get the current launcher version from package.json.
+ * @returns {string}  Version string (e.g. '1.0.0')
+ */
+function getLauncherVersion() {
+  try {
+    const packagePath = require('path').join(__dirname, '..', 'package.json');
+    const pkg = require(packagePath);
+    return pkg.version || '0.0.0';
+  } catch (e) {
+    return '0.0.0';
+  }
+}
+
+/**
+ * Get the latest launcher release version from GitHub releases API.
+ * @returns {Promise<string|null>}  Latest version string or null if failed
+ */
+function getLatestLauncherRelease() {
+  return new Promise((resolve) => {
+    const options = {
+      hostname: 'api.github.com',
+      path: '/repos/land007/webcode/releases/latest',
+      method: 'GET',
+      headers: {
+        'User-Agent': 'webcode-launcher'
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => { data += chunk; });
+      res.on('end', () => {
+        if (res.statusCode === 200) {
+          try {
+            const release = JSON.parse(data);
+            const tagName = release.tag_name || '';
+            // Remove 'v' prefix if present
+            const version = tagName.replace(/^v/, '');
+            resolve(version);
+          } catch (e) {
+            resolve(null);
+          }
+        } else {
+          resolve(null);
+        }
+      });
+    });
+
+    req.on('error', () => {
+      resolve(null);
+    });
+
+    req.setTimeout(10000, () => {
+      req.destroy();
+      resolve(null);
+    });
+
+    req.end();
+  });
+}
+
+/**
+ * Compare two version strings using semver-like comparison.
+ * @param {string} v1  Current version
+ * @param {string} v2  Latest version
+ * @returns {boolean}  True if v2 > v1
+ */
+function versionsDiffer(v1, v2) {
+  const parts1 = v1.split('.').map(Number);
+  const parts2 = v2.split('.').map(Number);
+
+  for (let i = 0; i < 3; i++) {
+    const p1 = parts1[i] || 0;
+    const p2 = parts2[i] || 0;
+    if (p2 > p1) return true;
+    if (p2 < p1) return false;
+  }
+  return false;
+}
+
+// ─── Main Update Check Function ────────────────────────────────────────────────
+
+/**
+ * Check for both container and launcher updates.
+ * @param {Object} cfg  Configuration object
+ * @returns {Promise<Object>}  Update status object:
+ *   - containerUpdate: boolean
+ *   - launcherUpdate: boolean
+ *   - remoteDigest: string|null
+ *   - remoteVersion: string|null
+ *   - localDigest: string|null
+ *   - localVersion: string|null
+ */
+async function checkForUpdates(cfg) {
+  const imageName = 'land007/webcode:latest';
+
+  // Check container update
+  const localDigest = await getLocalContainerDigest(imageName);
+  const remoteDigest = await getRemoteContainerDigest(imageName);
+  const containerUpdate = digestsDiffer(localDigest, remoteDigest);
+
+  // Check launcher update
+  const localVersion = getLauncherVersion();
+  const remoteVersion = await getLatestLauncherRelease();
+  const launcherUpdate = remoteVersion && versionsDiffer(localVersion, remoteVersion);
+
+  return {
+    containerUpdate,
+    launcherUpdate,
+    remoteDigest,
+    remoteVersion,
+    localDigest,
+    localVersion
+  };
+}
+
+// ─── Container Update Function ─────────────────────────────────────────────────
+
+/**
+ * Update the container by stopping, pulling, and restarting.
+ * @param {Object} cfg  Configuration object (used for docker operations)
+ * @param {Function} onData  Callback for progress updates (data: string)
+ * @param {Function} onClose  Callback when complete (exitCode: number)
+ * @returns {Object}  Process object
+ */
+function updateContainer(cfg, onData, onClose) {
+  const { dockerDown, dockerUp } = require('./app.js');
+
+  // Execute the update sequence
+  async function performUpdate() {
+    try {
+      // Step 1: Stop container
+      onData && onData('Stopping container...\n');
+      await new Promise((resolve, reject) => {
+        dockerDown(cfg, (data) => onData && onData(data), (code) => {
+          if (code === 0) resolve();
+          else reject(new Error(`docker down failed with code ${code}`));
+        });
+      });
+
+      // Step 2: Pull new image (dockerUp handles pulling)
+      onData && onData('Pulling latest image...\n');
+      await new Promise((resolve, reject) => {
+        dockerUp(cfg, (data) => onData && onData(data), (code) => {
+          if (code === 0) resolve();
+          else reject(new Error(`docker up failed with code ${code}`));
+        });
+      });
+
+      // Complete
+      if (onClose) onClose(0);
+    } catch (err) {
+      if (onData) {
+        onData(`\n❌ Update failed: ${err.message}\n`);
+      }
+      if (onClose) onClose(1);
+    }
+  }
+
+  // Start the update process
+  performUpdate();
+
+  // Return a mock process object for compatibility
+  return {
+    kill: () => {
+      // Can't easily cancel async operations, but this is for API compatibility
+    }
+  };
+}
+
+// ─── Exports ─────────────────────────────────────────────────────────────────────
+
+module.exports = {
+  checkForUpdates,
+  updateContainer,
+  getLocalContainerDigest,
+  getRemoteContainerDigest,
+  getLauncherVersion,
+  getLatestLauncherRelease,
+  digestsDiffer,
+  versionsDiffer,
+};

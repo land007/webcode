@@ -13,6 +13,10 @@ const {
   updateComposePorts, updateComposeCustomPorts,
   getPortSummary
 } = require('./ports.js');
+const {
+  checkForUpdates, updateContainer,
+  getLocalContainerDigest, getRemoteContainerDigest
+} = require('./update.js');
 
 // ─── Proxy servers ───────────────────────────────────────────────────────────
 
@@ -554,4 +558,8 @@ module.exports = {
   dockerVolumeRm,
   setTheiaTheme,
   setDesktopTheme,
+  checkForUpdates,
+  updateContainer,
+  getLocalContainerDigest,
+  getRemoteContainerDigest,
 };
