@@ -410,12 +410,16 @@
       output: function(encodedChunk) {
         if (micWs && micWs.readyState === WebSocket.OPEN) {
           try {
-            micWs.send(encodedChunk.data);
+            // EncodedAudioChunk: use copyTo() to get ArrayBuffer
+            var size = encodedChunk.byteLength;
+            var buffer = new ArrayBuffer(size);
+            encodedChunk.copyTo(buffer);
+            micWs.send(buffer);
           } catch (e) {
             console.error('[audio-bar] mic Opus send error:', e);
           }
         }
-        encodedChunk.close();
+        // encodedChunk will be garbage-collected automatically
       },
       error: function(e) {
         console.error('[audio-bar] mic AudioEncoder error:', e);
@@ -479,24 +483,27 @@
         var numFrames = e.inputBuffer.length;
         var numChannels = e.inputBuffer.numberOfChannels;
 
-        // Convert AudioBuffer to Float32Array planes for AudioData
-        var planes = [];
+        // Interleave channels into single Float32Array (format: 'f32')
+        var interleaved = new Float32Array(numFrames * numChannels);
         for (var ch = 0; ch < numChannels; ch++) {
-          planes.push(new Float32Array(e.inputBuffer.getChannelData(ch)));
+          var channelData = e.inputBuffer.getChannelData(ch);
+          for (var i = 0; i < numFrames; i++) {
+            interleaved[i * numChannels + ch] = channelData[i];
+          }
         }
 
         try {
           var audioData = new AudioData({
-            format: 'f32-planar',
+            format: 'f32',  // interleaved float32
             sampleRate: SAMPLE_RATE,
             numberOfFrames: numFrames,
             numberOfChannels: numChannels,
             timestamp: micTimestamp,
-            data: planes
+            data: interleaved
           });
           micEncoder.encode(audioData);
-          micTimestamp += (numFrames * 1000000 / SAMPLE_RATE);  // microseconds
-          audioData.close();
+          micTimestamp += Math.floor(numFrames * 1000000 / SAMPLE_RATE);  // microseconds
+          // audioData will be garbage-collected automatically
         } catch (err) {
           console.error('[audio-bar] mic encode error:', err);
         }
