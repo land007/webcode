@@ -2414,6 +2414,12 @@ function checkForUpdates(options) {
   options = options || {};
   const silent = options.silent || false;
 
+  // Prevent multiple concurrent checks
+  if (updateCheckInProgress) {
+    console.log('[Update Check] Already in progress, skipping duplicate check');
+    return Promise.resolve(updateInfo || { cancelled: true });
+  }
+
   if (!silent) {
     updateCheckInProgress = true;
     currentCheckStep = null;  // Reset progress at start
