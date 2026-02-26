@@ -37,9 +37,6 @@
 	handle_path /audio {
 		reverse_proxy 127.0.0.1:10006
 	}
-	handle_path /audio/* {
-		reverse_proxy 127.0.0.1:10006
-	}
 	handle /websockify {
 		reverse_proxy 127.0.0.1:10004
 	}
