@@ -2682,11 +2682,16 @@ function copyDebugLog() {
   textarea.select();
   try {
     document.execCommand('copy');
-    console.log('[Debug] Log copied to clipboard');
-    alert('日志已拷贝到剪贴板');
+    console.log('[Debug] ✓ Log copied to clipboard');
+    // Flash the button to indicate success
+    var btn = document.querySelector('button[onclick="copyDebugLog()"]');
+    if (btn) {
+      var originalText = btn.textContent;
+      btn.textContent = '已拷贝!';
+      setTimeout(() => btn.textContent = originalText, 1500);
+    }
   } catch (err) {
     console.error('[Debug] Failed to copy log:', err);
-    alert('拷贝失败: ' + err.message);
   }
   document.body.removeChild(textarea);
 }
