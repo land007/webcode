@@ -29,17 +29,32 @@ function resetUpdateCheckCancel() {
  * @returns {Promise<string|null>}  Digest string or null if not found
  */
 function getLocalContainerDigest(imageName) {
+  console.log('[getLocalContainerDigest] Starting for:', imageName);
   return new Promise((resolve) => {
     const env = Object.assign({}, process.env, { PATH: buildDockerPath() });
+    console.log('[getLocalContainerDigest] PATH:', env.PATH ? 'OK' : 'MISSING');
+
     const proc = spawn('docker', ['inspect', '--format={{index .RepoDigests 0}}', imageName], { env });
     let stdout = '';
     let stderr = '';
     let completed = false;
 
-    proc.stdout.on('data', (d) => { stdout += d.toString(); });
-    proc.stderr.on('data', (d) => { stderr += d.toString(); });
+    console.log('[getLocalContainerDigest] Process spawned, PID:', proc.pid);
+
+    proc.stdout.on('data', (d) => {
+      const chunk = d.toString();
+      console.log('[getLocalContainerDigest] stdout:', chunk.length, 'bytes');
+      stdout += chunk;
+    });
+
+    proc.stderr.on('data', (d) => {
+      const chunk = d.toString();
+      console.log('[getLocalContainerDigest] stderr:', chunk);
+      stderr += chunk;
+    });
 
     proc.on('close', (code) => {
+      console.log('[getLocalContainerDigest] close event, code:', code, 'stdout length:', stdout.length);
       completed = true;
       if (code === 0 && stdout.trim()) {
         resolve(stdout.trim());
@@ -48,14 +63,19 @@ function getLocalContainerDigest(imageName) {
       }
     });
 
+    proc.on('exit', (code) => {
+      console.log('[getLocalContainerDigest] exit event, code:', code);
+    });
+
     proc.on('error', (err) => {
+      console.log('[getLocalContainerDigest] error event:', err);
       completed = true;
-      console.error('docker inspect error:', err);
       resolve(null);
     });
 
     // Timeout after 2 seconds (local operation should be fast)
     const timeout = setTimeout(() => {
+      console.log('[getLocalContainerDigest] Timeout! completed:', completed);
       if (!completed) {
         proc.kill('SIGKILL');
         resolve(null);

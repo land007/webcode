@@ -10,7 +10,7 @@
     "min_height": 580,
     "icon": "assets/icon.png"
   },
-  "chromium-args": "--disable-web-security --allow-running-insecure-content",
+  "chromium-args": "--disable-web-security --allow-running-insecure-content --mixed-context",
   "dependencies": {
     "http-proxy": "^1.18.1"
   },
