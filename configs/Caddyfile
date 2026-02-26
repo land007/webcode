@@ -34,14 +34,14 @@
 
 # noVNC (Web VNC client) + Audio WebSocket (path-based routing)
 :20004 {
-	# Audio WebSocket stream
-	handle /audio/* {
+	handle_path /audio {
 		reverse_proxy 127.0.0.1:10006
 	}
-	# noVNC websockify
+	handle_path /audio/* {
+		reverse_proxy 127.0.0.1:10006
+	}
 	handle /websockify {
 		reverse_proxy 127.0.0.1:10004
 	}
-	# noVNC HTML pages and assets
 	reverse_proxy 127.0.0.1:10004
 }
