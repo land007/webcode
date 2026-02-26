@@ -206,7 +206,7 @@
     console.log('[audio-bar] Connecting:', AUDIO_WS_URL);
 
     try {
-      ws = new WebSocket(wsUrl);
+      ws = new WebSocket(AUDIO_WS_URL);
     } catch (e) {
       console.error('[audio-bar]', e);
       stopAudio();
