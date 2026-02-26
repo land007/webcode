@@ -45,11 +45,12 @@ function getLocalContainerDigest(imageName) {
       }
     });
 
-    // Timeout after 10 seconds
-    setTimeout(() => {
+    // Timeout after 5 seconds (local operation should be fast)
+    const timeout = setTimeout(() => {
       proc.kill();
       resolve(null);
-    }, 10000);
+    }, 5000);
+    proc.on('exit', () => clearTimeout(timeout));
   });
 }
 
@@ -120,19 +121,19 @@ function getRemoteContainerDigest(imageName) {
           proc2.kill();
         }
         resolve(null);
-      }, 15000);
+      }, 5000);  // 5 seconds for ghcr.io
 
       // Cleanup timeout if process completes early
       proc2.on('exit', () => clearTimeout(timeout2));
     });
 
-    // Timeout after 15 seconds (network request)
+    // Timeout after 5 seconds (Docker Hub might be blocked)
     const timeout1 = setTimeout(() => {
       if (!updateCheckCancelled) {
         proc.kill();
       }
       resolve(null);
-    }, 15000);
+    }, 5000);  // 5 seconds for Docker Hub
 
     // Cleanup timeout if process completes early
     proc.on('exit', () => clearTimeout(timeout1));
@@ -302,20 +303,23 @@ async function checkForUpdates(cfg, onProgress) {
   // Reset cancellation flag at start
   resetUpdateCheckCancel();
 
-  // Check container update
-  if (onProgress) onProgress('container', 'checking');
+  // Check local container digest
+  if (onProgress) onProgress('container-local', 'checking');
   const localDigest = await getLocalContainerDigest(imageName);
+
+  if (updateCheckCancelled) {
+    return { containerUpdate: false, launcherUpdate: false, cancelled: true };
+  }
+
+  // Check remote container digest
+  if (onProgress) onProgress('container-remote', 'checking');
   const remoteDigest = await getRemoteContainerDigest(imageName);
 
-  // Check if cancelled after container check
   if (updateCheckCancelled) {
     return {
       containerUpdate: false,
       launcherUpdate: false,
-      remoteDigest: null,
-      remoteVersion: null,
       localDigest,
-      localVersion: getLauncherVersion(),
       cancelled: true
     };
   }
@@ -327,13 +331,10 @@ async function checkForUpdates(cfg, onProgress) {
   const localVersion = getLauncherVersion();
   const remoteVersion = await getLatestLauncherRelease();
 
-  // Check if cancelled after launcher check
   if (updateCheckCancelled) {
     return {
       containerUpdate: false,
       launcherUpdate: false,
-      remoteDigest,
-      remoteVersion: null,
       localDigest,
       localVersion,
       cancelled: true

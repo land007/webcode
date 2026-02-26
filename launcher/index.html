@@ -576,9 +576,13 @@
     </button>
   </div>
   <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">
-    <div class="check-step" data-step="container">
+    <div class="check-step" data-step="container-local">
       <span class="step-icon">○</span>
-      <span class="step-text" data-i18n="update_checking_container">正在检查容器更新...</span>
+      <span class="step-text">检查本地容器版本...</span>
+    </div>
+    <div class="check-step" data-step="container-remote">
+      <span class="step-icon">○</span>
+      <span class="step-text">检查远程容器版本...</span>
     </div>
     <div class="check-step" data-step="launcher">
       <span class="step-icon">○</span>
@@ -586,7 +590,7 @@
     </div>
     <div class="check-step" data-step="complete">
       <span class="step-icon">○</span>
-      <span class="step-text" data-i18n="update_check_detail">正在对比 Docker 镜像和 GitHub Releases...</span>
+      <span class="step-text">完成检查</span>
     </div>
   </div>
 </div>
@@ -2237,7 +2241,7 @@ function hideUpdateProgressPanel() {
 
 function updateCheckProgress(step) {
   // Mark previous steps as completed
-  const steps = ['container', 'launcher', 'complete'];
+  const steps = ['container-local', 'container-remote', 'launcher', 'complete'];
   const stepIndex = steps.indexOf(step);
 
   document.querySelectorAll('.check-step').forEach(function(el) {
