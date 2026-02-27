@@ -1973,19 +1973,22 @@ function startLogStream() {
 
 // ─── Workspace: start / stop buttons ─────────────────────────────────────────
 
-// Dashboard button - opens port 20000 in browser
+// Dashboard button - opens port 20000 in external browser
 document.getElementById('btn-dashboard').addEventListener('click', () => {
   const dashboardPort = 20000;
   const dashboardUrl = `http://localhost:${dashboardPort}`;
 
-  // Check if container is running
-  const mainState = document.getElementById('main-state').textContent;
-  if (mainState.includes('运行中') || mainState.includes('Running')) {
-    nw.Shell.openExternal(dashboardUrl);
-  } else {
-    // Container not running - show message
-    alert(t('dyn_dashboard_not_running') || '请先启动容器');
-  }
+  // Check if container is running by querying docker
+  app.dockerPs(cfg, (err, containers) => {
+    const isRunning = containers && containers.length > 0;
+    if (isRunning) {
+      // Open in external browser (Chrome/Safari/etc)
+      nw.Shell.openExternal(dashboardUrl);
+    } else {
+      // Container not running - show message
+      alert(t('dyn_dashboard_not_running') || '请先启动容器');
+    }
+  });
 });
 
 document.getElementById('btn-restart').addEventListener('click', () => {
