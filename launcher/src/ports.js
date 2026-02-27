@@ -138,8 +138,7 @@ function getPortsFromConfig(cfg) {
     kanban: cfg.PORT_KANBAN || DEFAULT_PORTS.kanban,
     openclaw: cfg.PORT_OPENCLAW || DEFAULT_PORTS.openclaw,
     novnc: cfg.PORT_NOVNC || DEFAULT_PORTS.novnc,
-    vnc: cfg.PORT_VNC || DEFAULT_PORTS.vnc,
-    audio: cfg.PORT_AUDIO || DEFAULT_PORTS.audio
+    vnc: cfg.PORT_VNC || DEFAULT_PORTS.vnc
   };
 }
 
