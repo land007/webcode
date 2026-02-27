@@ -6,6 +6,7 @@ const path = require('path');
 
 // 默认端口配置
 const DEFAULT_PORTS = {
+  dashboard: 20000,
   theia: 20001,
   kanban: 20002,
   openclaw: 20003,
@@ -16,6 +17,7 @@ const DEFAULT_PORTS = {
 
 // 端口配置名称映射
 const PORT_NAMES = {
+  dashboard: 'Dashboard (四合一入口)',
   theia: 'Theia IDE',
   kanban: 'Vibe Kanban',
   openclaw: 'OpenClaw AI',
@@ -131,6 +133,7 @@ async function autoFixPorts(ports) {
  */
 function getPortsFromConfig(cfg) {
   return {
+    dashboard: cfg.PORT_DASHBOARD || DEFAULT_PORTS.dashboard,
     theia: cfg.PORT_THEIA || DEFAULT_PORTS.theia,
     kanban: cfg.PORT_KANBAN || DEFAULT_PORTS.kanban,
     openclaw: cfg.PORT_OPENCLAW || DEFAULT_PORTS.openclaw,
@@ -155,6 +158,7 @@ function updateComposePorts(workDir, ports) {
   let content = fs.readFileSync(composePath, 'utf8');
 
   // 替换端口映射
+  content = content.replace(/"(\d+):20000"/, `"${ports.dashboard}:20000"`);
   content = content.replace(/"(\d+):20001"/, `"${ports.theia}:20001"`);
   content = content.replace(/"(\d+):20002"/, `"${ports.kanban}:20002"`);
   content = content.replace(/"(\d+):20003"/, `"${ports.openclaw}:20003"`);
