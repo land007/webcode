@@ -38,7 +38,8 @@ function startProxy(listenPort, targetPort, authHeader) {
 
   proxy.on('error', (err, req, res) => {
     console.error(`Proxy error on port ${listenPort}:`, err.message);
-    if (res && !res.headersSent) {
+    // res may not exist or may not be a valid HTTP response object (e.g., for WebSocket errors)
+    if (res && typeof res.writeHead === 'function' && typeof res.end === 'function' && !res.headersSent) {
       res.writeHead(502, { 'Content-Type': 'text/plain' });
       res.end('Service unavailable — container may still be starting.');
     }
@@ -134,6 +135,19 @@ function dockerSpawn(args, cfg, onData, onClose) {
     cwd: cfg.WORK_DIR || getWorkDir(),
     env: buildEnv(cfg)
   });
+
+  // Handle spawn errors (e.g., docker command not found)
+  proc.on('error', (err) => {
+    if (err.code === 'ENOENT') {
+      const errorMsg = '\n❌ 错误：未找到 Docker 命令\n\n请确保已安装 Docker Desktop 并正确启动。\nmacOS: https://www.docker.com/products/docker-desktop/\n\n';
+      onData && onData(errorMsg);
+    } else {
+      const errorMsg = `\n❌ Docker 错误：${err.message}\n\n`;
+      onData && onData(errorMsg);
+    }
+    onClose && onClose(1);
+  });
+
   proc.stdout.on('data', (d) => onData && onData(d.toString()));
   proc.stderr.on('data', (d) => onData && onData(d.toString()));
   proc.on('close', (code) => onClose && onClose(code));
@@ -293,6 +307,12 @@ function dockerPs(cfg, callback) {
     cwd: cfg.WORK_DIR || getWorkDir(),
     env: buildEnv(cfg)
   });
+
+  proc.on('error', (err) => {
+    // Docker command not found or other spawn error
+    callback(err, []);
+  });
+
   let out = '';
   proc.stdout.on('data', (d) => { out += d.toString(); });
   proc.on('close', () => {
@@ -422,6 +442,7 @@ function setTheiaTheme(cfg, themeName, callback) {
   const proc = spawn('docker', ['exec', '-u', 'ubuntu', cfg.CONTAINER_NAME || 'webcode', 'node', '-e', script], {
     env: buildEnv(cfg)
   });
+  proc.on('error', (err) => { if (callback) callback(1); });
   proc.on('close', (code) => { if (callback) callback(code); });
 }
 
@@ -435,6 +456,7 @@ function setDesktopTheme(cfg, themeName, callback) {
   const proc = spawn('docker', ['exec', '-u', 'ubuntu', cfg.CONTAINER_NAME || 'webcode', '/usr/local/bin/theme-switch', themeName], {
     env: buildEnv(cfg)
   });
+  proc.on('error', (err) => { if (callback) callback(1); });
   proc.on('close', (code) => { if (callback) callback(code); });
 }
 
@@ -447,6 +469,11 @@ function supervisorStatus(cfg, callback) {
   const proc = spawn('docker', ['exec', cfg.CONTAINER_NAME || 'webcode', 'supervisorctl', 'status', 'all'], {
     env: buildEnv(cfg)
   });
+
+  proc.on('error', (err) => {
+    callback(err, []);
+  });
+
   let out = '';
   proc.stdout.on('data', d => { out += d.toString(); });
   proc.stderr.on('data', d => { out += d.toString(); });
@@ -465,6 +492,7 @@ function supervisorRestart(cfg, processName, callback) {
   const proc = spawn('docker', ['exec', cfg.CONTAINER_NAME || 'webcode', 'supervisorctl', 'restart', processName], {
     env: buildEnv(cfg)
   });
+  proc.on('error', (err) => { if (callback) callback(1); });
   proc.on('close', (code) => { if (callback) callback(code); });
 }
 
@@ -495,11 +523,13 @@ function supervisorProcessLog(cfg, processName, callback) {
   }
 
   const pStdout = spawn('docker', dockerArgs([]), { env: buildEnv(cfg) });
+  pStdout.on('error', () => finish()); // On error, count as done
   pStdout.stdout.on('data', d => { stdoutOut += d.toString(); });
   pStdout.stderr.on('data', d => { stdoutOut += d.toString(); });
   pStdout.on('close', finish);
 
   const pStderr = spawn('docker', dockerArgs(['stderr']), { env: buildEnv(cfg) });
+  pStderr.on('error', () => finish()); // On error, count as done
   pStderr.stdout.on('data', d => { stderrOut += d.toString(); });
   pStderr.stderr.on('data', d => { stderrOut += d.toString(); });
   pStderr.on('close', finish);
@@ -539,6 +569,11 @@ function dockerVolumeRm(volumeName, callback) {
   const env = Object.assign({}, process.env, { PATH: buildDockerPath() });
   // Find the actual full volume name using the label Docker Compose attaches
   const ls = spawn('docker', ['volume', 'ls', '--filter', 'label=com.docker.compose.volume=' + volumeName, '-q'], { env });
+
+  ls.on('error', (err) => {
+    callback(1, 'Docker error: ' + err.message);
+  });
+
   let found = '';
   ls.stdout.on('data', d => { found += d.toString(); });
   ls.on('close', () => {
@@ -548,6 +583,11 @@ function dockerVolumeRm(volumeName, callback) {
       return;
     }
     const rm = spawn('docker', ['volume', 'rm', actual], { env });
+
+    rm.on('error', (err) => {
+      callback(1, 'Docker error: ' + err.message);
+    });
+
     let out = '';
     rm.stdout.on('data', d => { out += d.toString(); });
     rm.stderr.on('data', d => { out += d.toString(); });
