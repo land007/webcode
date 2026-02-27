@@ -20,8 +20,6 @@
     "@theia/terminal": "1.68.2",
     "@theia/vsx-registry": "1.68.2",
     "@theia/workspace": "1.68.2",
-    "@theia/scm": "1.68.2",
-    "@theia/git": "1.68.2",
     "lodash": "^4.17.21"
   },
   "devDependencies": {
