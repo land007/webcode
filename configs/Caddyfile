@@ -2,6 +2,14 @@
 	admin off
 }
 
+# Dashboard (Main Entry - Basic Auth)
+:20000 {
+	basicauth {
+		{$AUTH_USER} {$AUTH_PASS_HASH}
+	}
+	reverse_proxy 127.0.0.1:10000
+}
+
 # Theia IDE
 :20001 {
 	basicauth {

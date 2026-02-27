@@ -32,6 +32,9 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y nodejs \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# ─── 2b. http-proxy for dashboard service ───────────────────────────
+RUN npm install -g http-proxy
+
 # ─── 3. Theia IDE native build deps ─────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libxkbfile-dev libsecret-1-dev python3-dev python3-setuptools make g++ pkg-config \
@@ -207,6 +210,9 @@ COPY configs/supervisor-cloudflared.conf /etc/supervisor/conf.d/supervisor-cloud
 COPY configs/supervisor-analytics.conf /etc/supervisor/conf.d/supervisor-analytics.conf
 
 COPY configs/supervisor-audio.conf /etc/supervisor/conf.d/supervisor-audio.conf
+COPY configs/supervisor-dashboard.conf /etc/supervisor/conf.d/supervisor-dashboard.conf
+COPY configs/dashboard-server.js /opt/dashboard-server.js
+COPY configs/dashboard.html /opt/dashboard.html
 COPY scripts/audio-ws-server.py /opt/audio-ws-server.py
 COPY scripts/audio-ws-wrapper.sh /opt/audio-ws-wrapper.sh
 COPY configs/audio-player.html /opt/noVNC/audio.html
