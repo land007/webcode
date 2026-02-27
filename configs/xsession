@@ -3,9 +3,21 @@ export XDG_SESSION_TYPE=x11
 export XDG_CURRENT_DESKTOP=GNOME-Flashback:GNOME
 export DESKTOP_SESSION=gnome-flashback-metacity
 
-# ─── Locale for fcitx GTK module ───────────────────────────────────
-export LANG=zh_CN.UTF-8
-export LC_ALL=zh_CN.UTF-8
+# ─── Locale（从保存的语言偏好读取）────────────────────────────
+LANG_FILE="$HOME/.config/gnome-language"
+if [ -f "$LANG_FILE" ]; then
+    SAVED_LANG=$(cat "$LANG_FILE")
+    export LANG="$SAVED_LANG"
+    export LC_ALL="$SAVED_LANG"
+    # 从 LANG 推导 LANGUAGE（如：zh_CN.UTF-8 -> zh_CN:zh）
+    LANG_BASE="${SAVED_LANG%%.*}"  # 移除 .UTF-8 后缀
+    export LANGUAGE="${LANG_BASE}:${LANG_BASE%%_*}"
+else
+    # 默认使用中文
+    export LANG=zh_CN.UTF-8
+    export LC_ALL=zh_CN.UTF-8
+    export LANGUAGE=zh_CN:zh
+fi
 
 # ─── XDG runtime dir (required by fcitx, dbus, etc.) ───────────────
 export XDG_RUNTIME_DIR=/run/user/$(id -u)
