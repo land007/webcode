@@ -78,6 +78,7 @@ const translations = {
     title_refresh:    '刷新',
     title_open_browser: '在浏览器中打开',
     status_detecting: '检测中…',
+    btn_dashboard:    'Dashboard',
     btn_restart:      '重启',
     btn_stop:         '停止',
 
@@ -150,6 +151,8 @@ const translations = {
     cf_help_text:     '如何获取 Token？',
     cf_help_link:     'Cloudflare Zero Trust 控制台',
     cf_help_steps:    ' → Networks → Tunnels → 创建 Tunnel → 复制 token',
+    // Dashboard button
+    dyn_dashboard_not_running: '请先启动容器',
     // 清空卷
     btn_clear_vol:    '清空',
     dyn_confirm_clear_vol: '确定要清空卷 {name}？\n将永久删除其中所有数据，且不可恢复。\n\n操作将自动停止容器，完成后需手动重启。',
@@ -284,6 +287,7 @@ const translations = {
     title_refresh:    'Refresh',
     title_open_browser: 'Open in browser',
     status_detecting: 'Detecting…',
+    btn_dashboard:    'Dashboard',
     btn_restart:      'Restart',
     btn_stop:         'Stop',
 
@@ -356,6 +360,8 @@ const translations = {
     cf_help_text:     'How to get a Token?',
     cf_help_link:     'Cloudflare Zero Trust dashboard',
     cf_help_steps:    ' → Networks → Tunnels → Create Tunnel → Copy token',
+    // Dashboard button
+    dyn_dashboard_not_running: 'Please start the container first',
     // Clear volume
     btn_clear_vol:    'Clear',
     dyn_confirm_clear_vol: 'Clear volume {name}?\nThis will permanently delete all data and cannot be undone.\n\nThe container will be stopped automatically. You will need to restart it afterwards.',

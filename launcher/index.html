@@ -326,6 +326,10 @@
       <span>EN</span>
     </button>
     <div class="topbar-actions">
+      <button class="btn-primary btn-sm" id="btn-dashboard" style="margin-right:8px">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+        <span data-i18n="btn_dashboard">Dashboard</span>
+      </button>
       <button class="btn-secondary btn-sm" id="btn-restart">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 21H3v-5"></path></svg>
         <span data-i18n="btn_restart">重启</span>
@@ -1968,6 +1972,21 @@ function startLogStream() {
 }
 
 // ─── Workspace: start / stop buttons ─────────────────────────────────────────
+
+// Dashboard button - opens port 20000 in browser
+document.getElementById('btn-dashboard').addEventListener('click', () => {
+  const dashboardPort = 20000;
+  const dashboardUrl = `http://localhost:${dashboardPort}`;
+
+  // Check if container is running
+  const mainState = document.getElementById('main-state').textContent;
+  if (mainState.includes('运行中') || mainState.includes('Running')) {
+    nw.Shell.openExternal(dashboardUrl);
+  } else {
+    // Container not running - show message
+    alert(t('dyn_dashboard_not_running') || '请先启动容器');
+  }
+});
 
 document.getElementById('btn-restart').addEventListener('click', () => {
   if (!confirm(t('dyn_confirm_restart'))) return;
