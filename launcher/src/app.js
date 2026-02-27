@@ -98,10 +98,12 @@ function startProxies(cfg) {
 /** macOS GUI apps get a minimal PATH; prepend all common Docker locations. */
 function buildDockerPath() {
   const extra = [
-    '/usr/local/bin',
-    '/opt/homebrew/bin',
+    '/usr/local/bin',                          // Intel Mac Homebrew / Docker Desktop default
+    '/opt/homebrew/bin',                       // Apple Silicon Mac Homebrew
     '/opt/homebrew/sbin',
-    '/Applications/Docker.app/Contents/Resources/bin',
+    '/Applications/Docker.app/Contents/Resources/bin',  // Docker Desktop bundled
+    '/Applications/Docker.app/Contents/Resources/bin/docker',  // Direct docker binary
+    '~/.docker/bin',                           // User-local Docker installations
   ];
   const current = process.env.PATH || '';
   const parts = current ? current.split(':') : [];
@@ -309,15 +311,36 @@ function dockerPs(cfg, callback) {
 
 // Check docker is installed and running
 function checkDocker(callback) {
-  const result = { installed: false, running: false, version: '' };
+  const result = { installed: false, running: false, version: '', error: null };
   const env = Object.assign({}, process.env, { PATH: buildDockerPath() });
+
   const ver = spawn('docker', ['--version'], { env });
   let verOut = '';
+  let verErr = '';
+
   ver.stdout.on('data', d => { verOut += d.toString(); });
+  ver.stderr.on('data', d => { verErr += d.toString(); });
+
+  ver.on('error', (err) => {
+    // Docker command not found (ENOENT)
+    if (err.code === 'ENOENT') {
+      result.error = 'not_found';
+      callback(result);
+    } else {
+      result.error = err.message;
+      callback(result);
+    }
+  });
+
   ver.on('close', (code) => {
-    if (code !== 0) { callback(result); return; }
+    if (code !== 0) {
+      result.error = 'not_found';
+      callback(result);
+      return;
+    }
     result.installed = true;
     result.version = verOut.trim();
+
     const info = spawn('docker', ['info'], { env });
     info.on('close', (c) => {
       result.running = (c === 0);

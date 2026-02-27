@@ -69,14 +69,18 @@
       </div>
       <div id="docker-help" style="display:none; margin-top:16px; padding:12px 14px;
            border-left:3px solid var(--accent); background:var(--card-bg);
-           border-radius:6px; font-size:12px; line-height:1.7">
+           border-radius:6px; font-size:12px; line-height:1.7; position:relative">
+        <button id="close-docker-help" style="position:absolute; top:8px; right:8px; background:none;
+             border:none; color:var(--text-muted); cursor:pointer; padding:4px; line-height:1;
+             font-size:16px; opacity:0.6" title="关闭">×</button>
         <div id="docker-help-mac" style="display:none">
           <strong data-i18n="docker_help_mac_title">macOS：安装 Docker Desktop</strong>
           <ol style="margin:8px 0 8px 16px; padding:0">
             <li><a class="link" id="docker-dl-link" data-i18n="docker_help_mac_dl">下载 Docker Desktop for Mac</a></li>
             <li data-i18n="docker_help_mac_step2">打开 .dmg，将 Docker 拖入应用程序文件夹</li>
-            <li data-i18n="docker_help_mac_step3">启动 Docker Desktop，等待菜单栏图标稳定</li>
+            <li data-i18n="docker_help_mac_step3">启动 Docker Desktop，等待菜单栏图标稳定（显示为运行状态）</li>
           </ol>
+          <p style="margin:8px 0 0 0; color:var(--text-muted); font-size:11px" data-i18n="docker_help_mac_note">注意：首次安装后可能需要重启终端或本启动器，以便系统识别 Docker 命令。</p>
         </div>
         <div id="docker-help-win" style="display:none">
           <strong data-i18n="docker_help_win_title">Windows：安装 Docker Desktop</strong>
@@ -85,6 +89,7 @@
             <li data-i18n="docker_help_win_step2">运行安装程序，启用 WSL2 后端</li>
             <li data-i18n="docker_help_win_step3">安装完成重启后，启动 Docker Desktop</li>
           </ol>
+          <p style="margin:8px 0 0 0; color:var(--text-muted); font-size:11px" data-i18n="docker_help_win_note">注意：确保已启用 WSL2 功能，并且 Docker Desktop 已正确启动。</p>
         </div>
         <div id="docker-help-notrunning" style="display:none">
           <strong data-i18n="docker_help_notrunning_title">Docker 已安装但未运行</strong>
@@ -1135,6 +1140,14 @@ function runDockerCheck() {
   document.getElementById('btn-step1-next').disabled = true;
 
   app.checkDocker((result) => {
+    if (result.error === 'not_found') {
+      // Docker command not found in PATH
+      setCheckState('check-docker-installed', 'fail', t('dyn_docker_not_found'));
+      setCheckState('check-docker-running',   'fail', '—');
+      showDockerHelp(false);
+      return;
+    }
+
     if (result.installed) {
       setCheckState('check-docker-installed', 'ok', result.version);
     } else {
@@ -1173,6 +1186,11 @@ document.getElementById('btn-step1-next').addEventListener('click', () => {
   if (el) el.addEventListener('click', () => {
     nw.Shell.openExternal('https://www.docker.com/products/docker-desktop/');
   });
+});
+
+// Close Docker help button
+document.getElementById('close-docker-help').addEventListener('click', () => {
+  document.getElementById('docker-help').style.display = 'none';
 });
 
 // ─── Volume list helpers ─────────────────────────────────────────────────────
