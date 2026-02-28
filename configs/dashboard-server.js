@@ -151,6 +151,35 @@ function startDashboardServer() {
       return;
     }
 
+    // API: GET /api/logs/:name — supervisor process logs (stdout + stderr)
+    const logsMatch = req.method === 'GET' && req.url.match(/^\/api\/logs\/([a-zA-Z0-9_-]+)$/);
+    if (logsMatch) {
+      const processName = logsMatch[1];
+
+      // Fetch both stdout and stderr in parallel
+      exec(`supervisorctl tail ${processName} stdout`, (err1, stdout) => {
+        exec(`supervisorctl tail ${processName} stderr`, (err2, stderr) => {
+          const parts = [];
+          if (stdout && stdout.trim()) parts.push(stdout.trim());
+          if (stderr && stderr.trim()) parts.push('=== stderr ===\n' + stderr.trim());
+
+          let output = parts.length > 0 ? parts.join('\n\n') : '(no output)';
+
+          // Format: add [ERROR] prefix to lines containing error keywords
+          const errorPattern = /[Ee]rror|[Ee]xception|[Ff]ail|[Ww]arn|Traceback|at\s+<|undefined|TypeError|ReferenceError|SyntaxError/;
+          output = output.split('\n').map(line => {
+            if (!line.trim()) return line;
+            if (errorPattern.test(line)) return `[ERROR] ${line}`;
+            return line;
+          }).join('\n');
+
+          res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res.end(output);
+        });
+      });
+      return;
+    }
+
     // API: GET /api/status — supervisor process list
     if (req.method === 'GET' && req.url === '/api/status') {
       exec('supervisorctl status all', (_err, stdout) => {

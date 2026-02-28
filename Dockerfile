@@ -6,7 +6,13 @@ LABEL org.opencontainers.image.title="webcode" \
       org.opencontainers.image.source="https://github.com/land007/webcode" \
       org.opencontainers.image.vendor="land007" \
       org.opencontainers.image.licenses="MIT" \
-      org.opencontainers.image.logo="https://raw.githubusercontent.com/land007/webcode/main/launcher/assets/icon-source.png"
+      org.opencontainers.image.logo="https://raw.githubusercontent.com/land007/webcode/main/launcher/assets/icon-source.png" \
+      org.opencontainers.image.version="${WEBCODE_VERSION:-dev}"
+
+# Build-time version argument (defaults to 'dev' if not provided)
+ARG WEBCODE_VERSION=dev
+# Runtime version environment variable
+ENV WEBCODE_VERSION=${WEBCODE_VERSION}
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG=zh_CN.UTF-8
