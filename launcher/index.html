@@ -2176,7 +2176,7 @@ document.getElementById('btn-save-restart').addEventListener('click', () => {
       btn.innerHTML = originalContent;
       if (currentTab !== 'status') activateTab(currentTab);
       startLogStream();
-    });
+    }, { skipPull: true });  // 快速重启，跳过镜像拉取
   });
 });
 

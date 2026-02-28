@@ -26,6 +26,7 @@ services:
       - AUTH_PASSWORD=${AUTH_PASSWORD:-changeme}
       - OPENCLAW_TOKEN=${OPENCLAW_TOKEN:-changeme}
       - PASSWORD=${VNC_PASSWORD:-changeme}
+      - VNC_PASSWORD=${VNC_PASSWORD:-changeme}
       - VNC_RESOLUTION=${VNC_RESOLUTION:-1920x1080}
       - CF_TUNNEL_TOKEN=${CF_TUNNEL_TOKEN:-}
       - GIT_USER_NAME=${GIT_USER_NAME:-}

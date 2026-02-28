@@ -65,10 +65,6 @@ RUN apt-get install -y --no-install-recommends unzip \
 RUN apt-get update && apt-get install -y --no-install-recommends supervisor \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# ─── 5b. Caddy reverse proxy ─────────────────────────────────────
-RUN apt-get update && apt-get install -y --no-install-recommends caddy \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
 # ─── 6. GNOME Flashback desktop (VNC-compatible, no GL needed) ──────
 # Note: intentionally NO --no-install-recommends here so gnome desktop
 # components pull in all recommended packages for a complete desktop.
@@ -204,8 +200,6 @@ COPY configs/supervisord-lite.conf /etc/supervisor/conf.d/supervisord-lite.conf
 COPY configs/supervisor-vibe-kanban.conf /etc/supervisor/conf.d/supervisor-vibe-kanban.conf
 COPY configs/supervisor-theia.conf /etc/supervisor/conf.d/supervisor-theia.conf
 COPY configs/supervisor-openclaw.conf /etc/supervisor/conf.d/supervisor-openclaw.conf
-COPY configs/Caddyfile /etc/caddy/Caddyfile
-COPY configs/supervisor-caddy.conf /etc/supervisor/conf.d/supervisor-caddy.conf
 COPY configs/supervisor-cloudflared.conf /etc/supervisor/conf.d/supervisor-cloudflared.conf
 COPY configs/supervisor-analytics.conf /etc/supervisor/conf.d/supervisor-analytics.conf
 

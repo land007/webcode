@@ -4,24 +4,49 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WebCode Dashboard</title>
+  <!-- 主题初始化：在 CSS 加载前设置 data-theme，防止页面闪烁 -->
+  <script>(function(){
+    try { var t = localStorage.getItem('webcode-theme') || 'dark'; document.documentElement.setAttribute('data-theme', t); } catch(e) {}
+  })();</script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --bg: #1a1d23;
-      --surface: #22262e;
-      --surface2: #2a2f3a;
-      --border: #363c4a;
-      --accent: #4f8ef7;
-      --text: #e2e8f0;
-      --text-muted: #8892a4;
-      --success: #3ecf8e;
-      --tab-h: 42px;
-      --radius: 8px;
+      --bg:        #1a1d23;
+      --surface:   #22262e;
+      --surface2:  #2a2f3a;
+      --border:    #363c4a;
+      --accent:    #4f8ef7;
+      --text:      #e2e8f0;
+      --text-muted:#8892a4;
+      --success:   #3ecf8e;
+      --tab-h:     42px;
+    }
+
+    html[data-theme="light"] {
+      --bg:        #f0f2f5;
+      --surface:   #ffffff;
+      --surface2:  #edf0f5;
+      --border:    #d1d5df;
+      --text:      #1e2130;
+      --text-muted:#5c667a;
+    }
+
+    @media (prefers-color-scheme: light) {
+      html[data-theme="system"] {
+        --bg:        #f0f2f5;
+        --surface:   #ffffff;
+        --surface2:  #edf0f5;
+        --border:    #d1d5df;
+        --text:      #1e2130;
+        --text-muted:#5c667a;
+      }
     }
 
     html, body {
       height: 100%;
+      margin: 0;
+      padding: 0;
       background: var(--bg);
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -29,16 +54,25 @@
       overflow: hidden;
     }
 
-    /* Top bar */
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
     .topbar {
       display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
       align-items: center;
       gap: 4px;
       height: var(--tab-h);
+      min-height: var(--tab-h);
+      max-height: var(--tab-h);
       background: var(--surface);
       border-bottom: 1px solid var(--border);
       padding: 0 12px;
       flex-shrink: 0;
+      overflow: hidden;
     }
 
     .logo {
@@ -49,17 +83,14 @@
       font-size: 14px;
       color: var(--accent);
       margin-right: 16px;
+      flex-shrink: 0;
     }
 
-    .logo svg {
-      width: 24px;
-      height: 24px;
-    }
+    .logo svg { width: 24px; height: 24px; flex-shrink: 0; }
 
-    /* Tab buttons */
     .tab-btn {
       height: 32px;
-      padding: 0 14px;
+      padding: 0 12px;
       border-radius: 6px;
       background: transparent;
       color: var(--text-muted);
@@ -71,27 +102,20 @@
       gap: 6px;
       white-space: nowrap;
       transition: all 0.15s;
+      flex-shrink: 0;
     }
 
-    .tab-btn:hover {
-      background: var(--surface2);
-      color: var(--text);
-    }
+    .tab-btn:hover { background: var(--surface2); color: var(--text); }
+    .tab-btn.active { background: var(--surface2); color: var(--text); }
+    .tab-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
 
-    .tab-btn.active {
-      background: var(--surface2);
-      color: var(--text);
-    }
-
-    .tab-btn svg {
-      width: 18px;
-      height: 18px;
-    }
+    .spacer { flex: 1; min-width: 0; }
 
     .tab-actions {
       display: flex;
+      align-items: center;
       gap: 4px;
-      margin-left: 8px;
+      flex-shrink: 0;
     }
 
     .btn-icon {
@@ -107,21 +131,37 @@
       align-items: center;
       justify-content: center;
       transition: all 0.15s;
+      flex-shrink: 0;
     }
 
-    .btn-icon:hover {
+    .btn-icon:hover { background: var(--surface2); color: var(--text); }
+    .btn-icon svg { width: 16px; height: 16px; }
+
+    .theme-cycle-btn,
+    .lang-cycle-btn {
+      padding: 3px 9px;
+      font-size: 12px;
       background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
       color: var(--text);
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
 
-    .btn-icon svg {
-      width: 16px;
-      height: 16px;
+    .theme-cycle-btn:hover,
+    .lang-cycle-btn:hover {
+      background: var(--surface);
+      border-color: var(--accent);
     }
 
-    .spacer { flex: 1; }
+    .theme-cycle-btn svg,
+    .lang-cycle-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
 
-    /* Status pill */
     .status-pill {
       display: flex;
       align-items: center;
@@ -129,6 +169,7 @@
       font-size: 12px;
       color: var(--text-muted);
       padding: 0 8px;
+      flex-shrink: 0;
     }
 
     .dot {
@@ -137,9 +178,9 @@
       border-radius: 50%;
       background: var(--success);
       box-shadow: 0 0 6px var(--success);
+      flex-shrink: 0;
     }
 
-    /* Fullscreen button */
     .btn-fullscreen {
       background: var(--surface2);
       border: 1px solid var(--border);
@@ -152,18 +193,16 @@
       align-items: center;
       gap: 6px;
       transition: all 0.15s;
+      flex-shrink: 0;
     }
 
-    .btn-fullscreen:hover {
-      background: var(--surface);
-      border-color: var(--accent);
-    }
+    .btn-fullscreen:hover { background: var(--surface); border-color: var(--accent); }
 
-    /* Iframe area */
     .iframe-area {
       flex: 1;
       position: relative;
       background: var(--bg);
+      min-height: 0;
     }
 
     .iframe-area iframe {
@@ -175,11 +214,8 @@
       display: none;
     }
 
-    .iframe-area iframe.visible {
-      display: block;
-    }
+    .iframe-area iframe.visible { display: block; }
 
-    /* Loading overlay */
     .loading-overlay {
       position: absolute;
       inset: 0;
@@ -190,9 +226,7 @@
       z-index: 10;
     }
 
-    .loading-overlay.hidden {
-      display: none;
-    }
+    .loading-overlay.hidden { display: none; }
 
     .loading-spinner {
       width: 40px;
@@ -203,11 +237,8 @@
       animation: spin 0.7s linear infinite;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Scrollbar */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
@@ -224,88 +255,66 @@
       <span>WebCode</span>
     </div>
 
-    <!-- Desktop Tab -->
     <button class="tab-btn active" data-tab="desktop">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
         <line x1="8" y1="21" x2="16" y2="21"></line>
         <line x1="12" y1="17" x2="12" y2="21"></line>
       </svg>
-      Desktop
-      <div class="tab-actions">
-        <button class="btn-icon" data-action="refresh" title="Refresh">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="23 4 23 10 17 10"></polyline>
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-          </svg>
-        </button>
-      </div>
+      <span data-i18n="desktop">桌面</span>
     </button>
 
-    <!-- IDE Tab -->
     <button class="tab-btn" data-tab="ide">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polyline points="16 18 22 12 16 6"></polyline>
         <polyline points="8 6 2 12 8 18"></polyline>
       </svg>
-      IDE
-      <div class="tab-actions">
-        <button class="btn-icon" data-action="refresh" title="Refresh">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="23 4 23 10 17 10"></polyline>
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-          </svg>
-        </button>
-      </div>
+      <span data-i18n="ide">IDE</span>
     </button>
 
-    <!-- Kanban Tab -->
     <button class="tab-btn" data-tab="kanban">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <rect x="3" y="3" width="18" height="18" rx="2"></rect>
         <line x1="9" y1="3" x2="9" y2="21"></line>
         <line x1="15" y1="3" x2="15" y2="21"></line>
       </svg>
-      Kanban
-      <div class="tab-actions">
-        <button class="btn-icon" data-action="refresh" title="Refresh">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="23 4 23 10 17 10"></polyline>
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-          </svg>
-        </button>
-      </div>
+      <span data-i18n="kanban">看板</span>
     </button>
 
-    <!-- AI Tab -->
     <button class="tab-btn" data-tab="ai">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 16a6 6 0 1 1 6-6 6 6 0 0 1-6 6z"></path>
         <circle cx="12" cy="12" r="3"></circle>
       </svg>
-      AI
-      <div class="tab-actions">
-        <button class="btn-icon" data-action="refresh" title="Refresh">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="23 4 23 10 17 10"></polyline>
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-          </svg>
-        </button>
-      </div>
+      <span data-i18n="ai">AI</span>
     </button>
 
-    <div class="spacer"></div>
+    <span class="spacer"></span>
+
+    <div class="tab-actions" id="tab-actions">
+      <button class="btn-icon" id="btn-refresh" data-i18n-title="refresh">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+          <path d="M3 3v5h5"></path>
+          <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+          <path d="M16 21h5v-5"></path>
+        </svg>
+      </button>
+    </div>
 
     <div class="status-pill">
       <span class="dot"></span>
-      <span>All Systems Online</span>
+      <span data-i18n="online">所有服务正常</span>
     </div>
 
-    <button class="btn-fullscreen" id="fullscreenBtn" title="Enter Fullscreen">
+    <button class="theme-cycle-btn" id="themeCycleBtn"></button>
+    <button class="lang-cycle-btn"  id="langCycleBtn"></button>
+
+    <button class="btn-fullscreen" id="fullscreenBtn">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
       </svg>
-      Fullscreen
+      <span data-i18n="fullscreen">全屏</span>
     </button>
   </div>
 
@@ -313,95 +322,151 @@
     <div class="loading-overlay hidden" id="loadingOverlay">
       <div class="loading-spinner"></div>
     </div>
-    <iframe id="frame-desktop" class="visible" src="http://127.0.0.1:10013/vnc.html" allow="clipboard-read; clipboard-write;"></iframe>
-    <iframe id="frame-ide" src="http://127.0.0.1:10010" allow="clipboard-read; clipboard-write;"></iframe>
-    <iframe id="frame-kanban" src="http://127.0.0.1:10011" allow="clipboard-read; clipboard-write;"></iframe>
-    <iframe id="frame-ai" src="http://127.0.0.1:10012" allow="clipboard-read; clipboard-write;"></iframe>
+    <iframe id="frame-desktop" class="visible"
+      src="http://127.0.0.1:20004/vnc.html?autoconnect=true&resize=remote&password=__VNC_PASSWORD__"
+      allow="clipboard-read; clipboard-write; autoplay; fullscreen; pointer-lock"></iframe>
+    <iframe id="frame-ide"
+      src="http://127.0.0.1:20001"
+      allow="clipboard-read; clipboard-write;"></iframe>
+    <iframe id="frame-kanban"
+      src="http://127.0.0.1:20002"
+      allow="clipboard-read; clipboard-write;"></iframe>
+    <iframe id="frame-ai"
+      src="http://127.0.0.1:20003/?token=__OPENCLAW_TOKEN__"
+      allow="clipboard-read; clipboard-write;"></iframe>
   </div>
 
   <script>
-    // Tab switching
-    const tabs = document.querySelectorAll('.tab-btn');
-    const iframes = document.querySelectorAll('.iframe-area iframe');
-    const loadingOverlay = document.getElementById('loadingOverlay');
+    // ── i18n ──────────────────────────────────────────────────────────────────
+    const MESSAGES = {
+      'zh-CN': { desktop: '桌面', ide: 'IDE', kanban: '看板', ai: 'AI',
+                 online: '所有服务正常', fullscreen: '全屏', exit: '退出全屏', refresh: '刷新',
+                 theme_dark: '暗色', theme_light: '亮色', theme_system: '跟随系统' },
+      'en':    { desktop: 'Desktop', ide: 'IDE', kanban: 'Kanban', ai: 'AI',
+                 online: 'All Systems Online', fullscreen: 'Fullscreen', exit: 'Exit', refresh: 'Refresh',
+                 theme_dark: 'Dark', theme_light: 'Light', theme_system: 'System' }
+    };
+
+    const LANG_KEY  = 'webcode-lang';
+    const THEME_KEY = 'webcode-theme';
+    const THEME_ORDER = ['dark', 'light', 'system'];
+
+    function getLang() {
+      try { return localStorage.getItem(LANG_KEY) || 'zh-CN'; } catch(e) { return 'zh-CN'; }
+    }
+    function setLang(l) {
+      try { localStorage.setItem(LANG_KEY, l); } catch(e) {}
+    }
+    function t(key) {
+      return (MESSAGES[getLang()] || MESSAGES['zh-CN'])[key] || key;
+    }
+    function getTheme() {
+      try { return localStorage.getItem(THEME_KEY) || 'dark'; } catch(e) { return 'dark'; }
+    }
+    function setTheme(th) {
+      try { localStorage.setItem(THEME_KEY, th); } catch(e) {}
+      document.documentElement.setAttribute('data-theme', th);
+    }
+
+    // ── Theme icons ───────────────────────────────────────────────────────────
+    const THEME_ICONS = {
+      dark:   '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>',
+      light:  '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>',
+      system: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>'
+    };
+    const LANG_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>';
+
+    // ── Apply translations ────────────────────────────────────────────────────
+    function applyTranslations() {
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        el.textContent = t(el.getAttribute('data-i18n'));
+      });
+      document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        el.title = t(el.getAttribute('data-i18n-title'));
+      });
+      document.documentElement.lang = getLang();
+      updateThemeBtn();
+      updateLangBtn();
+    }
+
+    function updateThemeBtn() {
+      const theme = getTheme();
+      const btn = document.getElementById('themeCycleBtn');
+      btn.innerHTML = THEME_ICONS[theme] + '<span>\u00a0' + t('theme_' + theme) + '</span>';
+    }
+
+    function updateLangBtn() {
+      const btn = document.getElementById('langCycleBtn');
+      const label = getLang() === 'zh-CN' ? '中文' : 'EN';
+      btn.innerHTML = LANG_ICON + '<span>\u00a0' + label + '</span>';
+    }
+
+    // ── Tab switching ─────────────────────────────────────────────────────────
+    const IFRAME_IDS = {
+      desktop: 'frame-desktop',
+      ide:     'frame-ide',
+      kanban:  'frame-kanban',
+      ai:      'frame-ai'
+    };
 
     let currentTab = 'desktop';
 
-    tabs.forEach(tab => {
-      tab.addEventListener('click', (e) => {
+    document.querySelectorAll('.tab-btn').forEach(tab => {
+      tab.addEventListener('click', () => {
         const tabName = tab.dataset.tab;
-
-        // Handle refresh button click
-        if (e.target.closest('[data-action="refresh"]')) {
-          e.stopPropagation();
-          const iframe = document.getElementById(`frame-${tabName}`);
-          if (iframe) {
-            showLoading();
-            iframe.src = iframe.src;
-            setTimeout(hideLoading, 1000);
-          }
-          return;
-        }
-
-        // Switch tab
-        if (tabName !== currentTab) {
-          tabs.forEach(t => t.classList.remove('active'));
-          tab.classList.add('active');
-
-          iframes.forEach(f => f.classList.remove('visible'));
-          document.getElementById(`frame-${tabName}`).classList.add('visible');
-
-          currentTab = tabName;
-        }
+        if (tabName === currentTab) return;
+        document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        Object.values(IFRAME_IDS).forEach(id => document.getElementById(id).classList.remove('visible'));
+        document.getElementById(IFRAME_IDS[tabName]).classList.add('visible');
+        currentTab = tabName;
       });
     });
 
-    // Loading overlay
-    function showLoading() {
-      loadingOverlay.classList.remove('hidden');
-    }
-
-    function hideLoading() {
-      loadingOverlay.classList.add('hidden');
-    }
-
-    // Hide loading on iframe load
-    iframes.forEach(iframe => {
-      iframe.addEventListener('load', () => {
-        hideLoading();
-      });
+    // ── Refresh ───────────────────────────────────────────────────────────────
+    document.getElementById('btn-refresh').addEventListener('click', () => {
+      const iframe = document.getElementById(IFRAME_IDS[currentTab]);
+      if (iframe) { showLoading(); iframe.src = iframe.src; setTimeout(hideLoading, 1500); }
     });
 
-    // Fullscreen toggle
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    function showLoading() { loadingOverlay.classList.remove('hidden'); }
+    function hideLoading() { loadingOverlay.classList.add('hidden'); }
+    document.querySelectorAll('.iframe-area iframe').forEach(fr => fr.addEventListener('load', hideLoading));
+
+    // ── Theme cycle ───────────────────────────────────────────────────────────
+    document.getElementById('themeCycleBtn').addEventListener('click', () => {
+      const cur = getTheme();
+      const next = THEME_ORDER[(THEME_ORDER.indexOf(cur) + 1) % THEME_ORDER.length];
+      setTheme(next);
+      updateThemeBtn();
+    });
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      if (getTheme() === 'system') document.documentElement.setAttribute('data-theme', 'system');
+    });
+
+    // ── Language cycle ────────────────────────────────────────────────────────
+    document.getElementById('langCycleBtn').addEventListener('click', () => {
+      setLang(getLang() === 'zh-CN' ? 'en' : 'zh-CN');
+      applyTranslations();
+    });
+
+    // ── Fullscreen ────────────────────────────────────────────────────────────
     const fullscreenBtn = document.getElementById('fullscreenBtn');
     fullscreenBtn.addEventListener('click', () => {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen();
-      } else {
-        document.exitFullscreen();
-      }
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
     });
 
-    // Update fullscreen button text on change
     document.addEventListener('fullscreenchange', () => {
-      if (document.fullscreenElement) {
-        fullscreenBtn.innerHTML = `
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path>
-          </svg>
-          Exit
-        `;
-      } else {
-        fullscreenBtn.innerHTML = `
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
-          </svg>
-          Fullscreen
-        `;
-      }
+      const isFs = !!document.fullscreenElement;
+      const fsIcon = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="${isFs ? 'M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3' : 'M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3'}"></path></svg>`;
+      fullscreenBtn.innerHTML = fsIcon + `<span data-i18n="${isFs ? 'exit' : 'fullscreen'}">${t(isFs ? 'exit' : 'fullscreen')}</span>`;
     });
 
-    // Initial loading state
+    // ── Init ──────────────────────────────────────────────────────────────────
+    applyTranslations();
     showLoading();
   </script>
 </body>
