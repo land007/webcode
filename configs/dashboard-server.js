@@ -203,6 +203,20 @@ function startDashboardServer() {
       return;
     }
 
+    // Serve favicon.ico
+    if (req.url === '/favicon.ico') {
+      fs.readFile(path.join(path.dirname(DASHBOARD_HTML), 'favicon.ico'), (err, data) => {
+        if (err) {
+          res.writeHead(404, { 'Content-Type': 'text/plain' });
+          res.end('Not found');
+          return;
+        }
+        res.writeHead(200, { 'Content-Type': 'image/x-icon' });
+        res.end(data);
+      });
+      return;
+    }
+
     // Serve dashboard.html for root path
     if (req.url === '/' || req.url === '/index.html') {
       fs.readFile(DASHBOARD_HTML, 'utf8', (err, data) => {
