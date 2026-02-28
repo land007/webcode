@@ -634,20 +634,47 @@
 
     function renderProcessGrid(services) {
       const grid = document.getElementById('processGrid');
+      grid.innerHTML = '';
       if (!services.length) {
-        grid.innerHTML = `<div style="color:var(--text-muted);font-size:13px;padding:8px 0">${t('offline')}</div>`;
+        const msg = document.createElement('div');
+        msg.style.cssText = 'color:var(--text-muted);font-size:13px;padding:8px 0';
+        msg.textContent = t('offline');
+        grid.appendChild(msg);
         return;
       }
-      grid.innerHTML = services.map(svc => `
-        <div class="svc-card">
-          <div class="svc-name">${escHtml(svc.name)}</div>
-          <div class="svc-state"><span class="dot ${dotClass(svc.state)}"></span>${svc.state.toLowerCase()}</div>
-          <div class="svc-actions">
-            <button class="svc-restart-btn" data-process="${escHtml(svc.name)}" title="${t('restart')}">
-              ${RESTART_ICON}
-            </button>
-          </div>
-        </div>`).join('');
+      services.forEach(svc => {
+        const card = document.createElement('div');
+        card.className = 'svc-card';
+
+        const nameEl = document.createElement('div');
+        nameEl.className = 'svc-name';
+        nameEl.textContent = svc.name;
+
+        const stateEl = document.createElement('div');
+        stateEl.className = 'svc-state';
+        const dotEl = document.createElement('span');
+        dotEl.className = 'dot ' + dotClass(svc.state);
+        stateEl.appendChild(dotEl);
+        stateEl.appendChild(document.createTextNode(svc.state.toLowerCase()));
+
+        const actions = document.createElement('div');
+        actions.className = 'svc-actions';
+
+        const btn = document.createElement('button');
+        btn.className = 'svc-restart-btn';
+        btn.title = t('restart');
+        btn.innerHTML = RESTART_ICON;
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          restartProcess(btn, svc.name);
+        });
+
+        actions.appendChild(btn);
+        card.appendChild(nameEl);
+        card.appendChild(stateEl);
+        card.appendChild(actions);
+        grid.appendChild(card);
+      });
     }
 
     function escHtml(s) {
@@ -707,16 +734,29 @@
 
     document.getElementById('modalRefreshBtn').addEventListener('click', fetchStatus);
 
-    // ── Restart button ────────────────────────────────────────────────────────
-    document.getElementById('processGrid').addEventListener('click', async e => {
-      const btn = e.target.closest('.svc-restart-btn');
-      if (!btn) return;
-      const name = btn.dataset.process;
+    // ── Restart process ───────────────────────────────────────────────────────
+    async function restartProcess(btn, name) {
       btn.disabled = true;
-      btn.style.opacity = '0.5';
-      await fetch(`/api/restart/${encodeURIComponent(name)}`, { method: 'POST' });
-      setTimeout(() => { btn.disabled = false; btn.style.opacity = ''; fetchStatus(); }, 1500);
-    });
+      btn.style.background = 'var(--accent)';
+      btn.style.color = '#fff';
+      try {
+        const r = await fetch(`/api/restart/${encodeURIComponent(name)}`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+        const data = await r.json();
+        btn.style.background = data.ok ? 'var(--success)' : '#e05252';
+      } catch (err) {
+        btn.style.background = '#e05252';
+        console.error('Restart failed:', err);
+      }
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.style.background = '';
+        btn.style.color = '';
+        fetchStatus();
+      }, 1500);
+    }
 
     // Keyboard: Esc to close
     document.addEventListener('keydown', e => {

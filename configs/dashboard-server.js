@@ -165,7 +165,9 @@ function startDashboardServer() {
     const restartMatch = req.method === 'POST' && req.url.match(/^\/api\/restart\/([a-zA-Z0-9_-]+)$/);
     if (restartMatch) {
       const processName = restartMatch[1];
-      exec(`supervisorctl restart ${processName}`, (err) => {
+      console.log(`[restart] request for: ${processName}`);
+      exec(`supervisorctl restart ${processName}`, (err, stdout) => {
+        console.log(`[restart] ${processName}: err=${err ? err.message : 'none'} stdout=${stdout.trim()}`);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: !err }));
       });
