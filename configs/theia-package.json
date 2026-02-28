@@ -5,6 +5,9 @@
   "dependencies": {
     "@theia/core": "1.68.2",
     "@theia/editor": "1.68.2",
+    "@theia/git": "1.68.2",
+    "@theia/scm": "1.68.2",
+    "@theia/scm-extra": "1.68.2",
     "@theia/file-search": "1.68.2",
     "@theia/filesystem": "1.68.2",
     "@theia/getting-started": "1.68.2",
