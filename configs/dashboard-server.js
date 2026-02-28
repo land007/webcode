@@ -16,7 +16,23 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { exec } = require('child_process');
 const httpProxy = require('http-proxy');
+
+// ── Supervisor helpers ────────────────────────────────────────────────────────
+const SUPERVISOR_VALID_STATES = new Set(['RUNNING','STOPPED','STARTING','FATAL','EXITED','UNKNOWN','BACKOFF']);
+
+function parseSupervisorOutput(out) {
+  const services = [];
+  for (const line of (out || '').trim().split('\n')) {
+    if (!line.trim()) continue;
+    const m = line.match(/^(\S+)\s+(\S+)\s*(.*)/);
+    if (m && SUPERVISOR_VALID_STATES.has(m[2].toUpperCase())) {
+      services.push({ name: m[1], state: m[2].toUpperCase(), detail: m[3] || '' });
+    }
+  }
+  return services;
+}
 
 // Configuration
 const DASHBOARD_PORT = 20000;  // External port with Basic Auth
@@ -132,6 +148,27 @@ function startDashboardServer() {
         'Content-Type': 'text/plain; charset=utf-8'
       });
       res.end('Invalid credentials');
+      return;
+    }
+
+    // API: GET /api/status — supervisor process list
+    if (req.method === 'GET' && req.url === '/api/status') {
+      exec('supervisorctl status all', (_err, stdout) => {
+        const services = parseSupervisorOutput(stdout);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(services));
+      });
+      return;
+    }
+
+    // API: POST /api/restart/:name — restart a supervisor process
+    const restartMatch = req.method === 'POST' && req.url.match(/^\/api\/restart\/([a-zA-Z0-9_-]+)$/);
+    if (restartMatch) {
+      const processName = restartMatch[1];
+      exec(`supervisorctl restart ${processName}`, (err) => {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: !err }));
+      });
       return;
     }
 

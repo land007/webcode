@@ -242,6 +242,129 @@
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ── Status dot colors ───────────────────────────────────────────── */
+    .dot-green  { background: var(--success); box-shadow: 0 0 6px var(--success); }
+    .dot-yellow { background: #f5a623; box-shadow: 0 0 6px #f5a623; animation: pulse 1.2s infinite; }
+    .dot-red    { background: #e05252; }
+    .dot-gray   { background: var(--text-muted); box-shadow: none; }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    /* ── Status pill as button ───────────────────────────────────────── */
+    .status-pill {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0 8px;
+    }
+    .status-pill:hover { opacity: 0.8; }
+
+    /* ── Modal overlay ───────────────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.hidden { display: none; }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      width: 90vw;
+      max-width: 680px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      flex-shrink: 0;
+    }
+
+    .modal-header h3 {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .modal-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-body {
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    /* ── Process grid ────────────────────────────────────────────────── */
+    .process-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 8px;
+    }
+
+    .svc-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px 12px;
+      position: relative;
+    }
+
+    .svc-name {
+      font-weight: 600;
+      font-size: 13px;
+      margin-bottom: 4px;
+      padding-right: 26px;
+    }
+
+    .svc-state {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .svc-actions {
+      position: absolute;
+      top: 10px;
+      right: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .svc-restart-btn {
+      width: 22px;
+      height: 22px;
+      padding: 3px;
+      border: none;
+      border-radius: 4px;
+      background: var(--surface);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .15s, color .15s;
+    }
+
+    .svc-restart-btn:hover { background: var(--accent); color: #fff; }
+    .svc-restart-btn svg { width: 14px; height: 14px; }
   </style>
 </head>
 <body>
@@ -302,10 +425,10 @@
       </button>
     </div>
 
-    <div class="status-pill">
-      <span class="dot"></span>
-      <span data-i18n="online">所有服务正常</span>
-    </div>
+    <button class="status-pill" id="statusPill">
+      <span class="dot dot-gray" id="status-dot"></span>
+      <span id="status-text" data-i18n="online">所有服务正常</span>
+    </button>
 
     <button class="theme-cycle-btn" id="themeCycleBtn"></button>
     <button class="lang-cycle-btn"  id="langCycleBtn"></button>
@@ -336,15 +459,47 @@
       allow="clipboard-read; clipboard-write;"></iframe>
   </div>
 
+  <!-- Status Modal -->
+  <div class="modal-overlay hidden" id="statusModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalTitle">进程状态</h3>
+        <div class="modal-header-actions">
+          <button class="btn-icon" id="modalRefreshBtn" title="刷新">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+              <path d="M3 3v5h5"></path>
+              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+              <path d="M16 21h5v-5"></path>
+            </svg>
+          </button>
+          <button class="btn-icon" id="closeModal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="process-grid" id="processGrid"></div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ── i18n ──────────────────────────────────────────────────────────────────
     const MESSAGES = {
       'zh-CN': { desktop: '桌面', ide: 'IDE', kanban: '看板', ai: 'AI',
-                 online: '所有服务正常', fullscreen: '全屏', exit: '退出全屏', refresh: '刷新',
-                 theme_dark: '暗色', theme_light: '亮色', theme_system: '跟随系统' },
+                 online: '所有服务正常', partial: '部分服务异常', offline: '服务离线',
+                 fullscreen: '全屏', exit: '退出全屏', refresh: '刷新',
+                 theme_dark: '暗色', theme_light: '亮色', theme_system: '跟随系统',
+                 proc_status: '进程状态', restart: '重启进程' },
       'en':    { desktop: 'Desktop', ide: 'IDE', kanban: 'Kanban', ai: 'AI',
-                 online: 'All Systems Online', fullscreen: 'Fullscreen', exit: 'Exit', refresh: 'Refresh',
-                 theme_dark: 'Dark', theme_light: 'Light', theme_system: 'System' }
+                 online: 'All Systems Online', partial: 'Some Services Down', offline: 'Services Offline',
+                 fullscreen: 'Fullscreen', exit: 'Exit', refresh: 'Refresh',
+                 theme_dark: 'Dark', theme_light: 'Light', theme_system: 'System',
+                 proc_status: 'Process Status', restart: 'Restart' }
     };
 
     const LANG_KEY  = 'webcode-lang';
@@ -465,8 +620,112 @@
       fullscreenBtn.innerHTML = fsIcon + `<span data-i18n="${isFs ? 'exit' : 'fullscreen'}">${t(isFs ? 'exit' : 'fullscreen')}</span>`;
     });
 
+    // ── Process status ────────────────────────────────────────────────────────
+    const RESTART_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 21H3v-5"></path></svg>`;
+
+    let pollTimer = null;
+    let lastServices = [];
+
+    function dotClass(state) {
+      if (state === 'RUNNING')  return 'dot-green';
+      if (state === 'STARTING') return 'dot-yellow';
+      return 'dot-red';
+    }
+
+    function renderProcessGrid(services) {
+      const grid = document.getElementById('processGrid');
+      if (!services.length) {
+        grid.innerHTML = `<div style="color:var(--text-muted);font-size:13px;padding:8px 0">${t('offline')}</div>`;
+        return;
+      }
+      grid.innerHTML = services.map(svc => `
+        <div class="svc-card">
+          <div class="svc-name">${escHtml(svc.name)}</div>
+          <div class="svc-state"><span class="dot ${dotClass(svc.state)}"></span>${svc.state.toLowerCase()}</div>
+          <div class="svc-actions">
+            <button class="svc-restart-btn" data-process="${escHtml(svc.name)}" title="${t('restart')}">
+              ${RESTART_ICON}
+            </button>
+          </div>
+        </div>`).join('');
+    }
+
+    function escHtml(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function updateStatusDot(services) {
+      const dot  = document.getElementById('status-dot');
+      const text = document.getElementById('status-text');
+      if (!services.length) {
+        dot.className = 'dot dot-gray'; text.textContent = t('offline'); return;
+      }
+      const anyStarting = services.some(s => s.state === 'STARTING');
+      const anyBad      = services.some(s => !['RUNNING','STARTING'].includes(s.state));
+      if (anyStarting) {
+        dot.className = 'dot dot-yellow'; text.textContent = t('partial');
+      } else if (anyBad) {
+        dot.className = 'dot dot-red'; text.textContent = t('partial');
+      } else {
+        dot.className = 'dot dot-green'; text.textContent = t('online');
+      }
+    }
+
+    async function fetchStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const services = await res.json();
+        lastServices = services;
+        updateStatusDot(services);
+        renderProcessGrid(services);
+      } catch(e) {
+        updateStatusDot([]);
+      }
+    }
+
+    function startPolling() {
+      fetchStatus();
+      pollTimer = setInterval(fetchStatus, 5000);
+    }
+
+    // ── Modal open / close ────────────────────────────────────────────────────
+    const statusModal  = document.getElementById('statusModal');
+
+    document.getElementById('statusPill').addEventListener('click', () => {
+      document.getElementById('modalTitle').textContent = t('proc_status');
+      renderProcessGrid(lastServices);
+      statusModal.classList.remove('hidden');
+    });
+
+    document.getElementById('closeModal').addEventListener('click', () => {
+      statusModal.classList.add('hidden');
+    });
+
+    statusModal.addEventListener('click', e => {
+      if (e.target === statusModal) statusModal.classList.add('hidden');
+    });
+
+    document.getElementById('modalRefreshBtn').addEventListener('click', fetchStatus);
+
+    // ── Restart button ────────────────────────────────────────────────────────
+    document.getElementById('processGrid').addEventListener('click', async e => {
+      const btn = e.target.closest('.svc-restart-btn');
+      if (!btn) return;
+      const name = btn.dataset.process;
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+      await fetch(`/api/restart/${encodeURIComponent(name)}`, { method: 'POST' });
+      setTimeout(() => { btn.disabled = false; btn.style.opacity = ''; fetchStatus(); }, 1500);
+    });
+
+    // Keyboard: Esc to close
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') statusModal.classList.add('hidden');
+    });
+
     // ── Init ──────────────────────────────────────────────────────────────────
     applyTranslations();
+    startPolling();
     showLoading();
   </script>
 </body>
