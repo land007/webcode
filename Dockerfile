@@ -38,6 +38,9 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y nodejs \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# ─── 2b. http-proxy for dashboard service ───────────────────────────
+RUN npm install -g http-proxy
+
 
 # ─── 3. Theia IDE native build deps ─────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
