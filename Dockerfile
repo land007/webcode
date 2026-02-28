@@ -51,7 +51,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ─── 4. Theia IDE (npm install + production build — SLOWEST STEP) ───
 COPY configs/theia-package.json /opt/theia/package.json
 RUN cd /opt/theia \
-    && USE_LOCAL_GIT=true npm install \
+    && npm install \
     && NODE_OPTIONS=--max-old-space-size=3072 npx theia build --mode production \
     && npm prune --omit=dev \
     && chown -R ubuntu:ubuntu /opt/theia
