@@ -553,7 +553,8 @@ function startPolling(cfg, onStatus) {
     });
   }
   poll();
-  pollTimer = setInterval(poll, 5000);
+  // Increased from 5000 to 10000 to reduce CPU usage
+  pollTimer = setInterval(poll, 10000);
 }
 
 function stopPolling() {

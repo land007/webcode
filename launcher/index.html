@@ -1855,7 +1855,8 @@ function startLogPolling(processName) {
     });
   }
   poll();
-  logPollTimer = setInterval(poll, 2000);
+  // Increased from 2000 to 3000 to reduce CPU usage when viewing logs
+  logPollTimer = setInterval(poll, 3000);
 }
 
 function stopLogPolling() {
@@ -2321,29 +2322,45 @@ function handleRemoveInstance(id) {
   if (!confirm(t('dyn_confirm_remove_instance', { name: inst ? inst.name : id }))) return;
 
   const wasActive = (id === activeInstanceId);
-  removeInstance(id);
-  globalCfg = readGlobalConfig();
+  const instCfg = readInstanceConfig(id);
 
-  if (wasActive) {
-    activeInstanceId = globalCfg.activeInstanceId;
-    cfg = readInstanceConfig(activeInstanceId) || Object.assign({}, DEFAULT_CONFIG, {
-      INSTANCE_ID: activeInstanceId,
-      PROJECT_NAME: 'webcode-' + activeInstanceId,
-      CONTAINER_NAME: 'webcode-' + activeInstanceId,
-      WORK_DIR: getInstanceWorkDir(activeInstanceId)
-    });
-    proxyStarted = false;
-    if (logsProc) { try { logsProc.kill(); } catch(e) {} logsProc = null; }
-    renderSidebar();
-    app.dockerPs(cfg, function(err, containers) {
-      if (!err && containerRunning(containers)) {
-        showWorkspace();
-      } else {
-        showWizard(4);
-      }
+  // Step 1: Stop and remove Docker container if config exists
+  if (instCfg) {
+    app.dockerDown(instCfg, null, function() {
+      // Step 2: After container stopped, remove instance
+      removeInstance(id);
+      globalCfg = readGlobalConfig();
+      finishRemoveInstance(wasActive);
     });
   } else {
-    renderSidebar();
+    // No config found, just remove instance
+    removeInstance(id);
+    globalCfg = readGlobalConfig();
+    finishRemoveInstance(wasActive);
+  }
+
+  function finishRemoveInstance(wasActive) {
+    if (wasActive) {
+      activeInstanceId = globalCfg.activeInstanceId;
+      cfg = readInstanceConfig(activeInstanceId) || Object.assign({}, DEFAULT_CONFIG, {
+        INSTANCE_ID: activeInstanceId,
+        PROJECT_NAME: 'webcode-' + activeInstanceId,
+        CONTAINER_NAME: 'webcode-' + activeInstanceId,
+        WORK_DIR: getInstanceWorkDir(activeInstanceId)
+      });
+      proxyStarted = false;
+      if (logsProc) { try { logsProc.kill(); } catch(e) {} logsProc = null; }
+      renderSidebar();
+      app.dockerPs(cfg, function(err, containers) {
+        if (!err && containerRunning(containers)) {
+          showWorkspace();
+        } else {
+          showWizard(4);
+        }
+      });
+    } else {
+      renderSidebar();
+    }
   }
 }
 
@@ -2366,7 +2383,8 @@ function refreshSidebarDots() {
 function startSidebarPolling() {
   if (sidebarPollTimer) clearInterval(sidebarPollTimer);
   refreshSidebarDots(); // 立即刷新一次，避免等待第一个周期
-  sidebarPollTimer = setInterval(refreshSidebarDots, 10000);
+  // Increased from 10000 to 30000 to reduce CPU usage
+  sidebarPollTimer = setInterval(refreshSidebarDots, 30000);
 }
 
 // Sidebar toggle
