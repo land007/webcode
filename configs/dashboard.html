@@ -74,7 +74,76 @@
       padding: 0 12px;
       flex-shrink: 0;
       overflow: hidden;
+      transition: height 0.2s ease, opacity 0.2s ease;
+      position: relative;
     }
+
+    /* ── Collapsed topbar ───────────────────────────────────────────────────── */
+    .topbar.collapsed {
+      height: 12px;
+      min-height: 12px;
+      max-height: 12px;
+      cursor: pointer;
+    }
+
+    .topbar.collapsed .topbar-content {
+      opacity: 0;
+      pointer-events: none;
+      position: absolute;
+      visibility: hidden;
+    }
+
+    .topbar.collapsed .topbar-expand-hint {
+      opacity: 1;
+    }
+
+    .topbar-expand-hint {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 10px;
+      color: var(--text-muted);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .topbar.collapsed:hover .topbar-expand-hint {
+      color: var(--accent);
+    }
+
+    .topbar-content {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 4px;
+      width: 100%;
+      transition: opacity 0.2s ease;
+    }
+
+    /* Collapse toggle button */
+    .btn-collapse {
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-muted);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .btn-collapse:hover { background: var(--surface2); color: var(--text); }
+    .btn-collapse svg { width: 16px; height: 16px; transition: transform 0.2s ease; }
+    .topbar.collapsed .btn-collapse svg { transform: rotate(180deg); }
 
     .logo {
       display: flex;
@@ -421,7 +490,8 @@
   </style>
 </head>
 <body>
-  <div class="topbar">
+  <div class="topbar" id="topbar">
+    <div class="topbar-content">
     <div class="logo">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
@@ -486,12 +556,20 @@
     <button class="theme-cycle-btn" id="themeCycleBtn"></button>
     <button class="lang-cycle-btn"  id="langCycleBtn"></button>
 
+    <button class="btn-collapse" id="collapseBtn" data-i18n-title="collapse_header">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="18 15 12 9 6 15"></polyline>
+      </svg>
+    </button>
+
     <button class="btn-fullscreen" id="fullscreenBtn">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
       </svg>
       <span data-i18n="fullscreen">全屏</span>
     </button>
+    </div>
+    <div class="topbar-expand-hint" id="expandHint">▲</div>
   </div>
 
   <div class="iframe-area">
@@ -576,17 +654,18 @@
                  fullscreen: '全屏', exit: '退出全屏', refresh: '刷新',
                  theme_dark: '暗色', theme_light: '亮色', theme_system: '跟随系统',
                  proc_status: '进程状态', restart: '重启进程', show_log: '查看日志',
-                 logs_title: '进程日志' },
+                 logs_title: '进程日志', collapse_header: '收起顶部栏', expand_header: '展开顶部栏' },
       'en':    { desktop: 'Desktop', ide: 'IDE', kanban: 'Kanban', ai: 'AI',
                  online: 'All Systems Online', partial: 'Some Services Down', offline: 'Services Offline',
                  fullscreen: 'Fullscreen', exit: 'Exit', refresh: 'Refresh',
                  theme_dark: 'Dark', theme_light: 'Light', theme_system: 'System',
                  proc_status: 'Process Status', restart: 'Restart', show_log: 'Show Logs',
-                 logs_title: 'Process Logs' }
+                 logs_title: 'Process Logs', collapse_header: 'Collapse header', expand_header: 'Expand header' }
     };
 
-    const LANG_KEY  = 'webcode-lang';
-    const THEME_KEY = 'webcode-theme';
+    const LANG_KEY   = 'webcode-lang';
+    const THEME_KEY  = 'webcode-theme';
+    const COLLAPSE_KEY = 'webcode-topbar-collapsed';
     const THEME_ORDER = ['dark', 'light', 'system'];
 
     function getLang() {
@@ -712,6 +791,49 @@
       const fsIcon = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="${isFs ? 'M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3' : 'M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3'}"></path></svg>`;
       fullscreenBtn.innerHTML = fsIcon + `<span data-i18n="${isFs ? 'exit' : 'fullscreen'}">${t(isFs ? 'exit' : 'fullscreen')}</span>`;
     });
+
+    // ── Topbar collapse ─────────────────────────────────────────────────────────
+    const topbar = document.getElementById('topbar');
+    const collapseBtn = document.getElementById('collapseBtn');
+    const expandHint = document.getElementById('expandHint');
+
+    function toggleTopbar() {
+      const isCollapsed = topbar.classList.toggle('collapsed');
+      try { localStorage.setItem(COLLAPSE_KEY, isCollapsed); } catch(e) {}
+      updateCollapseButton();
+    }
+
+    function updateCollapseButton() {
+      const isCollapsed = topbar.classList.contains('collapsed');
+      collapseBtn.title = t(isCollapsed ? 'expand_header' : 'collapse_header');
+      collapseBtn.setAttribute('data-i18n-title', isCollapsed ? 'expand_header' : 'collapse_header');
+    }
+
+    // Collapse button click
+    collapseBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleTopbar();
+    });
+
+    // Click on collapsed bar to expand
+    topbar.addEventListener('click', (e) => {
+      if (topbar.classList.contains('collapsed')) {
+        toggleTopbar();
+      }
+    });
+
+    // Prevent content clicks from triggering expand when collapsed
+    document.querySelector('.topbar-content').addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
+    // Restore saved state on load
+    try {
+      if (localStorage.getItem(COLLAPSE_KEY) === 'true') {
+        topbar.classList.add('collapsed');
+      }
+    } catch(e) {}
+    updateCollapseButton();
 
     // ── Process status ────────────────────────────────────────────────────────
     const RESTART_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 21H3v-5"/></svg>`;
@@ -935,6 +1057,11 @@
         statusModal.classList.add('hidden');
         logsModal.classList.add('hidden');
         currentLogProcess = null;
+      }
+      // Ctrl/Cmd + Shift + H to toggle header
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'H' || e.key === 'h')) {
+        e.preventDefault();
+        toggleTopbar();
       }
     });
 
