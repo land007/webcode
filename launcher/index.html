@@ -2609,25 +2609,10 @@ function showUpdateModal() {
     const currentEl = document.getElementById('container-current');
     const latestEl = document.getElementById('container-latest');
 
-    // Format digest for display - extract just the hash part
-    const currentDigest = updateInfo.localDigest || '';
-    const remoteDigest = updateInfo.remoteDigest || '';
-
-    // Extract short hash from digest
-    let currentHash = 'unknown';
-    if (currentDigest.includes('@')) {
-      currentHash = currentDigest.split('@')[1].substring(0, 12);
-    } else if (currentDigest.includes(':')) {
-      currentHash = currentDigest.split(':')[1].substring(0, 12);
-    }
-
-    let latestHash = 'unknown';
-    if (remoteDigest.includes(':')) {
-      latestHash = remoteDigest.split(':')[1].substring(0, 12);
-    }
-
-    currentEl.textContent = currentHash + '...';
-    latestEl.textContent = latestHash + '...';
+    // Show image IDs matching docker images IMAGE ID column
+    const shortId = (id) => id ? id.replace(/^sha256:/, '').substring(0, 12) : 'unknown';
+    currentEl.textContent = shortId(updateInfo.localImageId) + '...';
+    latestEl.textContent = shortId(updateInfo.remoteImageId) + '...';
   } else {
     containerSection.style.display = 'none';
   }

@@ -15,6 +15,7 @@ const {
 } = require('./ports.js');
 const {
   checkForUpdates, updateContainer,
+  getLocalImageId, getRemoteImageId,
   getLocalContainerDigest, getRemoteContainerDigest
 } = require('./update.js');
 
@@ -628,6 +629,8 @@ module.exports = {
   setDesktopTheme,
   checkForUpdates,
   updateContainer,
+  getLocalImageId,
+  getRemoteImageId,
   getLocalContainerDigest,
   getRemoteContainerDigest,
   buildDockerPath,

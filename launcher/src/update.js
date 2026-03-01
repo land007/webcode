@@ -39,6 +39,106 @@ function resetUpdateCheckCancel() {
 // ─── Container Version Detection ───────────────────────────────────────────────
 
 /**
+ * Get the local image ID (matches docker images IMAGE ID column).
+ * @param {string} imageName  e.g. 'land007/webcode:latest'
+ * @returns {Promise<string|null>}  Full image ID (sha256:...) or null
+ */
+function getLocalImageId(imageName) {
+  return new Promise((resolve) => {
+    try {
+      const env = Object.assign({}, process.env, { PATH: buildDockerPath() });
+      const proc = spawn('docker', ['inspect', '--format={{.Id}}', imageName], { env });
+      let stdout = '';
+      let completed = false;
+
+      proc.stdout.on('data', (d) => { stdout += d.toString(); });
+      proc.stderr.on('data', () => {});
+
+      proc.on('close', (code) => {
+        completed = true;
+        resolve(code === 0 && stdout.trim() ? stdout.trim() : null);
+      });
+
+      proc.on('error', () => { completed = true; resolve(null); });
+
+      const timeout = setTimeout(() => {
+        if (!completed) { proc.kill('SIGKILL'); resolve(null); }
+      }, 2000);
+      proc.on('exit', () => clearTimeout(timeout));
+    } catch (err) {
+      resolve(null);
+    }
+  });
+}
+
+/**
+ * Get the remote image ID (matches docker images IMAGE ID) via two-step manifest inspect.
+ * Step 1: manifest list → platform-specific manifest digest
+ * Step 2: platform manifest → config.digest (= image ID)
+ * Tries Docker Hub first, falls back to ghcr.io.
+ * @param {string} imageName  e.g. 'land007/webcode:latest'
+ * @returns {Promise<string|null>}  Image config digest (sha256:...) or null
+ */
+function getRemoteImageId(imageName) {
+  const ghcrImage = 'ghcr.io/land007/webcode:latest';
+  const platform = process.arch === 'arm64' ? 'arm64' : 'amd64';
+  const env = Object.assign({}, process.env, { PATH: buildDockerPath() });
+
+  function dockerManifestInspect(ref) {
+    return new Promise((resolve) => {
+      const proc = spawn('docker', ['manifest', 'inspect', ref], { env });
+      let stdout = '';
+      proc.stdout.on('data', (d) => { stdout += d.toString(); });
+      proc.stderr.on('data', () => {});
+      proc.on('close', (code) => resolve(code === 0 && stdout.trim() ? stdout.trim() : null));
+      proc.on('error', () => resolve(null));
+    });
+  }
+
+  async function getImageIdFromRepo(repoImage) {
+    const listJson = await dockerManifestInspect(repoImage);
+    if (!listJson) return null;
+    let manifest;
+    try { manifest = JSON.parse(listJson); } catch (e) { return null; }
+
+    // Find platform-specific manifest digest from manifest list
+    let platformDigest = null;
+    for (const m of manifest.manifests || []) {
+      if (m.platform && m.platform.architecture === platform) {
+        platformDigest = m.digest; break;
+      }
+    }
+    if (!platformDigest && manifest.manifests && manifest.manifests[0]) {
+      platformDigest = manifest.manifests[0].digest;
+    }
+    if (!platformDigest) return null;
+
+    // Step 2: inspect platform manifest to get image config digest
+    const imageRef = repoImage.split(':')[0] + '@' + platformDigest;
+    const platJson = await dockerManifestInspect(imageRef);
+    if (!platJson) return null;
+    try {
+      const platManifest = JSON.parse(platJson);
+      return (platManifest.config && platManifest.config.digest) || null;
+    } catch (e) { return null; }
+  }
+
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = (v) => { if (!done) { done = true; resolve(v); } };
+
+    const overallTimeout = setTimeout(() => finish(null), 60000);
+
+    getImageIdFromRepo(imageName).then((id) => {
+      if (id) { clearTimeout(overallTimeout); finish(id); return; }
+      return getImageIdFromRepo(ghcrImage);
+    }).then((id) => {
+      clearTimeout(overallTimeout); finish(id || null);
+    }).catch(() => { clearTimeout(overallTimeout); finish(null); });
+  });
+}
+
+/**
  * Get the local container image digest using docker inspect.
  * @param {string} imageName  e.g. 'land007/webcode:latest'
  * @returns {Promise<string|null>}  Digest string or null if not found
@@ -309,9 +409,16 @@ function digestsDiffer(digest1, digest2) {
     console.log('[digestsDiffer] Remote digest unavailable, skipping check');
     return false;
   }
-  // Compare digests
-  const hash1 = digest1.replace(/^sha256:/, '').substring(0, 12);
-  const hash2 = digest2.replace(/^sha256:/, '').substring(0, 12);
+  // Compare digests - extract hex hash from formats like:
+  //   "land007/webcode@sha256:07a4876d048a..."  (localDigest)
+  //   "sha256:17bc70a0d493..."                  (remoteDigest)
+  const extractHash = (d) => {
+    const parts = d.split('@');
+    const hashPart = parts[parts.length - 1]; // take part after '@' if present
+    return hashPart.replace(/^sha256:/, '').substring(0, 12);
+  };
+  const hash1 = extractHash(digest1);
+  const hash2 = extractHash(digest2);
   const differs = hash1 !== hash2;
   console.log('[digestsDiffer] Comparing digests:', hash1, 'vs', hash2, '→', differs);
   return differs;
@@ -503,33 +610,32 @@ async function checkForUpdates(cfg, onProgress) {
   // Reset cancellation flag at start
   resetUpdateCheckCancel();
 
-  // Check local container digest
+  // Get local image ID (matches docker images IMAGE ID)
   if (onProgress) onProgress('container-local', 'checking');
-  const localDigest = await getLocalContainerDigest(imageName);
+  const localImageId = await getLocalImageId(imageName);
 
   if (updateCheckCancelled) {
     return { containerUpdate: false, launcherUpdate: false, cancelled: true };
   }
 
-  // Check remote container digest
+  // Get remote image ID (two-step manifest inspect → config.digest)
   if (onProgress) onProgress('container-remote', 'checking');
-  const remoteDigest = await getRemoteContainerDigest(imageName);
+  const remoteImageId = await getRemoteImageId(imageName);
 
   if (updateCheckCancelled) {
-    return {
-      containerUpdate: false,
-      launcherUpdate: false,
-      localDigest,
-      cancelled: true
-    };
+    return { containerUpdate: false, launcherUpdate: false, localImageId, cancelled: true };
   }
 
-  const containerUpdate = digestsDiffer(localDigest, remoteDigest);
+  // Compare image IDs: same type of hash, directly comparable, matches docker images
+  const shortId = (id) => id ? id.replace(/^sha256:/, '').substring(0, 12) : null;
+  const localShort = shortId(localImageId);
+  const remoteShort = shortId(remoteImageId);
+  const containerUpdate = !localShort ? !!remoteShort : (!!remoteShort && localShort !== remoteShort);
 
-  console.log('[checkForUpdates] Container update check:');
-  console.log('[checkForUpdates]   localDigest:', localDigest ? localDigest.substring(0, 30) + '...' : 'null');
-  console.log('[checkForUpdates]   remoteDigest:', remoteDigest ? remoteDigest.substring(0, 30) + '...' : 'null');
-  console.log('[checkForUpdates]   containerUpdate:', containerUpdate);
+  console.log('[checkForUpdates] Container update check (image ID):');
+  console.log('[checkForUpdates]   local :', localShort || 'null (no local image)');
+  console.log('[checkForUpdates]   remote:', remoteShort || 'null (network error)');
+  console.log('[checkForUpdates]   update:', containerUpdate);
 
   // Check launcher update
   if (onProgress) onProgress('launcher', 'checking');
@@ -537,13 +643,7 @@ async function checkForUpdates(cfg, onProgress) {
   const remoteVersion = await getLatestLauncherRelease();
 
   if (updateCheckCancelled) {
-    return {
-      containerUpdate: false,
-      launcherUpdate: false,
-      localDigest,
-      localVersion,
-      cancelled: true
-    };
+    return { containerUpdate: false, launcherUpdate: false, localImageId, localVersion, cancelled: true };
   }
 
   const launcherUpdate = remoteVersion && versionsDiffer(localVersion, remoteVersion);
@@ -553,9 +653,9 @@ async function checkForUpdates(cfg, onProgress) {
   return {
     containerUpdate,
     launcherUpdate,
-    remoteDigest,
+    localImageId,
+    remoteImageId,
     remoteVersion,
-    localDigest,
     localVersion,
     cancelled: false
   };
@@ -620,6 +720,8 @@ function updateContainer(cfg, onData, onClose) {
 module.exports = {
   checkForUpdates,
   updateContainer,
+  getLocalImageId,
+  getRemoteImageId,
   getLocalContainerDigest,
   getRemoteContainerDigest,
   getLauncherVersion,
