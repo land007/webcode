@@ -108,14 +108,10 @@ EOF
 fi
 chown ubuntu:ubuntu "$OPENCLAW_JSON"
 
-# ─── Caddy auth setup (Basic Auth for all web services) ──────────
+# ─── Dashboard auth setup (Basic Auth for all web services) ──────────
 export AUTH_USER="${AUTH_USER:-admin}"
-if [ -z "$AUTH_PASSWORD" ]; then
-    echo "[startup] WARNING: AUTH_PASSWORD not set, generating random password"
-    AUTH_PASSWORD=$(openssl rand -base64 12)
-    echo "[startup] Generated AUTH_PASSWORD: $AUTH_PASSWORD"
-fi
-export AUTH_PASS_HASH=$(caddy hash-password --plaintext "$AUTH_PASSWORD")
+export AUTH_PASSWORD="${AUTH_PASSWORD:-changeme}"
+export OPENCLAW_TOKEN="${OPENCLAW_TOKEN:-sk-webcode}"
 echo "[startup] Basic Auth enabled — user: $AUTH_USER"
 
 # ─── Cloudflare Tunnel (optional) ─────────────────────────────────
