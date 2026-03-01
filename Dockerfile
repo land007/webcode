@@ -281,10 +281,13 @@ RUN if [ "$INSTALL_DESKTOP" = "true" ]; then \
         && chmod +x /opt/audio-ws-server.py /opt/audio-ws-wrapper.sh \
         && cp /tmp/audio-player.html /opt/noVNC/audio.html \
         && cp /tmp/audio-bar.js /opt/noVNC/audio-bar.js \
-        && sed -i $'s|<head>|<head>\\\n    <meta charset="UTF-8">|' /opt/noVNC/vnc.html \
-        && sed -i $'s|</body>|<script src="audio-bar.js"></script>\\\n</body>|' /opt/noVNC/vnc.html \
+        && sed -i 's|<head>|<head>|' /opt/noVNC/vnc.html \
+        && sed -i '/<head>/a\    <meta charset="UTF-8">' /opt/noVNC/vnc.html \
+        && sed -i 's|</body>|<script src="audio-bar.js"></script>|' /opt/noVNC/vnc.html \
+        && sed -i '/<script src="audio-bar.js"><\/script>/a\</body>' /opt/noVNC/vnc.html \
         && cp /tmp/touch-handler.js /opt/noVNC/touch-handler.js \
-        && sed -i $'s|</body>|<script src="touch-handler.js"></script>\\\n</body>|' /opt/noVNC/vnc.html \
+        && sed -i 's|</body>|<script src="touch-handler.js"></script>|' /opt/noVNC/vnc.html \
+        && sed -i '/<script src="touch-handler.js"><\/script>/a\</body>' /opt/noVNC/vnc.html \
         && cp /tmp/xsession /opt/xsession \
         && chmod +x /opt/xsession \
         && cp -r /tmp/desktop-shortcuts/ /opt/; \
