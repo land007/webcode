@@ -1531,6 +1531,7 @@ function collectWizardForm() {
   cfg.GIT_USER_EMAIL = document.getElementById('cfg-git-email').value || '';
   cfg.CF_TUNNEL_TOKEN= document.getElementById('cfg-cf-token').value  || '';
   cfg.MODE = selectedMode;
+  cfg.IMAGE_NAME = selectedMode === 'lite' ? 'webcode_lite' : 'webcode';
 
   // 端口配置
   cfg.PORT_THEIA    = parseInt(document.getElementById('cfg-port-theia').value)    || 20001;
@@ -2136,6 +2137,7 @@ function collectWorkspaceForm() {
   cfg.GIT_USER_EMAIL = document.getElementById('ws-git-email').value || '';
   cfg.CF_TUNNEL_TOKEN= document.getElementById('ws-cf-token').value  || '';
   cfg.MODE = wsMode;
+  cfg.IMAGE_NAME = wsMode === 'lite' ? 'webcode_lite' : 'webcode';
 
   // 端口配置
   cfg.PORT_THEIA    = parseInt(document.getElementById('ws-port-theia').value)    || 20001;

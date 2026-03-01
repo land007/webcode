@@ -115,6 +115,7 @@ function buildDockerPath() {
 }
 
 function buildEnv(cfg) {
+  const imageName = cfg.IMAGE_NAME || modeToImageName(cfg.MODE || 'desktop');
   return Object.assign({}, process.env, {
     PATH: buildDockerPath(),
     COMPOSE_PROJECT_NAME: cfg.PROJECT_NAME || 'webcode',
@@ -128,8 +129,20 @@ function buildEnv(cfg) {
     GIT_USER_NAME: cfg.GIT_USER_NAME || '',
     GIT_USER_EMAIL: cfg.GIT_USER_EMAIL || '',
     DNA_REPO_URL: cfg.DNA_REPO_URL || 'https://github.com/land007/webcode',
-    DOCKER_SOCK_MODE: cfg.DOCKER_SOCK_MODE || 'host'
+    DOCKER_SOCK_MODE: cfg.DOCKER_SOCK_MODE || 'host',
+    IMAGE_NAME: imageName,
+    IMAGE_TAG: cfg.IMAGE_TAG || 'latest',
+    IMAGE_REGISTRY: cfg.IMAGE_REGISTRY || 'land007'
   });
+}
+
+/**
+ * Map MODE to IMAGE_NAME
+ * @param {string} mode - 'desktop' or 'lite'
+ * @returns {string} - image name (webcode or webcode_lite)
+ */
+function modeToImageName(mode) {
+  return mode === 'lite' ? 'webcode_lite' : 'webcode';
 }
 
 function dockerSpawn(args, cfg, onData, onClose) {
@@ -169,13 +182,16 @@ async function dockerUp(cfg, onData, onClose, options = {}) {
   // ─── Pull image with fallback to ghcr.io ─────────────────────────────────────────────────────────────
   // 跳过 pull（用于快速重启）
   if (!options.skipPull) {
-    const imageName = 'land007/webcode:latest';
-    const ghcrImage = 'ghcr.io/land007/webcode:latest';
+    const imageName = modeToImageName(cfg.MODE || 'desktop');
+    const imageRegistry = cfg.IMAGE_REGISTRY || 'land007';
+    const imageTag = cfg.IMAGE_TAG || 'latest';
+    const fullImageName = `${imageRegistry}/${imageName}:${imageTag}`;
+    const ghcrImage = `ghcr.io/${imageRegistry}/${imageName}:${imageTag}`;
 
     onData && onData('正在拉取镜像...\n');
 
     const pullResult = await new Promise((resolve) => {
-      const pullProc = spawn('docker', ['pull', imageName], { env: buildEnv(cfg) });
+      const pullProc = spawn('docker', ['pull', fullImageName], { env: buildEnv(cfg) });
       let pullOutput = '';
       let pullError = '';
 
@@ -218,9 +234,9 @@ async function dockerUp(cfg, onData, onClose, options = {}) {
         });
         fallbackProc.on('close', (code) => {
           if (code === 0) {
-            // Tag the ghcr.io image as land007/webcode:latest
-            onData && onData('正在标记镜像为 ' + imageName + '...\n');
-            const tagProc = spawn('docker', ['tag', ghcrImage, imageName], { env: buildEnv(cfg) });
+            // Tag the ghcr.io image as the target image name
+            onData && onData('正在标记镜像为 ' + fullImageName + '...\n');
+            const tagProc = spawn('docker', ['tag', ghcrImage, fullImageName], { env: buildEnv(cfg) });
             tagProc.on('close', (tagCode) => {
               if (tagCode === 0) {
                 onData && onData('✅ 镜像下载成功（使用 GitHub Container Registry 备用源）\n\n');

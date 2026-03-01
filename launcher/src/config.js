@@ -10,6 +10,9 @@ const DEFAULT_CONFIG = {
   VNC_RESOLUTION: '1920x1080',
   OPENCLAW_TOKEN: 'changeme',
   MODE: 'desktop',
+  IMAGE_NAME: 'webcode',  // Image name: 'webcode' for full, 'webcode_lite' for lite
+  IMAGE_TAG: 'latest',    // Image tag (always 'latest' for now)
+  IMAGE_REGISTRY: 'land007',  // Image registry: 'land007' or custom fork
   GIT_USER_NAME: '',
   GIT_USER_EMAIL: '',
   CF_TUNNEL_TOKEN: '',

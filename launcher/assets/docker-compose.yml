@@ -1,6 +1,6 @@
 services:
   webcode:
-    image: land007/webcode:latest
+    image: ${IMAGE_REGISTRY:-land007}/${IMAGE_NAME:-webcode}:${IMAGE_TAG:-latest}
     build: .
     container_name: ${COMPOSE_PROJECT_NAME:-webcode}
     ports:
