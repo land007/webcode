@@ -271,6 +271,7 @@ COPY configs/audio-bar.js /tmp/
 COPY configs/touch-handler.js /tmp/
 COPY configs/xsession /tmp/
 COPY configs/desktop-shortcuts/ /tmp/desktop-shortcuts/
+COPY scripts/fix-novnc-html.sh /tmp/fix-novnc-html.sh
 RUN if [ "$INSTALL_DESKTOP" = "true" ]; then \
         cp /tmp/supervisor-audio.conf /etc/supervisor/conf.d/ \
         && cp /tmp/supervisor-dashboard.conf /etc/supervisor/conf.d/ \
@@ -281,20 +282,15 @@ RUN if [ "$INSTALL_DESKTOP" = "true" ]; then \
         && chmod +x /opt/audio-ws-server.py /opt/audio-ws-wrapper.sh \
         && cp /tmp/audio-player.html /opt/noVNC/audio.html \
         && cp /tmp/audio-bar.js /opt/noVNC/audio-bar.js \
-        && sed -i 's|<head>|<head>|' /opt/noVNC/vnc.html \
-        && sed -i '/<head>/a\    <meta charset="UTF-8">' /opt/noVNC/vnc.html \
-        && sed -i 's|</body>|<script src="audio-bar.js"></script>|' /opt/noVNC/vnc.html \
-        && sed -i '/<script src="audio-bar.js"><\/script>/a\</body>' /opt/noVNC/vnc.html \
         && cp /tmp/touch-handler.js /opt/noVNC/touch-handler.js \
-        && sed -i 's|</body>|<script src="touch-handler.js"></script>|' /opt/noVNC/vnc.html \
-        && sed -i '/<script src="touch-handler.js"><\/script>/a\</body>' /opt/noVNC/vnc.html \
+        && sh /tmp/fix-novnc-html.sh \
         && cp /tmp/xsession /opt/xsession \
         && chmod +x /opt/xsession \
         && cp -r /tmp/desktop-shortcuts/ /opt/; \
     fi \
     rm -rf /tmp/supervisor-audio.conf /tmp/supervisor-dashboard.conf /tmp/dashboard-server.js /tmp/dashboard.html \
            /tmp/audio-ws-server.py /tmp/audio-ws-wrapper.sh /tmp/audio-player.html /tmp/audio-bar.js \
-           /tmp/touch-handler.js /tmp/xsession /tmp/desktop-shortcuts/
+           /tmp/touch-handler.js /tmp/xsession /tmp/desktop-shortcuts/ /tmp/fix-novnc-html.sh
 
 COPY scripts/startup.sh /opt/startup.sh
 COPY scripts/vnc-setpass.py /opt/vnc-setpass.py

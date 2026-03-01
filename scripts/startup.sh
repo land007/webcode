@@ -11,21 +11,10 @@ if [ -S /var/run/docker.sock ]; then
 fi
 
 # ─── Docker-in-Docker (DinD) mode ────────────────────────────────────
+# dockerd 现在由 supervisor 自动管理，根据 DOCKER_SOCK_MODE 环境变量启动
 DOCKER_SOCK_MODE="${DOCKER_SOCK_MODE:-host}"
-if [ "$DOCKER_SOCK_MODE" = "dind" ]; then
-    echo "[startup] DinD mode: starting dockerd via supervisor..."
-    supervisorctl start dockerd
-    # Wait for dockerd to be ready (up to 30 s)
-    for i in $(seq 1 30); do
-        docker info >/dev/null 2>&1 && break
-        sleep 1
-    done
-    echo "[startup] dockerd ready"
-    usermod -aG docker ubuntu 2>/dev/null || true
-else
-    # 确保非 DinD 模式下 dockerd 已停止
-    supervisorctl stop dockerd 2>/dev/null || true
-fi
+export DOCKER_SOCK_MODE
+usermod -aG docker ubuntu 2>/dev/null || true
 
 # ─── Create project directory and fix permissions ────────────────────
 mkdir -p /home/ubuntu/projects
