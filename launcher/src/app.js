@@ -127,7 +127,8 @@ function buildEnv(cfg) {
     CF_TUNNEL_TOKEN: cfg.CF_TUNNEL_TOKEN || '',
     GIT_USER_NAME: cfg.GIT_USER_NAME || '',
     GIT_USER_EMAIL: cfg.GIT_USER_EMAIL || '',
-    DNA_REPO_URL: cfg.DNA_REPO_URL || 'https://github.com/land007/webcode'
+    DNA_REPO_URL: cfg.DNA_REPO_URL || 'https://github.com/land007/webcode',
+    DOCKER_SOCK_MODE: cfg.DOCKER_SOCK_MODE || 'host'
   });
 }
 
