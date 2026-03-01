@@ -39,11 +39,20 @@ const DASHBOARD_PORT = 20000;  // External port with Basic Auth
 const DASHBOARD_HTML = '/opt/dashboard.html';
 
 // Proxy port mapping (listen port -> target port)
+// For path-based routing, use 'routes' array instead of 'target'
 const PROXY_CONFIG = [
   { listen: 20001, target: 10001, authType: 'basic' },  // Theia IDE
   { listen: 20002, target: 10002, authType: 'basic' },  // Vibe Kanban
   { listen: 20003, target: 10003, authType: 'bearer' }, // OpenClaw AI
-  { listen: 20004, target: 10004, authType: 'basic' },  // noVNC
+  {
+    listen: 20004,
+    authType: 'basic',
+    routes: [
+      { path: '/audio', target: 10006 },      // Audio WebSocket
+      { path: '/websockify', target: 10004 }, // noVNC websockify
+      { path: '*', target: 10004 },           // Default: noVNC
+    ]
+  },
 ];
 
 // Get authentication credentials from environment
@@ -63,64 +72,102 @@ const httpServers = [];
 /**
  * Create a proxy server for a specific service
  * @param {number} listenPort - Port to listen on
- * @param {number} targetPort - Port to forward to
+ * @param {number} targetPort - Port to forward to (for simple proxy)
  * @param {string} authHeader - Full Authorization header value
+ * @param {Array} routes - Optional path-based routes [{path, target}]
  */
-function startProxy(listenPort, targetPort, authHeader) {
-  const proxy = httpProxy.createProxyServer({
-    ws: true,
-    changeOrigin: true
-  });
+function startProxy(listenPort, targetPort, authHeader, routes) {
+  // Create multiple proxy servers for different targets if routes exist
+  const proxyMap = new Map();
 
-  // Inject Authorization header on proxy request
-  proxy.on('proxyReq', (proxyReq) => {
-    proxyReq.setHeader('Authorization', authHeader);
-  });
+  const getProxy = (port) => {
+    if (!proxyMap.has(port)) {
+      const proxy = httpProxy.createProxyServer({
+        ws: true,
+        changeOrigin: true
+      });
 
-  // Remove security headers to allow iframe embedding
-  proxy.on('proxyRes', (proxyRes) => {
-    delete proxyRes.headers['x-frame-options'];
-    delete proxyRes.headers['content-security-policy'];
-    delete proxyRes.headers['x-content-type-options'];
-  });
+      // Inject Authorization header on proxy request
+      proxy.on('proxyReq', (proxyReq) => {
+        proxyReq.setHeader('Authorization', authHeader);
+      });
 
-  // Handle proxy errors (res may be Socket for WS errors, not HTTP response)
-  proxy.on('error', (err, req, res) => {
-    console.error(`Proxy error on port ${listenPort}:`, err.message);
-    if (res && typeof res.writeHead === 'function' && !res.headersSent) {
-      res.writeHead(502, { 'Content-Type': 'text/plain' });
-      res.end('Service unavailable — container may still be starting.');
-    } else if (res && typeof res.end === 'function') {
-      res.end();
+      // Remove security headers to allow iframe embedding
+      proxy.on('proxyRes', (proxyRes) => {
+        delete proxyRes.headers['x-frame-options'];
+        delete proxyRes.headers['content-security-policy'];
+        delete proxyRes.headers['x-content-type-options'];
+      });
+
+      // Handle proxy errors (res may be Socket for WS errors, not HTTP response)
+      proxy.on('error', (err, req, res) => {
+        console.error(`Proxy error on port ${listenPort} → :${port}:`, err.message);
+        if (res && typeof res.writeHead === 'function' && !res.headersSent) {
+          res.writeHead(502, { 'Content-Type': 'text/plain' });
+          res.end('Service unavailable — container may still be starting.');
+        } else if (res && typeof res.end === 'function') {
+          res.end();
+        }
+      });
+
+      // Handle WebSocket upgrade
+      proxy.on('proxyReqWs', (proxyReq, req, socket, options, head) => {
+        console.log(`Proxying WebSocket on port ${listenPort} → :${port}: ${req.url}`);
+        proxyReq.setHeader('Authorization', authHeader);
+        // Rewrite Origin to match the target so servers that validate Origin accept the connection
+        proxyReq.setHeader('Origin', `http://localhost:${port}`);
+      });
+
+      proxyMap.set(port, proxy);
+      proxyServers.push(proxy);
     }
-  });
+    return proxyMap.get(port);
+  };
 
-  // Handle WebSocket upgrade
-  proxy.on('proxyReqWs', (proxyReq, req, socket, options, head) => {
-    console.log(`Proxying WebSocket on port ${listenPort}: ${req.url}`);
-    proxyReq.setHeader('Authorization', authHeader);
-    // Rewrite Origin to match the target so servers that validate Origin accept the connection
-    proxyReq.setHeader('Origin', `http://localhost:${targetPort}`);
-  });
+  /**
+   * Find target port based on request path
+   */
+  const getTargetPort = (url) => {
+    if (!routes) return targetPort;
+
+    // Sort routes by path specificity (longer paths first)
+    const sortedRoutes = [...routes].sort((a, b) => b.path.length - a.path.length);
+
+    for (const route of sortedRoutes) {
+      if (route.path === '*') return route.target;
+      if (url === route.path || url.startsWith(route.path + '/') || url.startsWith(route.path + '?')) {
+        return route.target;
+      }
+    }
+    return targetPort;
+  };
 
   // Create HTTP server
   const server = http.createServer((req, res) => {
+    const targetPort = getTargetPort(req.url);
+    const proxy = getProxy(targetPort);
     proxy.web(req, res, { target: `http://localhost:${targetPort}` });
   });
 
   // Handle WebSocket upgrade
   server.on('upgrade', (req, socket, head) => {
-    console.log(`WebSocket upgrade on port ${listenPort}: ${req.url}`);
+    const targetPort = getTargetPort(req.url);
+    const proxy = getProxy(targetPort);
+    console.log(`WebSocket upgrade on port ${listenPort} → :${targetPort}: ${req.url}`);
     proxy.ws(req, socket, head, { target: `http://localhost:${targetPort}` });
   });
 
   // Start listening
   server.listen(listenPort, '0.0.0.0', () => {
-    console.log(`Proxy :${listenPort} → :${targetPort} started`);
+    if (routes) {
+      const routeDesc = routes.map(r => `${r.path}→${r.target}`).join(', ');
+      console.log(`Proxy :${listenPort} → [${routeDesc}] started`);
+    } else {
+      console.log(`Proxy :${listenPort} → :${targetPort} started`);
+    }
   });
 
   httpServers.push(server);
-  proxyServers.push(proxy);
 
   return server;
 }
@@ -258,7 +305,7 @@ function start() {
   // Start all proxy servers
   PROXY_CONFIG.forEach(config => {
     const authHeader = config.authType === 'bearer' ? BEARER_AUTH : BASIC_AUTH;
-    startProxy(config.listen, config.target, authHeader);
+    startProxy(config.listen, config.target, authHeader, config.routes);
   });
 
   console.log('Dashboard Server fully started');
