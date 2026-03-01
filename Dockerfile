@@ -235,6 +235,7 @@ COPY configs/supervisor-cloudflared.conf /etc/supervisor/conf.d/supervisor-cloud
 COPY configs/supervisor-analytics.conf /etc/supervisor/conf.d/supervisor-analytics.conf
 
 COPY configs/supervisor-audio.conf /etc/supervisor/conf.d/supervisor-audio.conf
+COPY configs/supervisor-dind.conf /etc/supervisor/conf.d/supervisor-dind.conf
 COPY configs/supervisor-dashboard.conf /etc/supervisor/conf.d/supervisor-dashboard.conf
 COPY configs/dashboard-server.js /opt/dashboard-server.js
 COPY configs/dashboard.html /opt/dashboard.html
