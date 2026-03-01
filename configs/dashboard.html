@@ -80,38 +80,115 @@
 
     /* ── Collapsed topbar ───────────────────────────────────────────────────── */
     .topbar.collapsed {
-      height: 12px;
-      min-height: 12px;
-      max-height: 12px;
-      cursor: pointer;
+      position: fixed !important;
+      top: 0;
+      left: var(--drag-pos, calc(50% - 100px));
+      width: 200px;
+      height: 32px;
+      min-height: 32px;
+      max-height: 32px;
+      border-radius: 0 0 8px 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      z-index: 1000;
+      cursor: move;
+      padding: 4px 8px;
+      gap: 4px;
+      opacity: 0.6;
+      transition: opacity 0.2s ease;
     }
 
-    .topbar.collapsed .topbar-content {
-      opacity: 0;
-      pointer-events: none;
-      position: absolute;
-      visibility: hidden;
-    }
-
-    .topbar.collapsed .topbar-expand-hint {
+    .topbar.collapsed:hover {
       opacity: 1;
     }
 
-    .topbar-expand-hint {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 10px;
-      color: var(--text-muted);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s ease;
-      white-space: nowrap;
+    /* Hide normal content when collapsed (except collapsed-tabs) */
+    .topbar.collapsed .topbar-content > *:not(.collapsed-tabs) {
+      display: none !important;
     }
 
-    .topbar.collapsed:hover .topbar-expand-hint {
-      color: var(--accent);
+    /* Collapsed tab icons container */
+    .collapsed-tabs {
+      display: none;
+      align-items: center;
+      gap: 4px;
+      flex: 1;
+      width: 100%;
+    }
+
+    .topbar.collapsed .collapsed-tabs {
+      display: flex;
+    }
+
+    /* Individual collapsed tab button */
+    .collapsed-tab-btn {
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      border: none;
+      background: transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .collapsed-tab-btn:hover { background: var(--surface2); color: var(--text); }
+    .collapsed-tab-btn.active { background: var(--surface2); color: var(--accent); }
+    .collapsed-tab-btn svg { width: 16px; height: 16px; }
+
+    /* Dotted texture for drag area */
+    .drag-area {
+      width: 40px;
+      height: 24px;
+      background-image: radial-gradient(circle, var(--text-muted) 1px, transparent 1px);
+      background-size: 8px 6px;
+      background-position: center;
+      opacity: 0.5;
+      cursor: move;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .drag-area:hover { opacity: 0.8; background-color: var(--surface2); }
+    .drag-area:active { cursor: grabbing; }
+
+    /* Push expand button to right side */
+    .collapsed-tabs .btn-collapse { margin-left: auto; }
+
+    /* Drag capture overlay (prevents drag interruption) */
+    .drag-capture-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: transparent;
+      cursor: grabbing;
+      display: none;
+    }
+
+    .drag-capture-overlay.active {
+      display: block;
+    }
+
+    /* Icon swap instead of rotation */
+    /* Expanded state: show ▲ (up arrow) - clicking collapses */
+    .btn-collapse .icon-collapse { display: none; }
+    .btn-collapse .icon-expand { display: block; }
+    /* Collapsed state: show ▼ (down arrow) - clicking expands */
+    .topbar.collapsed .btn-collapse .icon-collapse { display: block; }
+    .topbar.collapsed .btn-collapse .icon-expand { display: none; }
+
+    /* Hide expanded-state collapse button when collapsed */
+    .topbar.collapsed #collapseBtnExpanded { display: none !important; }
+
+    .topbar-expand-hint {
+      display: none; /* Not used in new design */
     }
 
     .topbar-content {
@@ -142,8 +219,7 @@
     }
 
     .btn-collapse:hover { background: var(--surface2); color: var(--text); }
-    .btn-collapse svg { width: 16px; height: 16px; transition: transform 0.2s ease; }
-    .topbar.collapsed .btn-collapse svg { transform: rotate(180deg); }
+    .btn-collapse svg { width: 16px; height: 16px; }
 
     .logo {
       display: flex;
@@ -556,21 +632,73 @@
     <button class="theme-cycle-btn" id="themeCycleBtn"></button>
     <button class="lang-cycle-btn"  id="langCycleBtn"></button>
 
-    <button class="btn-collapse" id="collapseBtn" data-i18n-title="collapse_header">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="18 15 12 9 6 15"></polyline>
-      </svg>
-    </button>
-
     <button class="btn-fullscreen" id="fullscreenBtn">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
       </svg>
       <span data-i18n="fullscreen">全屏</span>
     </button>
+
+    <!-- Collapse button for expanded state (hidden when collapsed) -->
+    <button class="btn-collapse" id="collapseBtnExpanded" data-i18n-title="collapse_header">
+      <svg class="icon-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+      <svg class="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="18 15 12 9 6 15"></polyline>
+      </svg>
+    </button>
+
+    <!-- Collapsed state tabs (hidden by default) -->
+    <div class="collapsed-tabs" id="collapsedTabs">
+      <!-- 1. Drag area FIRST (LEFT) -->
+      <div class="drag-area" id="dragArea" title="拖动此区域移动位置"></div>
+
+      <!-- 2. Tab icons in the middle -->
+      <button class="collapsed-tab-btn active" data-tab="desktop" title="桌面">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+          <line x1="8" y1="21" x2="16" y2="21"></line>
+          <line x1="12" y1="17" x2="12" y2="21"></line>
+        </svg>
+      </button>
+      <button class="collapsed-tab-btn" data-tab="ide" title="IDE">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="16 18 22 12 16 6"></polyline>
+          <polyline points="8 6 2 12 8 18"></polyline>
+        </svg>
+      </button>
+      <button class="collapsed-tab-btn" data-tab="kanban" title="看板">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+          <line x1="9" y1="3" x2="9" y2="21"></line>
+          <line x1="15" y1="3" x2="15" y2="21"></line>
+        </svg>
+      </button>
+      <button class="collapsed-tab-btn" data-tab="ai" title="AI">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 16a6 6 0 1 1 6-6 6 6 0 0 1-6 6z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+      </button>
+
+      <!-- 3. Expand button LAST (RIGHT) -->
+      <button class="btn-collapse" id="collapseBtn" data-i18n-title="expand_header"
+              style="width:20px;height:20px;padding:0;background:transparent;border:none;cursor:pointer;">
+        <svg class="icon-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+        <svg class="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="18 15 12 9 6 15"></polyline>
+        </svg>
+      </button>
+    </div>
     </div>
     <div class="topbar-expand-hint" id="expandHint">▲</div>
   </div>
+
+  <!-- Drag capture overlay (prevents drag interruption) -->
+  <div class="drag-capture-overlay" id="dragCaptureOverlay"></div>
 
   <div class="iframe-area">
     <div class="loading-overlay hidden" id="loadingOverlay">
@@ -666,6 +794,7 @@
     const LANG_KEY   = 'webcode-lang';
     const THEME_KEY  = 'webcode-theme';
     const COLLAPSE_KEY = 'webcode-topbar-collapsed';
+    const DRAG_POS_KEY = 'webcode-topbar-drag-pos';
     const THEME_ORDER = ['dark', 'light', 'system'];
 
     function getLang() {
@@ -738,6 +867,17 @@
 
     let currentTab = 'desktop';
 
+    // Sync collapsed tabs with main tabs
+    function syncCollapsedTabs() {
+      const mainActiveBtn = document.querySelector('.tab-btn.active');
+      const tabName = mainActiveBtn?.dataset.tab || 'desktop';
+
+      // Update collapsed tabs active state
+      document.querySelectorAll('.collapsed-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tabName);
+      });
+    }
+
     document.querySelectorAll('.tab-btn').forEach(tab => {
       tab.addEventListener('click', () => {
         const tabName = tab.dataset.tab;
@@ -747,6 +887,27 @@
         Object.values(IFRAME_IDS).forEach(id => document.getElementById(id).classList.remove('visible'));
         document.getElementById(IFRAME_IDS[tabName]).classList.add('visible');
         currentTab = tabName;
+        syncCollapsedTabs();
+      });
+    });
+
+    // Add collapsed tab click handlers
+    document.querySelectorAll('.collapsed-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tabName = btn.dataset.tab;
+
+        // Update main tabs
+        document.querySelectorAll('.tab-btn').forEach(t => {
+          t.classList.toggle('active', t.dataset.tab === tabName);
+        });
+
+        // Switch iframe
+        Object.values(IFRAME_IDS).forEach(id => document.getElementById(id).classList.remove('visible'));
+        document.getElementById(IFRAME_IDS[tabName]).classList.add('visible');
+        currentTab = tabName;
+
+        // Update collapsed tabs active state
+        syncCollapsedTabs();
       });
     });
 
@@ -794,37 +955,100 @@
 
     // ── Topbar collapse ─────────────────────────────────────────────────────────
     const topbar = document.getElementById('topbar');
-    const collapseBtn = document.getElementById('collapseBtn');
-    const expandHint = document.getElementById('expandHint');
+    const collapseBtn = document.getElementById('collapseBtn');  // In drag area (collapsed state)
+    const collapseBtnExpanded = document.getElementById('collapseBtnExpanded');  // Expanded state
+    const dragArea = document.getElementById('dragArea');
+    const dragCaptureOverlay = document.getElementById('dragCaptureOverlay');
+    let isDragging = false;
+    let dragStartX = 0;
+    let handleStartLeft = 0;
 
     function toggleTopbar() {
       const isCollapsed = topbar.classList.toggle('collapsed');
       try { localStorage.setItem(COLLAPSE_KEY, isCollapsed); } catch(e) {}
+
+      // Reset position when expanding - remove the left offset from collapsed state
+      if (!isCollapsed) {
+        topbar.style.removeProperty('left');
+        topbar.style.removeProperty('--drag-pos');
+      }
+
       updateCollapseButton();
     }
 
     function updateCollapseButton() {
       const isCollapsed = topbar.classList.contains('collapsed');
-      collapseBtn.title = t(isCollapsed ? 'expand_header' : 'collapse_header');
-      collapseBtn.setAttribute('data-i18n-title', isCollapsed ? 'expand_header' : 'collapse_header');
+      // Update both collapse buttons
+      [collapseBtn, collapseBtnExpanded].forEach(btn => {
+        if (btn) {
+          btn.title = t(isCollapsed ? 'expand_header' : 'collapse_header');
+          btn.setAttribute('data-i18n-title', isCollapsed ? 'expand_header' : 'collapse_header');
+        }
+      });
     }
 
-    // Collapse button click
-    collapseBtn.addEventListener('click', (e) => {
+    // Collapse button click (expanded state)
+    collapseBtnExpanded?.addEventListener('click', (e) => {
       e.stopPropagation();
       toggleTopbar();
     });
 
-    // Click on collapsed bar to expand
-    topbar.addEventListener('click', (e) => {
-      if (topbar.classList.contains('collapsed')) {
-        toggleTopbar();
+    // Collapse button click (in drag area - collapsed state)
+    collapseBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleTopbar();
+    });
+
+    // Drag handlers - only on drag-area
+    dragArea.addEventListener('mousedown', (e) => {
+      if (!topbar.classList.contains('collapsed')) return;
+      isDragging = true;
+      dragStartX = e.clientX;
+      const rect = topbar.getBoundingClientRect();
+      handleStartLeft = rect.left;
+      // Show capture overlay to prevent drag interruption
+      dragCaptureOverlay.classList.add('active');
+      e.preventDefault();
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const deltaX = e.clientX - dragStartX;
+      let newLeft = handleStartLeft + deltaX;
+      // Constrain to screen bounds
+      const maxWidth = window.innerWidth - 200;  // 200px = collapsed width
+      newLeft = Math.max(0, Math.min(newLeft, maxWidth));
+      topbar.style.left = newLeft + 'px';
+      e.preventDefault();
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        // Hide capture overlay
+        dragCaptureOverlay.classList.remove('active');
+        // Save position
+        const rect = topbar.getBoundingClientRect();
+        try {
+          localStorage.setItem(DRAG_POS_KEY, JSON.stringify({ left: rect.left }));
+        } catch(e) {}
       }
     });
 
     // Prevent content clicks from triggering expand when collapsed
     document.querySelector('.topbar-content').addEventListener('click', (e) => {
-      e.stopPropagation();
+      if (topbar.classList.contains('collapsed')) {
+        e.stopPropagation();
+      }
+    });
+
+    // Prevent tab clicks from expanding when collapsed
+    document.querySelectorAll('.tab-btn, .btn-icon, .theme-cycle-btn, .lang-cycle-btn, .btn-fullscreen, .status-pill').forEach(el => {
+      el.addEventListener('click', (e) => {
+        if (topbar.classList.contains('collapsed')) {
+          e.stopPropagation();
+        }
+      });
     });
 
     // Restore saved state on load
@@ -832,8 +1056,14 @@
       if (localStorage.getItem(COLLAPSE_KEY) === 'true') {
         topbar.classList.add('collapsed');
       }
+      // Load saved drag position
+      const savedPos = JSON.parse(localStorage.getItem(DRAG_POS_KEY) || '{"left":null}');
+      if (savedPos.left !== null) {
+        topbar.style.setProperty('--drag-pos', savedPos.left + 'px');
+      }
     } catch(e) {}
     updateCollapseButton();
+    syncCollapsedTabs();
 
     // ── Process status ────────────────────────────────────────────────────────
     const RESTART_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 21H3v-5"/></svg>`;
