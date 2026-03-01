@@ -358,7 +358,8 @@ function dockerPs(cfg, callback) {
  * @param {Function} callback - (exists: boolean) => void
  */
 function checkLocalImage(cfg, callback) {
-  const imageName = modeToImageName(cfg.MODE || 'desktop');
+  // Use cfg.IMAGE_NAME if set, otherwise derive from MODE
+  const imageName = cfg.IMAGE_NAME || modeToImageName(cfg.MODE || 'desktop');
   const imageRegistry = cfg.IMAGE_REGISTRY || 'land007';
   const imageTag = cfg.IMAGE_TAG || 'latest';
   const fullImageName = `${imageRegistry}/${imageName}:${imageTag}`;
