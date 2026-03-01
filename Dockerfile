@@ -260,37 +260,23 @@ COPY configs/supervisor-analytics.conf /etc/supervisor/conf.d/supervisor-analyti
 COPY configs/supervisor-dind.conf /etc/supervisor/conf.d/supervisor-dind.conf
 
 # Desktop-specific configs (audio, dashboard, noVNC, desktop shortcuts)
-COPY configs/supervisor-audio.conf /tmp/
-COPY configs/supervisor-dashboard.conf /tmp/
-COPY configs/dashboard-server.js /tmp/
-COPY configs/dashboard.html /tmp/
-COPY scripts/audio-ws-server.py /tmp/
-COPY scripts/audio-ws-wrapper.sh /tmp/
-COPY configs/audio-player.html /tmp/
-COPY configs/audio-bar.js /tmp/
-COPY configs/touch-handler.js /tmp/
-COPY configs/xsession /tmp/
-COPY configs/desktop-shortcuts/ /tmp/desktop-shortcuts/
 RUN if [ "$INSTALL_DESKTOP" = "true" ]; then \
-        cp /tmp/supervisor-audio.conf /etc/supervisor/conf.d/ \
-        && cp /tmp/supervisor-dashboard.conf /etc/supervisor/conf.d/ \
-        && cp /tmp/dashboard-server.js /opt/ \
-        && cp /tmp/dashboard.html /opt/ \
-        && cp /tmp/audio-ws-server.py /opt/ \
-        && cp /tmp/audio-ws-wrapper.sh /opt/ \
+        cp configs/supervisor-audio.conf /etc/supervisor/conf.d/ \
+        && cp configs/supervisor-dashboard.conf /etc/supervisor/conf.d/ \
+        && cp configs/dashboard-server.js /opt/ \
+        && cp configs/dashboard.html /opt/ \
+        && cp scripts/audio-ws-server.py /opt/ \
+        && cp scripts/audio-ws-wrapper.sh /opt/ \
         && chmod +x /opt/audio-ws-server.py /opt/audio-ws-wrapper.sh \
-        && cp /tmp/audio-player.html /opt/noVNC/audio.html \
-        && cp /tmp/audio-bar.js /opt/noVNC/audio-bar.js \
-        && cp /tmp/touch-handler.js /opt/noVNC/touch-handler.js \
+        && cp configs/audio-player.html /opt/noVNC/audio.html \
+        && cp configs/audio-bar.js /opt/noVNC/audio-bar.js \
+        && cp configs/touch-handler.js /opt/noVNC/touch-handler.js \
         && sed -i 's/<head>/<head><meta charset="UTF-8">/' /opt/noVNC/vnc.html \
         && sed -i 's/<\/body>/<script src="audio-bar.js"><\/script><script src="touch-handler.js"><\/script><\/body>/' /opt/noVNC/vnc.html \
-        && cp /tmp/xsession /opt/xsession \
+        && cp configs/xsession /opt/xsession \
         && chmod +x /opt/xsession \
-        && cp -r /tmp/desktop-shortcuts/ /opt/; \
-    fi \
-    rm -rf /tmp/supervisor-audio.conf /tmp/supervisor-dashboard.conf /tmp/dashboard-server.js /tmp/dashboard.html \
-           /tmp/audio-ws-server.py /tmp/audio-ws-wrapper.sh /tmp/audio-player.html /tmp/audio-bar.js \
-           /tmp/touch-handler.js /tmp/xsession /tmp/desktop-shortcuts/
+        && cp -r configs/desktop-shortcuts/ /opt/; \
+    fi
 
 COPY scripts/startup.sh /opt/startup.sh
 COPY scripts/vnc-setpass.py /opt/vnc-setpass.py
