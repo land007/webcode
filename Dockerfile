@@ -68,6 +68,19 @@ RUN apt-get install -y --no-install-recommends unzip \
     && rm /tmp/zh-hans.vsix \
     && chown -R ubuntu:ubuntu /opt/theia/plugins
 
+# ─── 4c. VS Code builtin git extensions for Theia SCM ──────────────
+# vscode.git provides the git SCM provider; vscode.git-base provides
+# the underlying git API used by vscode.git. Both are needed for the
+# Source Control panel to detect and show the current git repository.
+RUN mkdir -p /tmp/vscode-extract /opt/theia/plugins \
+    && curl -fsSL -o /tmp/vscode-builtins.tar.gz \
+       "https://github.com/eclipse-theia/vscode-builtin-extensions/releases/download/1.104.0/vscode-builtin-extensions-1.104.0.tar.gz" \
+    && tar -xzf /tmp/vscode-builtins.tar.gz -C /tmp/vscode-extract \
+    && find /tmp/vscode-extract \( -name "vscode.git-*.vsix" -o -name "vscode.git-base-*.vsix" \) \
+       | xargs -I{} sh -c 'name=$(basename {} .vsix); unzip -q {} -d /opt/theia/plugins/$name' \
+    && rm -rf /tmp/vscode-extract /tmp/vscode-builtins.tar.gz \
+    && chown -R ubuntu:ubuntu /opt/theia/plugins
+
 # ─── 5. Supervisor ──────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends supervisor \
     && apt-get clean && rm -rf /var/lib/apt/lists/*

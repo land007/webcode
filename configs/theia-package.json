@@ -15,6 +15,7 @@
     "@theia/monaco": "1.68.2",
     "@theia/navigator": "1.68.2",
     "@theia/outline-view": "1.68.2",
+    "@theia/plugin-ext": "1.68.2",
     "@theia/plugin-ext-vscode": "1.68.2",
     "@theia/preferences": "1.68.2",
     "@theia/process": "1.68.2",
