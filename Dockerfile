@@ -98,6 +98,14 @@ RUN apt-get update && apt-get install -y \
         eog evince gnome-screenshot gedit xdg-user-dirs \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# ─── 6b. Language packs for Chinese and English localization ─────────────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        language-pack-zh-hans language-pack-zh-hans-base \
+        language-pack-gnome-zh-hans language-pack-gnome-zh-hans-base \
+        language-pack-en language-pack-en-base \
+        language-pack-gnome-en language-pack-gnome-en-base \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # ─── 6b. GNOME / Terminal font defaults + panel layout fix ────────────
 RUN mkdir -p /etc/dconf/profile /etc/dconf/db/local.d \
     && printf 'user-db:user\nsystem-db:local\n' > /etc/dconf/profile/user \
