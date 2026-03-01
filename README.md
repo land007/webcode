@@ -104,11 +104,45 @@ irm https://raw.githubusercontent.com/land007/webcode/main/install.ps1 | iex
 
 No GUI needed. Requires [Docker](https://docs.docker.com/engine/install/).
 
+**Option A — Using docker compose (recommended for easier management):**
+
 **macOS / Linux / WSL / Git Bash:**
 ```bash
 mkdir -p ~/webcode && cd ~/webcode
 curl -fsSL https://raw.githubusercontent.com/land007/webcode/main/launcher/assets/docker-compose.yml -o docker-compose.yml
 docker compose up -d
+```
+
+**Option B — Using single docker run command:**
+
+```bash
+docker run -d \
+  --name webcode \
+  --restart unless-stopped \
+  -p 20000:20000 \
+  -p 20001:20001 \
+  -p 20002:20002 \
+  -p 20003:20003 \
+  -p 20004:20004 \
+  -p 20005:10005 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v dna-data:/home/ubuntu/dna \
+  -v projects:/home/ubuntu/projects \
+  -v vibe-kanban-data:/home/ubuntu/.local/share/vibe-kanban \
+  -v theia-data:/home/ubuntu/.theia \
+  -v user-data:/home/ubuntu/.local/share \
+  -v gitconfig:/home/ubuntu/.gitconfig-vol \
+  -v openclaw-data:/home/ubuntu/.openclaw \
+  -v chrome-data:/home/ubuntu/.config \
+  -v recordings:/home/ubuntu/recordings \
+  -e MODE=desktop \
+  -e AUTH_USER=admin \
+  -e AUTH_PASSWORD=changeme \
+  -e VNC_PASSWORD=changeme \
+  -e VNC_RESOLUTION=1920x1080 \
+  --shm-size=512m \
+  --security-opt seccomp=unconfined \
+  land007/webcode:latest
 ```
 
 **Windows PowerShell:**
@@ -336,11 +370,45 @@ irm https://raw.githubusercontent.com/land007/webcode/main/install.ps1 | iex
 
 不需要图形界面。需要安装 [Docker](https://docs.docker.com/engine/install/)。
 
+**选项 A — 使用 docker compose（推荐，更方便管理）：**
+
 **macOS / Linux / WSL / Git Bash：**
 ```bash
 mkdir -p ~/webcode && cd ~/webcode
 curl -fsSL https://raw.githubusercontent.com/land007/webcode/main/launcher/assets/docker-compose.yml -o docker-compose.yml
 docker compose up -d
+```
+
+**选项 B — 使用单条 docker run 命令：**
+
+```bash
+docker run -d \
+  --name webcode \
+  --restart unless-stopped \
+  -p 20000:20000 \
+  -p 20001:20001 \
+  -p 20002:20002 \
+  -p 20003:20003 \
+  -p 20004:20004 \
+  -p 20005:10005 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v dna-data:/home/ubuntu/dna \
+  -v projects:/home/ubuntu/projects \
+  -v vibe-kanban-data:/home/ubuntu/.local/share/vibe-kanban \
+  -v theia-data:/home/ubuntu/.theia \
+  -v user-data:/home/ubuntu/.local/share \
+  -v gitconfig:/home/ubuntu/.gitconfig-vol \
+  -v openclaw-data:/home/ubuntu/.openclaw \
+  -v chrome-data:/home/ubuntu/.config \
+  -v recordings:/home/ubuntu/recordings \
+  -e MODE=desktop \
+  -e AUTH_USER=admin \
+  -e AUTH_PASSWORD=changeme \
+  -e VNC_PASSWORD=changeme \
+  -e VNC_RESOLUTION=1920x1080 \
+  --shm-size=512m \
+  --security-opt seccomp=unconfined \
+  land007/webcode:latest
 ```
 
 **Windows PowerShell：**
