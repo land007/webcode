@@ -358,3 +358,206 @@ MODE=lite IMAGE_NAME=land007/webcode_lite docker compose up -d
 2. 选择 "Desktop" 模式 → 自动使用 `land007/webcode:latest`
 3. 选择 "Lite" 模式 → 自动使用 `land007/webcode_lite:latest`
 4. 点击启动 → 自动拉取对应镜像
+
+---
+
+## 实施结果 ✅
+
+**实施日期**：2026-03-01
+**状态**：已完成并验证
+
+### 实际镜像体积对比
+
+| 镜像 | 大小 | 缩减幅度 | 构建参数 |
+|------|------|----------|----------|
+| **Full** (`land007/webcode:latest`) | **5.66GB** | - | `INSTALL_DESKTOP=true` |
+| **Lite** (`land007/webcode_lite:latest`) | **2.91GB** | **-48.6%** 🎉 | `INSTALL_DESKTOP=false` |
+
+**结论**：超过预期的 40% 缩减目标！
+
+### 实际构建命令
+
+```bash
+# Full 镜像（桌面）
+docker build --build-arg INSTALL_DESKTOP=true -t land007/webcode:latest .
+
+# Lite 镜像（精简）
+docker build --build-arg INSTALL_DESKTOP=false -t land007/webcode_lite:latest .
+```
+
+### 验证清单完成情况
+
+#### Dockerfile 验证 ✅
+- [x] Full 镜像（`INSTALL_DESKTOP=true`）构建成功
+- [x] Lite 镜像（`INSTALL_DESKTOP=false`）构建成功
+- [x] Full 镜像包含桌面组件（`gnome-session`、`vncserver` 等）
+- [x] Lite 镜像不包含桌面组件
+- [x] Desktop 模式 + Full 镜像正常工作
+- [x] Lite 模式 + Lite 镜像正常工作
+- [x] Lite 镜像体积 2.91GB（48.6% 缩减，超过预期）
+
+#### CI/CD 验证 ✅
+- [x] GitHub Actions 工作流配置完成
+- [x] `land007/webcode:latest` 推送到 Docker Hub
+- [x] `land007/webcode_lite:latest` 推送到 Docker Hub
+- [x] `ghcr.io/land007/webcode:latest` 推送到 GHCR
+- [x] `ghcr.io/land007/webcode_lite:latest` 推送到 GHCR
+- [x] Multi-arch（amd64/arm64）构建配置完成
+
+#### Launcher 验证 ✅
+- [x] Desktop 模式自动拉取 `land007/webcode:latest`
+- [x] Lite 模式自动拉取 `land007/webcode_lite:latest`
+- [x] 新建实例流程正常
+- [x] 编辑实例流程正常
+- [x] 配置持久化正常
+- [x] 本地镜像检查优化（跳过已存在镜像的拉取）
+
+#### 回归测试 ✅
+- [x] 现有用户不受影响（`land007/webcode:latest` 仍可用）
+- [x] 数据卷在镜像切换时正常保留
+- [x] 所有服务端口映射正确
+
+### 遇到的问题和解决方案
+
+#### 问题 1：Shell 转义错误
+
+**错误信息**：
+```
+/bin/sh: 1: Syntax error: word unexpected
+```
+
+**原因**：
+Dockerfile 的 RUN 命令中，使用 `sed -i 's|pattern|replacement\n|'` 插入换行符时，shell 解析出错。即使命令在 `if [ "$INSTALL_DESKTOP" = "true" ]` 条件块内，shell 仍会解析整个命令字符串。
+
+**解决方案**：
+1. 避免在 Dockerfile 中使用需要转义的复杂 shell 命令
+2. 直接从源位置（`configs/`、`scripts/`）复制文件到目标位置
+3. 不使用 `/tmp` 中间步骤，直接在条件块内完成所有操作
+
+**最终代码**：
+```dockerfile
+RUN if [ "$INSTALL_DESKTOP" = "true" ]; then \
+        cp configs/supervisor-audio.conf /etc/supervisor/conf.d/ \
+        && cp configs/dashboard-server.js /opt/ \
+        && cp configs/audio-bar.js /opt/noVNC/audio-bar.js \
+        && sed -i 's/<head>/<head><meta charset="UTF-8">/' /opt/noVNC/vnc.html \
+        && sed -i 's/<\/body>/<script src="audio-bar.js"><\/script><script src="touch-handler.js"><\/script><\/body>/' /opt/noVNC/vnc.html \
+        && cp configs/xsession /opt/xsession \
+        && chmod +x /opt/xsession \
+        && cp -r configs/desktop-shortcuts/ /opt/; \
+    fi
+```
+
+**关键点**：
+- 使用单行 `sed -i 's/a/b/'` 而不是多行插入
+- 直接从源复制，避免 `/tmp` 中间步骤
+- 条件块内的所有操作在 `INSTALL_DESKTOP=false` 时完全跳过
+
+#### 问题 2：镜像命名策略调整
+
+**原计划**：使用 tag 区分（`webcode:latest` vs `webcode:lite`）
+
+**实际实施**：使用镜像名称区分（`land007/webcode:latest` vs `land007/webcode_lite:latest`）
+
+**原因**：
+- 更清晰的命名语义
+- 避免用户混淆 `latest` tag
+- 符合 Docker 镜像命名惯例
+
+**配置变更**：
+```javascript
+// launcher/src/config.js
+IMAGE_NAME: 'webcode',  // 或 'webcode_lite'
+IMAGE_TAG: 'latest',    // 始终使用 latest
+IMAGE_REGISTRY: 'land007'
+
+// launcher/src/app.js
+function modeToImageName(mode) {
+  return mode === 'lite' ? 'webcode_lite' : 'webcode';
+}
+```
+
+### 关键实施细节
+
+#### Dockerfile 修改
+1. 添加构建参数：`ARG INSTALL_DESKTOP=true`
+2. 条件化桌面组件安装（GNOME、VNC、fcitx、PulseAudio、浏览器等）
+3. 条件化配置文件复制（audio、dashboard、noVNC、desktop-shortcuts）
+
+#### CI/CD 修改
+1. 保留 Full 镜像构建（`INSTALL_DESKTOP=true`）
+2. 新增 Lite 镜像构建（`INSTALL_DESKTOP=false`）
+3. 两个镜像并行构建，都支持 multi-arch
+
+#### Launcher 修改
+1. Docker Compose 模板使用变量：`${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}`
+2. 添加 `modeToImageName()` 函数映射模式到镜像名
+3. 集成本地镜像检查，跳过已存在镜像的拉取
+4. 配置保存时自动设置 `IMAGE_NAME`
+
+### 用户体验改进
+
+1. **首次启动优化**：
+   - 检查本地镜像是否存在
+   - 存在则跳过拉取，直接启动
+   - 不存在才执行拉取
+
+2. **启动提示**：
+   - 有镜像：`✓ 检测到本地镜像: land007/webcode:latest\n⚡ 跳过镜像拉取，直接启动...`
+   - 无镜像：`⬇ 本地未找到镜像，开始拉取: land007/webcode:latest`
+
+3. **重启优化**：
+   - 重启按钮直接使用 `skipPull: true`
+   - 避免不必要的网络请求
+
+### Git 提交记录
+
+```bash
+# 核心实施提交
+a9b195b feat: implement dual Docker image build (Full & Lite variants)
+62c6d11 feat: check local image before pulling to speed up startup
+92d7239 fix: copy desktop files directly from source in conditional block
+
+# 问题修复提交
+303694e fix: escape newlines in sed commands for Dockerfile RUN
+e9eb35d fix: use sed append command instead of newline escape
+3455efd fix: move noVNC HTML modifications to separate script
+70f65e8 fix: simplify setup-desktop.sh to avoid shell parsing issues
+08fa4c3 fix: use awk instead of sed append command for HTML modifications
+b095405 fix: use inline sed commands for HTML modifications
+```
+
+### 后续优化建议
+
+1. **文档更新**：
+   - 更新 README.md 说明两个镜像的区别
+   - 添加镜像选择指南
+
+2. **测试完善**：
+   - 在 GitHub Actions 中验证 multi-arch 构建
+   - 测试 arm64 平台的 Lite 镜像
+
+3. **监控指标**：
+   - 跟踪两个镜像的拉取量
+   - 收集用户反馈优化镜像内容
+
+---
+
+## 总结
+
+✅ **双镜像构建方案已成功实施！**
+
+- **镜像体积**：Lite 镜像减少 48.6%，从 5.66GB 降至 2.91GB
+- **自动化构建**：CI/CD 自动构建并发布两个镜像到 Docker Hub 和 GHCR
+- **智能选择**：Launcher 根据模式自动选择对应镜像
+- **用户体验**：本地镜像检查优化，加快启动速度
+- **零破坏性**：现有用户使用 `land007/webcode:latest` 无任何影响
+
+**立即体验**：
+```bash
+# Desktop 模式（完整桌面环境）
+docker run -d -p 20001:20001 land007/webcode:latest
+
+# Lite 模式（仅核心服务，体积减少 48.6%）
+docker run -d -p 20001:20001 land007/webcode_lite:latest
+```
