@@ -160,14 +160,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \
     && pip3 install --no-cache-dir --break-system-packages opuslib
 
-# ─── 9. Docker CLI (client only, auto-detect arch) ──────────────────
+# ─── 9. Docker CLI + daemon (auto-detect arch) ───────────────────────
+# docker-ce and containerd.io are needed for DinD mode; cli is the primary use case.
+# Packages are installed but daemon is NOT started by default — startup.sh handles DinD.
 RUN install -m 0755 -d /etc/apt/keyrings \
     && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg \
     && chmod a+r /etc/apt/keyrings/docker.gpg \
     && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu noble stable" \
        > /etc/apt/sources.list.d/docker.list \
     && apt-get update && apt-get install -y --no-install-recommends \
-        docker-ce-cli docker-compose-plugin \
+        docker-ce-cli docker-ce containerd.io docker-compose-plugin \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # ─── 9b. Cloudflare Tunnel client (via official apt repo — avoids GitHub rate limits) ───

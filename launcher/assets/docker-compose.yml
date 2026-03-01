@@ -32,6 +32,7 @@ services:
       - GIT_USER_NAME=${GIT_USER_NAME:-}
       - GIT_USER_EMAIL=${GIT_USER_EMAIL:-}
       - DNA_REPO_URL=${DNA_REPO_URL:-https://github.com/land007/webcode}
+      - DOCKER_SOCK_MODE=${DOCKER_SOCK_MODE:-host}
     shm_size: "512m"
     security_opt:
       - seccomp=unconfined

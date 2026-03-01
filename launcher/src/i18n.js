@@ -210,6 +210,14 @@ const translations = {
     update_checking_complete: '完成检查',
     update_check_detail:     '正在对比 Docker 镜像和 GitHub Releases...',
     update_cancelled:        '检查已取消',
+    // Docker 访问模式
+    docker_mode_title:       'Docker 访问模式',
+    docker_mode_host:        '宿主机 Docker',
+    docker_mode_host_desc:   '挂载宿主机 Docker Socket，可在容器内管理宿主机所有容器（适合自我进化、构建镜像）',
+    docker_mode_dind:        '容器内 Docker（DinD）',
+    docker_mode_dind_desc:   '在容器内启动独立 Docker 守护进程，与宿主机完全隔离（需 --privileged 权限，需重建镜像）',
+    docker_mode_none:        '不启用 Docker',
+    docker_mode_none_desc:   '不挂载 Docker Socket，适合不需要 Docker 功能的场景',
   },
 
   'en': {
@@ -419,6 +427,14 @@ const translations = {
     update_checking_complete: 'Check complete',
     update_check_detail:     'Comparing Docker images and GitHub Releases...',
     update_cancelled:        'Check cancelled',
+    // Docker access mode
+    docker_mode_title:       'Docker Access Mode',
+    docker_mode_host:        'Host Docker',
+    docker_mode_host_desc:   'Mount the host Docker socket. Manage all host containers from inside the container (ideal for self-evolution and image builds).',
+    docker_mode_dind:        'Docker-in-Docker (DinD)',
+    docker_mode_dind_desc:   'Run an isolated Docker daemon inside the container, fully separate from the host (requires --privileged; needs image rebuild).',
+    docker_mode_none:        'No Docker',
+    docker_mode_none_desc:   'No Docker socket mounted. Suitable for workloads that do not require Docker.',
   },
 };
 

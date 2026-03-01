@@ -10,6 +10,22 @@ if [ -S /var/run/docker.sock ]; then
     usermod -aG docker ubuntu 2>/dev/null || true
 fi
 
+# ─── Docker-in-Docker (DinD) mode ────────────────────────────────────
+DOCKER_SOCK_MODE="${DOCKER_SOCK_MODE:-host}"
+if [ "$DOCKER_SOCK_MODE" = "dind" ]; then
+    echo "[startup] DinD mode: starting dockerd..."
+    dockerd --host=unix:///var/run/docker.sock \
+            --storage-driver=overlay2 \
+            &> /var/log/dockerd.log &
+    # Wait for dockerd to be ready (up to 30 s)
+    for i in $(seq 1 30); do
+        docker info >/dev/null 2>&1 && break
+        sleep 1
+    done
+    echo "[startup] dockerd ready"
+    usermod -aG docker ubuntu 2>/dev/null || true
+fi
+
 # ─── Create project directory and fix permissions ────────────────────
 mkdir -p /home/ubuntu/projects
 mkdir -p /home/ubuntu/Desktop

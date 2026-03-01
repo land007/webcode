@@ -141,6 +141,39 @@ function updateComposeCustomVolumes(workDir, customVolumes) {
 }
 
 /**
+ * 按 Docker 访问模式更新 docker-compose.yml 中的 sock 挂载和 privileged 标志
+ * @param {string} workDir - 工作目录
+ * @param {string} mode - 'host' | 'dind' | 'none'
+ */
+function updateComposeDockerMode(workDir, mode) {
+  const composePath = path.join(workDir, 'docker-compose.yml');
+  if (!fs.existsSync(composePath)) return;
+
+  let content = fs.readFileSync(composePath, 'utf8');
+
+  // 幂等清理：先删除已有的 sock 行和 privileged 行
+  content = content.replace(/\n      - \/var\/run\/docker\.sock:\/var\/run\/docker\.sock/g, '');
+  content = content.replace(/\n    privileged: true/g, '');
+
+  if (mode === 'host') {
+    // 在 volumes: 列表第一行之前插入 sock 挂载
+    content = content.replace(
+      /(    volumes:\n)/,
+      '$1      - /var/run/docker.sock:/var/run/docker.sock\n'
+    );
+  } else if (mode === 'dind') {
+    // 在 restart: 行之前插入 privileged: true
+    content = content.replace(
+      /(\n    restart:)/,
+      '\n    privileged: true$1'
+    );
+  }
+  // mode === 'none': 不需要额外操作
+
+  fs.writeFileSync(composePath, content, 'utf8');
+}
+
+/**
  * 获取 volume 摘要信息（用于显示）
  * @param {Object} volumes - volume 配置
  * @returns {Array} - volume 信息数组
@@ -160,6 +193,7 @@ module.exports = {
   getInstanceVolumes,
   getVolumesFromConfig,
   updateComposeVolumes,
+  updateComposeDockerMode,
   updateComposeCustomVolumes,
   getVolumeSummary
 };

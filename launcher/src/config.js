@@ -24,7 +24,9 @@ const DEFAULT_CONFIG = {
   // 自定义目录挂载：[{ host: '/宿主机路径', container: '/容器路径' }, ...]
   CUSTOM_VOLUMES: [],
   // 自定义端口映射：[{ host: '8080', container: '3000' }, ...]
-  CUSTOM_PORTS: []
+  CUSTOM_PORTS: [],
+  // Docker 访问模式：'host'（挂载宿主机 socket）| 'dind'（容器内 dockerd）| 'none'（不启用）
+  DOCKER_SOCK_MODE: 'host'
 };
 
 function getConfigPath() {
@@ -162,6 +164,9 @@ function ensureInstanceComposeFile(id) {
     ports.updateComposePorts(workDir, portConfig);
     ports.updateComposeCustomPorts(workDir, cfg.CUSTOM_PORTS || []);
   }
+
+  // Apply Docker access mode (sock / dind / none)
+  volumes.updateComposeDockerMode(workDir, cfg ? cfg.DOCKER_SOCK_MODE || 'host' : 'host');
 
   // Apply custom volumes
   volumes.updateComposeCustomVolumes(workDir, cfg ? cfg.CUSTOM_VOLUMES || [] : []);

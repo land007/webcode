@@ -228,6 +228,32 @@
           <div id="custom-port-status" style="font-size:11px;margin-top:4px"></div>
         </div>
         <div class="adv-block">
+          <div class="adv-block-title" data-i18n="docker_mode_title">Docker 访问模式</div>
+          <div class="docker-mode-block" id="docker-mode-selector">
+            <label class="docker-mode-option">
+              <input type="radio" name="docker-mode" value="host" checked>
+              <div class="docker-mode-label-wrap">
+                <span class="mode-name" data-i18n="docker_mode_host">宿主机 Docker</span>
+                <span class="mode-desc" data-i18n="docker_mode_host_desc">挂载宿主机 Docker Socket，可在容器内管理宿主机所有容器（适合自我进化、构建镜像）</span>
+              </div>
+            </label>
+            <label class="docker-mode-option">
+              <input type="radio" name="docker-mode" value="dind">
+              <div class="docker-mode-label-wrap">
+                <span class="mode-name" data-i18n="docker_mode_dind">容器内 Docker（DinD）</span>
+                <span class="mode-desc" data-i18n="docker_mode_dind_desc">在容器内启动独立 Docker 守护进程，与宿主机完全隔离（需 --privileged 权限，需重建镜像）</span>
+              </div>
+            </label>
+            <label class="docker-mode-option">
+              <input type="radio" name="docker-mode" value="none">
+              <div class="docker-mode-label-wrap">
+                <span class="mode-name" data-i18n="docker_mode_none">不启用 Docker</span>
+                <span class="mode-desc" data-i18n="docker_mode_none_desc">不挂载 Docker Socket，适合不需要 Docker 功能的场景</span>
+              </div>
+            </label>
+          </div>
+        </div>
+        <div class="adv-block">
           <div class="adv-block-title" data-i18n="adv_title_volumes">目录挂载</div>
           <div id="named-vols-display" class="named-vols-block"></div>
           <hr class="adv-divider">
@@ -479,6 +505,32 @@
           </div>
           <div id="ws-port-map-list"></div>
           <div id="ws-custom-port-status" style="font-size:11px;margin-top:4px"></div>
+        </div>
+        <div class="adv-block">
+          <div class="adv-block-title" data-i18n="docker_mode_title">Docker 访问模式</div>
+          <div class="docker-mode-block" id="ws-docker-mode-selector">
+            <label class="docker-mode-option">
+              <input type="radio" name="ws-docker-mode" value="host" checked>
+              <div class="docker-mode-label-wrap">
+                <span class="mode-name" data-i18n="docker_mode_host">宿主机 Docker</span>
+                <span class="mode-desc" data-i18n="docker_mode_host_desc">挂载宿主机 Docker Socket，可在容器内管理宿主机所有容器（适合自我进化、构建镜像）</span>
+              </div>
+            </label>
+            <label class="docker-mode-option">
+              <input type="radio" name="ws-docker-mode" value="dind">
+              <div class="docker-mode-label-wrap">
+                <span class="mode-name" data-i18n="docker_mode_dind">容器内 Docker（DinD）</span>
+                <span class="mode-desc" data-i18n="docker_mode_dind_desc">在容器内启动独立 Docker 守护进程，与宿主机完全隔离（需 --privileged 权限，需重建镜像）</span>
+              </div>
+            </label>
+            <label class="docker-mode-option">
+              <input type="radio" name="ws-docker-mode" value="none">
+              <div class="docker-mode-label-wrap">
+                <span class="mode-name" data-i18n="docker_mode_none">不启用 Docker</span>
+                <span class="mode-desc" data-i18n="docker_mode_none_desc">不挂载 Docker Socket，适合不需要 Docker 功能的场景</span>
+              </div>
+            </label>
+          </div>
         </div>
         <div class="adv-block">
           <div class="adv-block-title" data-i18n="adv_title_volumes">目录挂载</div>
@@ -1459,6 +1511,11 @@ function loadConfigIntoWizardForm() {
   document.getElementById('mode-lite').classList.toggle('active', selectedMode === 'lite');
   document.getElementById('vnc-group').style.display = selectedMode === 'desktop' ? '' : 'none';
 
+  const dockerMode = cfg.DOCKER_SOCK_MODE || 'host';
+  document.querySelectorAll('input[name="docker-mode"]').forEach(r => {
+    r.checked = r.value === dockerMode;
+  });
+
   renderNamedVolumes('named-vols-display');
   renderVolumeList('volume-list', cfg.CUSTOM_VOLUMES || []);
   renderPortMapList('port-map-list', cfg.CUSTOM_PORTS || []);
@@ -1482,6 +1539,9 @@ function collectWizardForm() {
   cfg.PORT_NOVNC    = parseInt(document.getElementById('cfg-port-novnc').value)    || 20004;
   cfg.PORT_VNC      = parseInt(document.getElementById('cfg-port-vnc').value)      || 20005;
   // Audio uses /audio path on PORT_NOVNC, no separate PORT_AUDIO needed
+
+  const dockerModeRadio = document.querySelector('input[name="docker-mode"]:checked');
+  cfg.DOCKER_SOCK_MODE = dockerModeRadio ? dockerModeRadio.value : 'host';
 
   cfg.CUSTOM_VOLUMES = collectVolumeList('volume-list');
   cfg.CUSTOM_PORTS = collectPortMapList('port-map-list');
@@ -2056,6 +2116,11 @@ function loadConfigIntoWorkspaceForm() {
   document.getElementById('ws-mode-desktop').classList.toggle('active', wsMode === 'desktop');
   document.getElementById('ws-mode-lite').classList.toggle('active', wsMode === 'lite');
 
+  const wsDockerMode = cfg.DOCKER_SOCK_MODE || 'host';
+  document.querySelectorAll('input[name="ws-docker-mode"]').forEach(r => {
+    r.checked = r.value === wsDockerMode;
+  });
+
   renderNamedVolumes('ws-named-vols-display');
   renderVolumeList('ws-volume-list', cfg.CUSTOM_VOLUMES || []);
   renderPortMapList('ws-port-map-list', cfg.CUSTOM_PORTS || []);
@@ -2079,6 +2144,9 @@ function collectWorkspaceForm() {
   cfg.PORT_NOVNC    = parseInt(document.getElementById('ws-port-novnc').value)    || 20004;
   cfg.PORT_VNC      = parseInt(document.getElementById('ws-port-vnc').value)      || 20005;
   // Audio uses /audio path on novnc port, no separate port needed
+
+  const wsDockerModeRadio = document.querySelector('input[name="ws-docker-mode"]:checked');
+  cfg.DOCKER_SOCK_MODE = wsDockerModeRadio ? wsDockerModeRadio.value : 'host';
 
   cfg.CUSTOM_VOLUMES = collectVolumeList('ws-volume-list');
   cfg.CUSTOM_PORTS = collectPortMapList('ws-port-map-list');

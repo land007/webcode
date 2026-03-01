@@ -162,6 +162,20 @@ details[open] > summary { margin-bottom: 10px; }
   word-break: break-all;
 }
 
+/* ── Docker mode selector ───────────────────────────────────── */
+.docker-mode-block { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.docker-mode-option {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 10px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--border); transition: border-color .15s;
+}
+.docker-mode-option:hover { border-color: var(--accent); }
+.docker-mode-option input[type="radio"] { margin-top: 2px; accent-color: var(--accent); flex-shrink: 0; }
+.docker-mode-option input[type="radio"]:checked + .docker-mode-label-wrap { color: var(--text); }
+.docker-mode-label-wrap { display: flex; flex-direction: column; gap: 2px; }
+.docker-mode-label-wrap .mode-name { font-size: 13px; font-weight: 500; }
+.docker-mode-label-wrap .mode-desc { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+
 /* ── Named volume display ───────────────────────────────────── */
 .named-vols-block { margin-bottom: 8px; }
 .named-vol-row {
