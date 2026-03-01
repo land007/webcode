@@ -9,8 +9,8 @@ const DEFAULT_CONFIG = {
   VNC_PASSWORD: 'changeme',
   VNC_RESOLUTION: '1920x1080',
   OPENCLAW_TOKEN: 'changeme',
-  MODE: 'desktop',
-  IMAGE_NAME: 'webcode',  // Image name: 'webcode' for full, 'webcode_lite' for lite
+  MODE: 'lite',
+  IMAGE_NAME: 'webcode_lite',  // Image name: 'webcode' for full, 'webcode_lite' for lite
   IMAGE_TAG: 'latest',    // Image tag (always 'latest' for now)
   IMAGE_REGISTRY: 'land007',  // Image registry: 'land007' or custom fork
   GIT_USER_NAME: '',
@@ -29,7 +29,7 @@ const DEFAULT_CONFIG = {
   // 自定义端口映射：[{ host: '8080', container: '3000' }, ...]
   CUSTOM_PORTS: [],
   // Docker 访问模式：'host'（挂载宿主机 socket）| 'dind'（容器内 dockerd）| 'none'（不启用）
-  DOCKER_SOCK_MODE: 'host'
+  DOCKER_SOCK_MODE: 'none'
 };
 
 function getConfigPath() {

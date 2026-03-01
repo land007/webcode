@@ -115,11 +115,11 @@ function buildDockerPath() {
 }
 
 function buildEnv(cfg) {
-  const imageName = cfg.IMAGE_NAME || modeToImageName(cfg.MODE || 'desktop');
+  const imageName = cfg.IMAGE_NAME || modeToImageName(cfg.MODE || 'lite');
   return Object.assign({}, process.env, {
     PATH: buildDockerPath(),
     COMPOSE_PROJECT_NAME: cfg.PROJECT_NAME || 'webcode',
-    MODE: cfg.MODE || 'desktop',
+    MODE: cfg.MODE || 'lite',
     AUTH_USER: cfg.AUTH_USER,
     AUTH_PASSWORD: cfg.AUTH_PASSWORD,
     OPENCLAW_TOKEN: cfg.OPENCLAW_TOKEN,
@@ -129,7 +129,7 @@ function buildEnv(cfg) {
     GIT_USER_NAME: cfg.GIT_USER_NAME || '',
     GIT_USER_EMAIL: cfg.GIT_USER_EMAIL || '',
     DNA_REPO_URL: cfg.DNA_REPO_URL || 'https://github.com/land007/webcode',
-    DOCKER_SOCK_MODE: cfg.DOCKER_SOCK_MODE || 'host',
+    DOCKER_SOCK_MODE: cfg.DOCKER_SOCK_MODE || 'none',
     IMAGE_NAME: imageName,
     IMAGE_TAG: cfg.IMAGE_TAG || 'latest',
     IMAGE_REGISTRY: cfg.IMAGE_REGISTRY || 'land007'
@@ -182,7 +182,7 @@ async function dockerUp(cfg, onData, onClose, options = {}) {
   // ─── Pull image with fallback to ghcr.io ─────────────────────────────────────────────────────────────
   // 跳过 pull（用于快速重启）
   if (!options.skipPull) {
-    const imageName = modeToImageName(cfg.MODE || 'desktop');
+    const imageName = modeToImageName(cfg.MODE || 'lite');
     const imageRegistry = cfg.IMAGE_REGISTRY || 'land007';
     const imageTag = cfg.IMAGE_TAG || 'latest';
     const fullImageName = `${imageRegistry}/${imageName}:${imageTag}`;
