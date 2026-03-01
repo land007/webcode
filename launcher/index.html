@@ -272,7 +272,7 @@
 
     <!-- Step 3: Launch -->
     <div id="step-3" style="display:none">
-      <p class="text-muted text-sm" style="margin-bottom:12px" data-i18n="step3_desc">正在启动 webcode 容器，首次运行将拉取镜像（约 2–5 分钟）…</p>
+      <p class="text-muted text-sm" style="margin-bottom:12px" data-i18n="step3_desc">正在启动 webcode 容器，如本地无镜像将自动拉取（约 2–5 分钟）…</p>
       <div class="log-area" id="launch-log" style="height:240px"></div>
       <div class="action-row">
         <button class="btn-secondary btn-sm" id="btn-step3-back" data-i18n="btn_step3_back">返回配置</button>
@@ -1627,18 +1627,43 @@ function startLaunch(logId, nextBtn, backBtn) {
 
   ensureInstanceComposeFile(activeInstanceId);
 
-  app.dockerUp(cfg,
-    (data) => appendLog(logId, data),
-    (code) => {
-      document.getElementById(backBtn).disabled = false;
-      if (code === 0) {
-        appendLog(logId, t('dyn_launch_ok'));
-        document.getElementById(nextBtn).disabled = false;
-      } else {
-        appendLog(logId, t('dyn_launch_fail', { code }));
-      }
+  // Check if image exists locally first
+  const imageName = (cfg.IMAGE_NAME || (cfg.MODE === 'lite' ? 'webcode_lite' : 'webcode'));
+  const fullImageName = `${cfg.IMAGE_REGISTRY || 'land007'}/${imageName}:${cfg.IMAGE_TAG || 'latest'}`;
+
+  app.checkLocalImage(cfg, (exists) => {
+    if (exists) {
+      appendLog(logId, '✓ 检测到本地镜像: ' + fullImageName + '\n');
+      appendLog(logId, '⚡ 跳过镜像拉取，直接启动...\n\n');
+      app.dockerUp(cfg,
+        (data) => appendLog(logId, data),
+        (code) => {
+          document.getElementById(backBtn).disabled = false;
+          if (code === 0) {
+            appendLog(logId, t('dyn_launch_ok'));
+            document.getElementById(nextBtn).disabled = false;
+          } else {
+            appendLog(logId, t('dyn_launch_fail', { code }));
+          }
+        },
+        { skipPull: true }
+      );
+    } else {
+      appendLog(logId, '⬇ 本地未找到镜像，开始拉取: ' + fullImageName + '\n\n');
+      app.dockerUp(cfg,
+        (data) => appendLog(logId, data),
+        (code) => {
+          document.getElementById(backBtn).disabled = false;
+          if (code === 0) {
+            appendLog(logId, t('dyn_launch_ok'));
+            document.getElementById(nextBtn).disabled = false;
+          } else {
+            appendLog(logId, t('dyn_launch_fail', { code }));
+          }
+        }
+      );
     }
-  );
+  });
 }
 
 document.getElementById('btn-step3-back').addEventListener('click', () => setStep(2));
@@ -1653,18 +1678,42 @@ document.getElementById('btn-step4-start').addEventListener('click', () => {
   document.getElementById('relaunch-log').textContent = '';
   document.getElementById('btn-step4-start').disabled = true;
 
-  app.dockerUp(cfg,
-    (data) => appendLog('relaunch-log', data),
-    (code) => {
-      document.getElementById('btn-step4-start').disabled = false;
-      if (code === 0) {
-        appendLog('relaunch-log', t('dyn_relaunch_ok'));
-        showWorkspace();
-      } else {
-        appendLog('relaunch-log', t('dyn_launch_fail', { code }));
-      }
+  // Check if image exists locally first
+  const imageName = (cfg.IMAGE_NAME || (cfg.MODE === 'lite' ? 'webcode_lite' : 'webcode'));
+  const fullImageName = `${cfg.IMAGE_REGISTRY || 'land007'}/${imageName}:${cfg.IMAGE_TAG || 'latest'}`;
+
+  app.checkLocalImage(cfg, (exists) => {
+    if (exists) {
+      document.getElementById('relaunch-log').textContent = '✓ 检测到本地镜像: ' + fullImageName + '\n⚡ 跳过镜像拉取，直接启动...\n\n';
+      app.dockerUp(cfg,
+        (data) => appendLog('relaunch-log', data),
+        (code) => {
+          document.getElementById('btn-step4-start').disabled = false;
+          if (code === 0) {
+            appendLog('relaunch-log', t('dyn_relaunch_ok'));
+            showWorkspace();
+          } else {
+            appendLog('relaunch-log', t('dyn_launch_fail', { code }));
+          }
+        },
+        { skipPull: true }
+      );
+    } else {
+      document.getElementById('relaunch-log').textContent = '⬇ 本地未找到镜像，开始拉取: ' + fullImageName + '\n\n';
+      app.dockerUp(cfg,
+        (data) => appendLog('relaunch-log', data),
+        (code) => {
+          document.getElementById('btn-step4-start').disabled = false;
+          if (code === 0) {
+            appendLog('relaunch-log', t('dyn_relaunch_ok'));
+            showWorkspace();
+          } else {
+            appendLog('relaunch-log', t('dyn_launch_fail', { code }));
+          }
+        }
+      );
     }
-  );
+  });
 });
 
 document.getElementById('btn-step4-config').addEventListener('click', () => {
@@ -2060,7 +2109,8 @@ document.getElementById('btn-restart').addEventListener('click', () => {
   btn.disabled = true;
   btn.innerHTML = '<span class="loading-spinner" style="width:14px;height:14px;border-width:1.5px"></span>\u00a0<span>' + t('dyn_restarting') + '</span>';
   app.dockerDown(cfg, null, () => {
-    app.dockerUp(cfg, null, () => {
+    // Skip pull on restart since image was just running
+    app.dockerUp(cfg, null, { skipPull: true }, () => {
       iframeLoaded['ide'] = iframeLoaded['kanban'] = iframeLoaded['vnc'] = iframeLoaded['ai'] = false;
       if (currentTab !== 'status') activateTab(currentTab);
       startLogStream();

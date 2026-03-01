@@ -352,6 +352,30 @@ function dockerPs(cfg, callback) {
   });
 }
 
+/**
+ * Check if a Docker image exists locally
+ * @param {Object} cfg - Configuration object
+ * @param {Function} callback - (exists: boolean) => void
+ */
+function checkLocalImage(cfg, callback) {
+  const imageName = modeToImageName(cfg.MODE || 'desktop');
+  const imageRegistry = cfg.IMAGE_REGISTRY || 'land007';
+  const imageTag = cfg.IMAGE_TAG || 'latest';
+  const fullImageName = `${imageRegistry}/${imageName}:${imageTag}`;
+
+  const proc = spawn('docker', ['images', '--format', '{{.Repository}}:{{.Tag}}'], {
+    env: Object.assign({}, process.env, { PATH: buildDockerPath() })
+  });
+
+  let out = '';
+  proc.stdout.on('data', (d) => { out += d.toString(); });
+  proc.on('close', () => {
+    const images = out.trim().split('\n');
+    const exists = images.includes(fullImageName);
+    callback(exists);
+  });
+}
+
 // Check docker is installed and running
 function checkDocker(callback) {
   const result = { installed: false, running: false, version: '', error: null };
@@ -630,6 +654,7 @@ module.exports = {
   dockerLogs,
   dockerPs,
   checkDocker,
+  checkLocalImage,
   startPolling,
   stopPolling,
   supervisorStatus,
