@@ -271,26 +271,11 @@ COPY configs/audio-bar.js /tmp/
 COPY configs/touch-handler.js /tmp/
 COPY configs/xsession /tmp/
 COPY configs/desktop-shortcuts/ /tmp/desktop-shortcuts/
-COPY scripts/fix-novnc-html.sh /tmp/fix-novnc-html.sh
-RUN if [ "$INSTALL_DESKTOP" = "true" ]; then \
-        cp /tmp/supervisor-audio.conf /etc/supervisor/conf.d/ \
-        && cp /tmp/supervisor-dashboard.conf /etc/supervisor/conf.d/ \
-        && cp /tmp/dashboard-server.js /opt/ \
-        && cp /tmp/dashboard.html /opt/ \
-        && cp /tmp/audio-ws-server.py /opt/ \
-        && cp /tmp/audio-ws-wrapper.sh /opt/ \
-        && chmod +x /opt/audio-ws-server.py /opt/audio-ws-wrapper.sh \
-        && cp /tmp/audio-player.html /opt/noVNC/audio.html \
-        && cp /tmp/audio-bar.js /opt/noVNC/audio-bar.js \
-        && cp /tmp/touch-handler.js /opt/noVNC/touch-handler.js \
-        && sh /tmp/fix-novnc-html.sh \
-        && cp /tmp/xsession /opt/xsession \
-        && chmod +x /opt/xsession \
-        && cp -r /tmp/desktop-shortcuts/ /opt/; \
-    fi \
+COPY scripts/setup-desktop.sh /tmp/setup-desktop.sh
+RUN if [ "$INSTALL_DESKTOP" = "true" ]; then sh /tmp/setup-desktop.sh; fi \
     rm -rf /tmp/supervisor-audio.conf /tmp/supervisor-dashboard.conf /tmp/dashboard-server.js /tmp/dashboard.html \
            /tmp/audio-ws-server.py /tmp/audio-ws-wrapper.sh /tmp/audio-player.html /tmp/audio-bar.js \
-           /tmp/touch-handler.js /tmp/xsession /tmp/desktop-shortcuts/ /tmp/fix-novnc-html.sh
+           /tmp/touch-handler.js /tmp/xsession /tmp/desktop-shortcuts/ /tmp/setup-desktop.sh
 
 COPY scripts/startup.sh /opt/startup.sh
 COPY scripts/vnc-setpass.py /opt/vnc-setpass.py
