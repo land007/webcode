@@ -281,10 +281,10 @@ RUN if [ "$INSTALL_DESKTOP" = "true" ]; then \
         && chmod +x /opt/audio-ws-server.py /opt/audio-ws-wrapper.sh \
         && cp /tmp/audio-player.html /opt/noVNC/audio.html \
         && cp /tmp/audio-bar.js /opt/noVNC/audio-bar.js \
-        && sed -i 's|<head>|<head>\n    <meta charset="UTF-8">|' /opt/noVNC/vnc.html \
-        && sed -i 's|</body>|<script src="audio-bar.js"></script>\n</body>|' /opt/noVNC/vnc.html \
+        && sed -i $'s|<head>|<head>\\\n    <meta charset="UTF-8">|' /opt/noVNC/vnc.html \
+        && sed -i $'s|</body>|<script src="audio-bar.js"></script>\\\n</body>|' /opt/noVNC/vnc.html \
         && cp /tmp/touch-handler.js /opt/noVNC/touch-handler.js \
-        && sed -i 's|</body>|<script src="touch-handler.js"></script>\n</body>|' /opt/noVNC/vnc.html \
+        && sed -i $'s|</body>|<script src="touch-handler.js"></script>\\\n</body>|' /opt/noVNC/vnc.html \
         && cp /tmp/xsession /opt/xsession \
         && chmod +x /opt/xsession \
         && cp -r /tmp/desktop-shortcuts/ /opt/; \
@@ -296,7 +296,8 @@ RUN if [ "$INSTALL_DESKTOP" = "true" ]; then \
 COPY scripts/startup.sh /opt/startup.sh
 COPY scripts/vnc-setpass.py /opt/vnc-setpass.py
 COPY scripts/analytics.sh /scripts/analytics.sh
-RUN chmod +x /opt/startup.sh /scripts/analytics.sh
+COPY scripts/dockerd-condition.sh /usr/local/bin/dockerd-condition.sh
+RUN chmod +x /opt/startup.sh /scripts/analytics.sh /usr/local/bin/dockerd-condition.sh
 
 RUN echo "land007/webcode" > /.image_name && \
     echo $(date "+%Y-%m-%d_%H:%M:%S") > /.image_time
