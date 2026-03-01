@@ -14,8 +14,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Docker-in-Docker capability (Docker CLI inside container)
 
 **Port Architecture:**
-- **10001-10005**: Internal application ports (actual app listeners)
-- **20001-20005**: External access ports via Caddy (with Basic Auth)
+- **10001-10006**: Internal application ports (actual app listeners)
+- **20001-20004**: External access ports via dashboard-server.js proxy (with Basic Auth)
 - **11001-11004**: Launcher proxy ports (desktop app internal use, no auth)
 
 ## Running the Environment
@@ -45,13 +45,39 @@ Default Basic Auth credentials: `admin` / `changeme` (configurable via `AUTH_USE
 
 ## Building the Docker Image
 
+### Full Version (with Desktop)
+
 ```bash
-# Local build
+# Local build (single architecture, matches your host)
 docker build -t webcode .
 
-# Multi-arch build (matches CI)
-docker buildx build --platform linux/amd64,linux/arm64 -t webcode .
+# Multi-arch build (amd64 + arm64, matches CI)
+docker buildx build --platform linux/amd64,linux/arm64 -t land007/webcode:latest .
+
+# Multi-arch build with push to registry
+docker buildx build --platform linux/amd64,linux/arm64 -t land007/webcode:latest --push .
 ```
+
+**Full version includes:** GNOME desktop, VNC/noVNC, fcitx Chinese input, Chrome/Chromium browser, Theia IDE, Vibe Kanban, OpenClaw.
+
+**Image size:** ~2.5-3 GB
+
+### Lite Version (without Desktop)
+
+```bash
+# Local build (single architecture)
+docker build --build-arg INSTALL_DESKTOP=false -t webcode_lite:latest .
+
+# Multi-arch build (amd64 + arm64)
+docker buildx build --build-arg INSTALL_DESKTOP=false --platform linux/amd64,linux/arm64 -t land007/webcode_lite:latest .
+
+# Multi-arch build with push
+docker buildx build --build-arg INSTALL_DESKTOP=false --platform linux/amd64,linux/arm64 -t land007/webcode_lite:latest --push .
+```
+
+**Lite version includes:** Theia IDE, Vibe Kanban, OpenClaw, Dashboard proxy. **No** VNC, GNOME desktop, fcitx, or browser.
+
+**Image size:** ~1-1.5 GB (50% smaller than full version)
 
 ## Architecture
 
@@ -70,11 +96,18 @@ docker buildx build --platform linux/amd64,linux/arm64 -t webcode .
 12. **Config files** — copied last so most changes don't bust Theia cache
 
 ### Startup Modes (`scripts/startup.sh`)
-- **desktop mode**: Runs full GNOME session via `supervisord.conf` (includes xvnc, desktop, novnc, theia, vibe-kanban, openclaw, caddy)
-- **lite mode**: Runs only Theia + Vibe Kanban + OpenClaw + Caddy via `supervisord-lite.conf` (no VNC/desktop overhead)
+- **desktop mode**: Runs full GNOME session via `supervisord.conf` (includes xvnc, desktop, novnc, theia, vibe-kanban, openclaw, dashboard)
+- **lite mode**: Runs only Theia + Vibe Kanban + OpenClaw + Dashboard via `supervisord-lite.conf` (no VNC/desktop overhead)
 
 ### Authentication Architecture
-Caddy serves as a unified Basic Auth gateway in front of Theia, Vibe Kanban, and OpenClaw. Internal services bind to `127.0.0.1` only; Caddy listens on `0.0.0.0` and proxies authenticated requests. noVNC/VNC retain their own VNC password authentication.
+The dashboard-server.js Node.js process acts as a unified authentication and proxy gateway:
+- **Port 20000**: Dashboard UI with Basic Auth
+- **Port 20001**: Theia IDE proxy (Basic Auth → 127.0.0.1:10001)
+- **Port 20002**: Vibe Kanban proxy (Basic Auth → 127.0.0.1:10002)
+- **Port 20003**: OpenClaw proxy (Bearer token → 127.0.0.1:10003)
+- **Port 20004**: noVNC proxy (Basic Auth + path-based routing for /audio, /websockify)
+
+Internal services bind to `127.0.0.1` only. The dashboard proxy listens on `0.0.0.0` and injects authentication headers. noVNC/VNC retain their own VNC password authentication.
 
 ### Key Config Files
 | File | Purpose |
@@ -85,8 +118,8 @@ Caddy serves as a unified Basic Auth gateway in front of Theia, Vibe Kanban, and
 | `configs/supervisor-theia.conf` | Theia process (port 10001, serves `/home/ubuntu/projects`) |
 | `configs/supervisor-vibe-kanban.conf` | Vibe Kanban process (port 10002) |
 | `configs/supervisor-openclaw.conf` | OpenClaw gateway process (port 10003, launched via npx) |
-| `configs/Caddyfile` | Caddy reverse proxy config with Basic Auth (ports 20001-20004) |
-| `configs/supervisor-caddy.conf` | Caddy process (ports 20001-20004) |
+| `configs/dashboard-server.js` | Dashboard + proxy server (ports 20000-20004, handles Basic Auth) |
+| `configs/supervisor-dashboard.conf` | Dashboard process configuration |
 | `configs/supervisord.conf` | Main supervisor config, includes noVNC (port 10004) and TigerVNC (port 10005) |
 | `configs/xsession` | GNOME Flashback session startup script |
 | `configs/desktop-shortcuts/` | `.desktop` files for Chrome, Theia, Vibe Kanban on desktop |

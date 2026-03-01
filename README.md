@@ -215,6 +215,59 @@ docker compose up -d
 
 ---
 
+## 🔨 Building from Source
+
+### Build Full Version (with Desktop)
+
+**Full version** includes GNOME desktop, VNC/noVNC, Chinese input (fcitx), browser, Theia IDE, Vibe Kanban, and OpenClaw.
+
+```bash
+# Clone repository
+git clone https://github.com/land007/webcode.git && cd webcode
+
+# Local build (single architecture)
+docker build -t webcode .
+
+# Multi-arch build (amd64 + arm64)
+docker buildx build --platform linux/amd64,linux/arm64 -t webcode:latest .
+```
+
+**Image size:** ~2.5-3 GB
+
+### Build Lite Version (without Desktop)
+
+**Lite version** only includes Theia IDE, Vibe Kanban, OpenClaw, and Dashboard proxy. No VNC, desktop environment, or browser.
+
+```bash
+# Clone repository
+git clone https://github.com/land007/webcode.git && cd webcode
+
+# Local build (single architecture)
+docker build --build-arg INSTALL_DESKTOP=false -t webcode_lite:latest .
+
+# Multi-arch build (amd64 + arm64)
+docker buildx build --build-arg INSTALL_DESKTOP=false --platform linux/amd64,linux/arm64 -t land007/webcode_lite:latest .
+```
+
+**Image size:** ~1-1.5 GB (50% smaller than full version)
+
+### Version Comparison
+
+| Feature | Full Version | Lite Version |
+|---------|--------------|--------------|
+| Theia IDE | ✅ | ✅ |
+| Vibe Kanban | ✅ | ✅ |
+| OpenClaw AI | ✅ | ✅ |
+| Dashboard Proxy | ✅ | ✅ |
+| GNOME Desktop | ✅ | ❌ |
+| VNC/noVNC | ✅ | ❌ |
+| fcitx Chinese Input | ✅ | ❌ |
+| Chrome/Chromium | ✅ | ❌ |
+| Image Size | ~2.5-3 GB | ~1-1.5 GB |
+| Use Case | Full desktop experience | Lightweight development only |
+
+---
+
 ## 🖥️ Run Modes
 
 **Desktop mode** (default) — Full GNOME Linux desktop in your browser, with Chinese input (fcitx + Google Pinyin):
@@ -478,6 +531,59 @@ cp .env.example .env
 # 按需修改 .env，然后：
 docker compose up -d
 ```
+
+---
+
+## 🔨 从源码构建
+
+### 构建完整版（含桌面）
+
+**完整版**包含 GNOME 桌面、VNC/noVNC、中文输入（fcitx）、浏览器、Theia IDE、Vibe Kanban 和 OpenClaw。
+
+```bash
+# 克隆仓库
+git clone https://github.com/land007/webcode.git && cd webcode
+
+# 本地构建（单架构）
+docker build -t webcode .
+
+# 多架构构建（amd64 + arm64）
+docker buildx build --platform linux/amd64,linux/arm64 -t webcode:latest .
+```
+
+**镜像大小：** ~2.5-3 GB
+
+### 构建精简版（无桌面）
+
+**精简版**仅包含 Theia IDE、Vibe Kanban、OpenClaw 和 Dashboard 代理，不包含 VNC、桌面环境和浏览器。
+
+```bash
+# 克隆仓库
+git clone https://github.com/land007/webcode.git && cd webcode
+
+# 本地构建（单架构）
+docker build --build-arg INSTALL_DESKTOP=false -t webcode_lite:latest .
+
+# 多架构构建（amd64 + arm64）
+docker buildx build --build-arg INSTALL_DESKTOP=false --platform linux/amd64,linux/arm64 -t land007/webcode_lite:latest .
+```
+
+**镜像大小：** ~1-1.5 GB（比完整版小 50%）
+
+### 版本对比
+
+| 功能 | 完整版 | 精简版 |
+|------|--------|--------|
+| Theia IDE | ✅ | ✅ |
+| Vibe Kanban | ✅ | ✅ |
+| OpenClaw AI | ✅ | ✅ |
+| Dashboard 代理 | ✅ | ✅ |
+| GNOME 桌面 | ✅ | ❌ |
+| VNC/noVNC | ✅ | ❌ |
+| fcitx 中文输入 | ✅ | ❌ |
+| Chrome/Chromium | ✅ | ❌ |
+| 镜像大小 | ~2.5-3 GB | ~1-1.5 GB |
+| 适用场景 | 完整桌面体验 | 仅需轻量开发 |
 
 ---
 
