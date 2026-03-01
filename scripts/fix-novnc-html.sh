@@ -6,13 +6,19 @@ set -e
 
 VNC_HTML="/opt/noVNC/vnc.html"
 
-# Add UTF-8 meta tag after <head>
-sed -i '/<head>/a\    <meta charset="UTF-8">' "$VNC_HTML"
-
-# Add audio-bar.js script before </body>
-sed -i 's|</body>|<script src="audio-bar.js"></script>|' "$VNC_HTML"
-sed -i '/<script src="audio-bar.js"><\/script>/a\</body>' "$VNC_HTML"
-
-# Add touch-handler.js script before </body>
-sed -i 's|</body>|<script src="touch-handler.js"></script>|' "$VNC_HTML"
-sed -i '/<script src="touch-handler.js"><\/script>/a\</body>' "$VNC_HTML"
+# Use awk for reliable multi-line text insertion
+awk '
+/<head>/ {
+    print
+    print "    <meta charset=\"UTF-8\">"
+    next
+}
+/<\/body>/ {
+    # Insert scripts before </body> in reverse order
+    print "<script src=\"touch-handler.js\"></script>"
+    print "<script src=\"audio-bar.js\"></script>"
+    print
+    next
+}
+{ print }
+' "$VNC_HTML" > "$VNC_HTML.tmp" && mv "$VNC_HTML.tmp" "$VNC_HTML"
