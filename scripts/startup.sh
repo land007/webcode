@@ -159,6 +159,10 @@ nohup npm install -g openclaw@2026.2.22 >> /tmp/npm-upgrade.log 2>&1 &
 su -l ubuntu -c \
     'source ~/.nvm/nvm.sh 2>/dev/null && npm install -g @anthropic-ai/claude-code@latest >> /tmp/claude-upgrade.log 2>&1' &
 
+# ─── Export service enable flags for supervisor ───────────────────────
+export ENABLE_KANBAN="${ENABLE_KANBAN:-true}"
+export ENABLE_OPENCLAW="${ENABLE_OPENCLAW:-true}"
+
 # ─── Mode selection ─────────────────────────────────────────────────
 if [ "$MODE" = "lite" ]; then
     echo "[startup] Lite mode: starting Theia + Vibe Kanban only (no VNC desktop)"
