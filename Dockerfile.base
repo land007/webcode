@@ -77,3 +77,4 @@ LABEL org.opencontainers.image.version="${WEBCODE_VERSION:-dev}" \
 WORKDIR /home/ubuntu
 
 #docker build -f Dockerfile.base -t land007/webcode_base:latest .
+# Trigger rebuild 2025-03-05
