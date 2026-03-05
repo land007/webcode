@@ -239,6 +239,12 @@ COPY scripts/analytics.sh /scripts/analytics.sh
 COPY scripts/dockerd-condition.sh /usr/local/bin/dockerd-condition.sh
 RUN chmod +x /opt/startup.sh /scripts/analytics.sh /usr/local/bin/dockerd-condition.sh
 
+# ─── 13. Skills for Claude Code (host-ops, etc.) ───────────────────────
+COPY skills/ /opt/skills/
+RUN mkdir -p /home/ubuntu/.claude/skills && \
+    cp -r /opt/skills/* /home/ubuntu/.claude/skills/ && \
+    chown -R ubuntu:ubuntu /home/ubuntu/.claude/skills
+
 RUN echo "land007/webcode" > /.image_name && \
     echo $(date "+%Y-%m-%d_%H:%M:%S") > /.image_time
 

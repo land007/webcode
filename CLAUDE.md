@@ -176,3 +176,31 @@ GitHub Actions (`.github/workflows/`) builds and pushes multi-arch images (`linu
 - Theia is pinned to `1.60.2` across all `@theia/*` packages to ensure compatibility with native build dependencies.
 - When modifying the Dockerfile, keep config file `COPY` instructions near the end to maximize layer cache reuse for the expensive Theia build step.
 - OpenClaw and Vibe Kanban are both launched via `npx` at runtime (not pre-installed in the image), so first startup may take longer while packages are fetched. Run `docker exec -it -u ubuntu webcode openclaw onboard` to complete OpenClaw initial configuration.
+
+## Git Commit Message Convention
+
+**All commit messages MUST be written in Chinese.**
+
+When creating commits, follow these guidelines:
+
+- Use clear, descriptive Chinese to explain the change
+- Format: `<类型>: <简短描述>` where 类型 can be:
+  - `新增`: 添加新功能
+  - `修复`: 修复bug
+  - `优化`: 性能或代码质量优化
+  - `重构`: 代码重构
+  - `文档`: 文档更新
+  - `配置`: 配置修改
+
+Examples:
+```
+新增: 添加 code-server 中文语言包支持
+修复: 解决 dashboard-server.js 代理跨域问题
+优化: 缩小 Docker 镜像大小，移除不必要的依赖
+配置: 更新 docker-compose.yml 端口映射
+```
+
+Co-authored-by attribution should still use English format:
+```
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+```

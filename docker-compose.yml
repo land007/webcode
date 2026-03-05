@@ -37,6 +37,9 @@ services:
       - DNA_REPO_URL=${DNA_REPO_URL:-https://github.com/land007/webcode}
       - ENABLE_KANBAN=${ENABLE_KANBAN:-true}
       - ENABLE_OPENCLAW=${ENABLE_OPENCLAW:-true}
+      - HOST_API_TOKEN=${HOST_API_TOKEN:-webcode-host-token-change-me}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     shm_size: "512m"
     security_opt:
       - seccomp=unconfined
