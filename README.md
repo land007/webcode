@@ -9,11 +9,7 @@
 ![Docker Pulls](https://img.shields.io/docker/pulls/land007/webcode)
 ![Platforms](https://img.shields.io/badge/platform-amd64%20%7C%20arm64-blue)
 
-> **📢 Project Migration**: The launcher and website have moved to separate repositories.
-> - **[Launcher](https://github.com/land007/webcode-launcher)** — Desktop app for managing containers
-> - **[Website](https://github.com/land007/webcode-website)** — Product website and downloads
->
-> This repository now focuses on the Docker service stack.
+**🌐 [Official Website](https://webcode.qhkly.com)** — Documentation, guides, and downloads
 
 [📦 Repository](https://github.com/land007/webcode) |
 [🚀 Launcher](https://github.com/land007/webcode-launcher) |
@@ -67,6 +63,8 @@ A Docker-based browser-accessible development environment with **Theia IDE**, **
 
 ## 🚀 Installation
 
+**📖 For detailed installation guides and documentation, visit [webcode.qhkly.com](https://webcode.qhkly.com)**
+
 ### Method 1: Desktop App — Download & Run (Easiest) ⭐
 
 No Git or Node.js needed. Just Docker Desktop + a download.
@@ -81,7 +79,7 @@ No Git or Node.js needed. Just Docker Desktop + a download.
 
 **Step 2 — Download the webcode Launcher app:**
 
-Go to the [**Releases page**](https://github.com/land007/webcode/releases/latest) and download the file for your platform:
+Visit **[webcode.qhkly.com](https://webcode.qhkly.com)** to download the launcher app for your platform, or download from the [**Releases page**](https://github.com/land007/webcode/releases/latest):
 
 | Platform | File to download |
 |----------|-----------------|
@@ -457,6 +455,8 @@ Follow the prompts, then refresh http://localhost:20003.
 
 ## 🚀 安装方式
 
+**📖 详细安装指南和文档，请访问 [webcode.qhkly.com](https://webcode.qhkly.com)**
+
 ### 方式一：下载桌面应用（最简单）⭐
 
 不需要安装 Git 或 Node.js，只需安装 Docker Desktop 后下载应用即可。
@@ -471,7 +471,7 @@ Follow the prompts, then refresh http://localhost:20003.
 
 **第二步 — 下载 webcode 启动器应用**：
 
-前往 [**Releases 页面**](https://github.com/land007/webcode/releases/latest) 下载对应平台的文件：
+访问 **[webcode.qhkly.com](https://webcode.qhkly.com)** 下载启动器应用，或前往 [**Releases 页面**](https://github.com/land007/webcode/releases/latest)：
 
 | 平台 | 下载文件 |
 |------|---------|
