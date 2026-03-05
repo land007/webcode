@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-mode="__MODE__" data-enable-kanban="__ENABLE_KANBAN__" data-enable-openclaw="__ENABLE_OPENCLAW__">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebCode Dashboard</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <!-- 主题初始化：在 CSS 加载前设置 data-theme，防止页面闪烁 -->
+  <script>(function(){
+    try { var t = localStorage.getItem('webcode-theme') || 'dark'; document.documentElement.setAttribute('data-theme', t); } catch(e) {}
+  })();</script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:        #1a1d23;
+      --surface:   #22262e;
+      --surface2:  #2a2f3a;
+      --border:    #363c4a;
+      --accent:    #4f8ef7;
+      --text:      #e2e8f0;
+      --text-muted:#8892a4;
+      --success:   #3ecf8e;
+      --tab-h:     42px;
+    }
+
+    html[data-theme="light"] {
+      --bg:        #f0f2f5;
+      --surface:   #ffffff;
+      --surface2:  #edf0f5;
+      --border:    #d1d5df;
+      --text:      #1e2130;
+      --text-muted:#5c667a;
+    }
+
+    @media (prefers-color-scheme: light) {
+      html[data-theme="system"] {
+        --bg:        #f0f2f5;
+        --surface:   #ffffff;
+        --surface2:  #edf0f5;
+        --border:    #d1d5df;
+        --text:      #1e2130;
+        --text-muted:#5c667a;
+      }
+    }
+
+    /* Hide elements in lite mode */
+    html[data-mode="lite"] .lite-mode-hide {
+      display: none !important;
+    }
+
+    /* Hide kanban/openclaw tabs when service is unavailable */
+    html[data-enable-kanban="false"] .kanban-tab-hide { display: none !important; }
+    html[data-enable-openclaw="false"] .openclaw-tab-hide { display: none !important; }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 14px;
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 4px;
+      height: var(--tab-h);
+      min-height: var(--tab-h);
+      max-height: var(--tab-h);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 12px;
+      flex-shrink: 0;
+      overflow: hidden;
+      transition: height 0.2s ease, opacity 0.2s ease;
+      position: relative;
+    }
+
+    /* ── Collapsed topbar ───────────────────────────────────────────────────── */
+    .topbar.collapsed {
+      position: fixed !important;
+      top: 0;
+      left: var(--drag-pos, calc(50% - 100px));
+      width: 200px;
+      height: 32px;
+      min-height: 32px;
+      max-height: 32px;
+      border-radius: 0 0 8px 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      z-index: 1000;
+      cursor: move;
+      padding: 4px 8px;
+      gap: 4px;
+      opacity: 0.6;
+      transition: opacity 0.2s ease;
+    }
+
+    .topbar.collapsed:hover {
+      opacity: 1;
+    }
+
+    /* Hide normal content when collapsed (except collapsed-tabs) */
+    .topbar.collapsed .topbar-content > *:not(.collapsed-tabs) {
+      display: none !important;
+    }
+
+    /* Collapsed tab icons container */
+    .collapsed-tabs {
+      display: none;
+      align-items: center;
+      gap: 4px;
+      flex: 1;
+      width: 100%;
+    }
+
+    .topbar.collapsed .collapsed-tabs {
+      display: flex;
+    }
+
+    /* Individual collapsed tab button */
+    .collapsed-tab-btn {
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      border: none;
+      background: transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .collapsed-tab-btn:hover { background: var(--surface2); color: var(--text); }
+    .collapsed-tab-btn.active { background: var(--surface2); color: var(--accent); }
+    .collapsed-tab-btn svg { width: 16px; height: 16px; }
+
+    /* Dotted texture for drag area */
+    .drag-area {
+      width: 40px;
+      height: 24px;
+      background-image: radial-gradient(circle, var(--text-muted) 1px, transparent 1px);
+      background-size: 8px 6px;
+      background-position: center;
+      opacity: 0.5;
+      cursor: move;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .drag-area:hover { opacity: 0.8; background-color: var(--surface2); }
+    .drag-area:active { cursor: grabbing; }
+
+    /* Push expand button to right side */
+    .collapsed-tabs .btn-collapse { margin-left: auto; }
+
+    /* Drag capture overlay (prevents drag interruption) */
+    .drag-capture-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: transparent;
+      cursor: grabbing;
+      display: none;
+    }
+
+    .drag-capture-overlay.active {
+      display: block;
+    }
+
+    /* Icon swap instead of rotation */
+    /* Expanded state: show ▲ (up arrow) - clicking collapses */
+    .btn-collapse .icon-collapse { display: none; }
+    .btn-collapse .icon-expand { display: block; }
+    /* Collapsed state: show ▼ (down arrow) - clicking expands */
+    .topbar.collapsed .btn-collapse .icon-collapse { display: block; }
+    .topbar.collapsed .btn-collapse .icon-expand { display: none; }
+
+    /* Hide expanded-state collapse button when collapsed */
+    .topbar.collapsed #collapseBtnExpanded { display: none !important; }
+
+    .topbar-expand-hint {
+      display: none; /* Not used in new design */
+    }
+
+    .topbar-content {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 4px;
+      width: 100%;
+      transition: opacity 0.2s ease;
+    }
+
+    /* Collapse toggle button */
+    .btn-collapse {
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-muted);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .btn-collapse:hover { background: var(--surface2); color: var(--text); }
+    .btn-collapse svg { width: 16px; height: 16px; }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--accent);
+      margin-right: 16px;
+      flex-shrink: 0;
+    }
+
+    .logo svg { width: 24px; height: 24px; flex-shrink: 0; }
+
+    .tab-btn {
+      height: 32px;
+      padding: 0 12px;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 13px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .tab-btn:hover { background: var(--surface2); color: var(--text); }
+    .tab-btn.active { background: var(--surface2); color: var(--text); }
+    .tab-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    .spacer { flex: 1; min-width: 0; }
+
+    .tab-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .btn-icon {
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-muted);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .btn-icon:hover { background: var(--surface2); color: var(--text); }
+    .btn-icon svg { width: 16px; height: 16px; }
+
+    .theme-cycle-btn,
+    .lang-cycle-btn {
+      padding: 3px 9px;
+      font-size: 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .theme-cycle-btn:hover,
+    .lang-cycle-btn:hover {
+      background: var(--surface);
+      border-color: var(--accent);
+    }
+
+    .theme-cycle-btn svg,
+    .lang-cycle-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 0 8px;
+      flex-shrink: 0;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 6px var(--success);
+      flex-shrink: 0;
+    }
+
+    .btn-fullscreen {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .btn-fullscreen:hover { background: var(--surface); border-color: var(--accent); }
+
+    .iframe-area {
+      flex: 1;
+      position: relative;
+      background: var(--bg);
+      min-height: 0;
+    }
+
+    .iframe-area iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: none;
+    }
+
+    .iframe-area iframe.visible { display: block; }
+
+    .loading-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      z-index: 10;
+    }
+
+    .loading-overlay.hidden { display: none; }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ── Status dot colors ───────────────────────────────────────────── */
+    .dot-green  { background: var(--success); box-shadow: 0 0 6px var(--success); }
+    .dot-yellow { background: #f5a623; box-shadow: 0 0 6px #f5a623; animation: pulse 1.2s infinite; }
+    .dot-red    { background: #e05252; }
+    .dot-gray   { background: var(--text-muted); box-shadow: none; }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    /* ── Status pill as button ───────────────────────────────────────── */
+    .status-pill {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0 8px;
+    }
+    .status-pill:hover { opacity: 0.8; }
+
+    /* ── Modal overlay ───────────────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.hidden { display: none; }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      width: 90vw;
+      max-width: 680px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      flex-shrink: 0;
+    }
+
+    .modal-header h3 {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .modal-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-body {
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    /* ── Settings modal ──────────────────────────────────────────────── */
+    .adv-block { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:12px 14px; margin-bottom:12px; }
+    .adv-block-title { font-size:12px; font-weight:600; color:var(--text); margin-bottom:10px; }
+    .config-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .form-group { margin-bottom:14px; }
+    .form-group label { display:block; font-size:12px; color:var(--text-muted); margin-bottom:4px; }
+    .form-group input[type="text"],.form-group input[type="password"] {
+      background:var(--surface2); border:1px solid var(--border); border-radius:6px;
+      color:var(--text); font-size:13px; padding:7px 10px; width:100%; outline:none; transition:border-color .15s;
+      box-sizing:border-box; }
+    .form-group input:focus { border-color:var(--accent); }
+    .input-with-eye { position:relative; display:block; }
+    .input-with-eye input { padding-right:34px; }
+    .eye-toggle { position:absolute; right:4px; top:50%; transform:translateY(-50%);
+      background:transparent; border:none; padding:0; width:26px; height:26px;
+      display:flex; align-items:center; justify-content:center; color:var(--text-muted); border-radius:4px; cursor:pointer; }
+    .eye-toggle:hover { color:var(--text); }
+    .btn-primary { background:var(--accent); color:#fff; border:none; border-radius:8px;
+      font-size:13px; font-weight:500; padding:7px 16px; cursor:pointer; }
+    .btn-primary:hover { opacity:.87; }
+    .settings-footer { border-top:1px solid var(--border); margin-top:4px; padding-top:12px;
+      display:flex; justify-content:flex-end; gap:8px; flex-shrink:0; }
+    .btn-secondary { background:var(--surface2); border:1px solid var(--border); border-radius:8px;
+      color:var(--text); font-size:13px; padding:7px 16px; cursor:pointer; }
+    .btn-secondary:hover { background:var(--border); }
+
+    /* ── Process grid ────────────────────────────────────────────────── */
+    .process-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 8px;
+    }
+
+    .svc-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px 12px;
+      position: relative;
+    }
+
+    .svc-name {
+      font-weight: 600;
+      font-size: 13px;
+      margin-bottom: 4px;
+      padding-right: 32px;
+    }
+
+    .svc-state {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .svc-actions {
+      position: absolute;
+      top: 10px;
+      right: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .svc-restart-btn {
+      width: 22px;
+      height: 22px;
+      padding: 3px;
+      border: none;
+      border-radius: 4px;
+      background: var(--surface);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .15s, color .15s;
+    }
+
+    .svc-restart-btn:hover { background: var(--accent); color: #fff; }
+    .svc-restart-btn svg { width: 14px; height: 14px; }
+
+    /* ── Log toggle button ───────────────────────────────────────────── */
+    .svc-log-btn {
+      width: 22px;
+      height: 22px;
+      padding: 3px;
+      border: none;
+      border-radius: 4px;
+      background: var(--surface);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .15s, color .15s;
+    }
+    .svc-log-btn:hover { background: var(--surface2); color: var(--text); }
+    .svc-log-btn.active { color: var(--accent); }
+    .svc-log-btn svg { width: 14px; height: 14px; }
+
+    /* ── Log area ────────────────────────────────────────────────────── */
+    .log-area {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 11px;
+      line-height: 1.6;
+      color: var(--text);
+      padding: 8px 10px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* Error line highlighting */
+    .log-line-error {
+      color: #e05252;
+      background: rgba(224, 82, 82, 0.1);
+      padding: 2px 4px;
+      border-radius: 3px;
+      margin: 2px -4px;
+    }
+
+    /* stderr section header */
+    .log-stderr-header {
+      color: #e05252;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      padding: 4px 0;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar" id="topbar">
+    <div class="topbar-content">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+        <line x1="3" y1="9" x2="21" y2="9"></line>
+        <line x1="9" y1="21" x2="9" y2="9"></line>
+      </svg>
+      <span>WebCode</span>
+    </div>
+
+    <button class="tab-btn lite-mode-hide active" data-tab="desktop">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+        <line x1="8" y1="21" x2="16" y2="21"></line>
+        <line x1="12" y1="17" x2="12" y2="21"></line>
+      </svg>
+      <span data-i18n="desktop">桌面</span>
+    </button>
+
+    <button class="tab-btn" data-tab="ide">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="16 18 22 12 16 6"></polyline>
+        <polyline points="8 6 2 12 8 18"></polyline>
+      </svg>
+      <span data-i18n="ide">IDE</span>
+    </button>
+
+    <button class="tab-btn kanban-tab-hide" data-tab="kanban">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+        <line x1="9" y1="3" x2="9" y2="21"></line>
+        <line x1="15" y1="3" x2="15" y2="21"></line>
+      </svg>
+      <span data-i18n="kanban">看板</span>
+    </button>
+
+    <button class="tab-btn openclaw-tab-hide" data-tab="ai">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M7 2c-1.5 0-2.5 1-3 2.5C3.5 6 4 7.5 5.5 8c-.5 1.5-.5 3 0 4.5C4.5 13 4 14 4 15c0 2 1.5 3.5 3 4.5.5 1.5 1.5 2.5 3 2.5h4c1.5 0 2.5-1 3-2.5 1.5-1 3-2.5 3-4.5 0-1-.5-2-1.5-2.5.5-1.5.5-3 0-4.5 1.5-.5 2-2 1.5-3.5C20 3 19 2 17.5 2H7z"></path>
+        <path d="M8 10c.5-1 1.5-1.5 2.5-1.5h3c1 0 2 .5 2.5 1.5"></path>
+        <circle cx="8.5" cy="6" r="1"></circle>
+        <circle cx="15.5" cy="6" r="1"></circle>
+      </svg>
+      <span data-i18n="ai">AI</span>
+    </button>
+
+    <span class="spacer"></span>
+
+    <div class="tab-actions" id="tab-actions">
+      <button class="btn-icon" id="btn-refresh" data-i18n-title="refresh">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+          <path d="M3 3v5h5"></path>
+          <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+          <path d="M16 21h5v-5"></path>
+        </svg>
+      </button>
+      <button class="btn-icon" id="btn-popout" data-i18n-title="open_in_new_tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+          <polyline points="15 3 21 3 21 9"></polyline>
+          <line x1="10" y1="14" x2="21" y2="3"></line>
+        </svg>
+      </button>
+    </div>
+
+    <button class="status-pill" id="statusPill">
+      <span class="dot dot-gray" id="status-dot"></span>
+      <span id="status-text" data-i18n="online">所有服务正常</span>
+    </button>
+
+    <button class="theme-cycle-btn" id="themeCycleBtn"></button>
+    <button class="lang-cycle-btn"  id="langCycleBtn"></button>
+
+    <button class="btn-icon" id="btn-settings" title="运行时配置" style="width:32px;height:32px;border-radius:6px">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+    </button>
+
+    <button class="btn-fullscreen" id="fullscreenBtn">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+      </svg>
+      <span data-i18n="fullscreen">全屏</span>
+    </button>
+
+    <!-- Collapse button for expanded state (hidden when collapsed) -->
+    <button class="btn-collapse" id="collapseBtnExpanded" data-i18n-title="collapse_header">
+      <svg class="icon-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+      <svg class="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="18 15 12 9 6 15"></polyline>
+      </svg>
+    </button>
+
+    <!-- Collapsed state tabs (hidden by default) -->
+    <div class="collapsed-tabs" id="collapsedTabs">
+      <!-- 1. Drag area FIRST (LEFT) -->
+      <div class="drag-area" id="dragArea" title="拖动此区域移动位置"></div>
+
+      <!-- 2. Tab icons in the middle -->
+      <button class="collapsed-tab-btn lite-mode-hide active" data-tab="desktop" title="桌面">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+          <line x1="8" y1="21" x2="16" y2="21"></line>
+          <line x1="12" y1="17" x2="12" y2="21"></line>
+        </svg>
+      </button>
+      <button class="collapsed-tab-btn" data-tab="ide" title="IDE">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="16 18 22 12 16 6"></polyline>
+          <polyline points="8 6 2 12 8 18"></polyline>
+        </svg>
+      </button>
+      <button class="collapsed-tab-btn kanban-tab-hide" data-tab="kanban" title="看板">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+          <line x1="9" y1="3" x2="9" y2="21"></line>
+          <line x1="15" y1="3" x2="15" y2="21"></line>
+        </svg>
+      </button>
+      <button class="collapsed-tab-btn openclaw-tab-hide" data-tab="ai" title="AI">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M7 2c-1.5 0-2.5 1-3 2.5C3.5 6 4 7.5 5.5 8c-.5 1.5-.5 3 0 4.5C4.5 13 4 14 4 15c0 2 1.5 3.5 3 4.5.5 1.5 1.5 2.5 3 2.5h4c1.5 0 2.5-1 3-2.5 1.5-1 3-2.5 3-4.5 0-1-.5-2-1.5-2.5.5-1.5.5-3 0-4.5 1.5-.5 2-2 1.5-3.5C20 3 19 2 17.5 2H7z"></path>
+          <path d="M8 10c.5-1 1.5-1.5 2.5-1.5h3c1 0 2 .5 2.5 1.5"></path>
+          <circle cx="8.5" cy="6" r="1"></circle>
+          <circle cx="15.5" cy="6" r="1"></circle>
+        </svg>
+      </button>
+
+      <!-- 2.5. Theme toggle button -->
+      <button class="collapsed-tab-btn" id="themeBtnCollapsed" title="切换主题"></button>
+
+      <!-- 2.6. Fullscreen button -->
+      <button class="collapsed-tab-btn" id="fullscreenBtnCollapsed" title="全屏" onclick="document.getElementById('fullscreenBtn').click()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+        </svg>
+      </button>
+
+      <!-- 3. Expand button LAST (RIGHT) -->
+      <button class="btn-collapse" id="collapseBtn" data-i18n-title="expand_header"
+              style="width:20px;height:20px;padding:0;background:transparent;border:none;cursor:pointer;">
+        <svg class="icon-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+        <svg class="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="18 15 12 9 6 15"></polyline>
+        </svg>
+      </button>
+    </div>
+    </div>
+    <div class="topbar-expand-hint" id="expandHint">▲</div>
+  </div>
+
+  <!-- Drag capture overlay (prevents drag interruption) -->
+  <div class="drag-capture-overlay" id="dragCaptureOverlay"></div>
+
+  <div class="iframe-area">
+    <div class="loading-overlay hidden" id="loadingOverlay">
+      <div class="loading-spinner"></div>
+    </div>
+    <iframe id="frame-desktop" class="lite-mode-hide visible"
+      allow="clipboard-read; clipboard-write; autoplay; fullscreen; pointer-lock; microphone"></iframe>
+    <iframe id="frame-ide"
+      allow="clipboard-read; clipboard-write;"></iframe>
+    <iframe id="frame-kanban"
+      allow="clipboard-read; clipboard-write;"></iframe>
+    <iframe id="frame-ai"
+      allow="clipboard-read; clipboard-write;"></iframe>
+  </div>
+
+  <!-- Status Modal -->
+  <div class="modal-overlay hidden" id="statusModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalTitle">进程状态</h3>
+        <div class="modal-header-actions">
+          <button class="btn-icon" id="modalRefreshBtn" title="刷新">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+              <path d="M3 3v5h5"></path>
+              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+              <path d="M16 21h5v-5"></path>
+            </svg>
+          </button>
+          <button class="btn-icon" id="closeModal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="process-grid" id="processGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Logs Modal -->
+  <div class="modal-overlay hidden" id="logsModal">
+    <div class="modal" style="max-width:800px;height:70vh;display:flex;flex-direction:column">
+      <div class="modal-header">
+        <h3 id="logsModalTitle">进程日志</h3>
+        <div class="modal-header-actions">
+          <button class="btn-icon" id="logsRefreshBtn" title="刷新">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+              <path d="M3 3v5h5"></path>
+              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+              <path d="M16 21h5v-5"></path>
+            </svg>
+          </button>
+          <button class="btn-icon" id="closeLogsModal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="modal-body" style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+        <div class="log-area" id="logsContent" style="flex:1;overflow:auto;height:100%">加载中...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay hidden" id="settingsModal">
+    <div class="modal" style="max-width:520px;padding:20px">
+      <div class="modal-header">
+        <h3>⚙ 运行时配置</h3>
+        <button class="btn-icon" id="closeSettingsModal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body" style="max-height:60vh;overflow-y:auto;padding-right:4px">
+
+        <!-- 访问认证 -->
+        <div class="adv-block">
+          <div class="adv-block-title">访问认证</div>
+          <div class="config-grid">
+            <div class="form-group">
+              <label>Basic Auth 用户名</label>
+              <input type="text" id="cfg-auth-user" autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label>Basic Auth 密码</label>
+              <div class="input-with-eye">
+                <input type="password" id="cfg-auth-password" placeholder="留空则不修改" autocomplete="new-password">
+                <button type="button" class="eye-toggle" data-target="cfg-auth-password">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>VNC 密码</label>
+              <div class="input-with-eye">
+                <input type="password" id="cfg-vnc-password" placeholder="留空则不修改" autocomplete="new-password">
+                <button type="button" class="eye-toggle" data-target="cfg-vnc-password">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>OpenClaw Token</label>
+              <div class="input-with-eye">
+                <input type="password" id="cfg-openclaw-token" placeholder="留空则不修改" autocomplete="new-password">
+                <button type="button" class="eye-toggle" data-target="cfg-openclaw-token">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Git 配置 -->
+        <div class="adv-block">
+          <div class="adv-block-title">Git 配置</div>
+          <div class="config-grid">
+            <div class="form-group" style="margin-bottom:0">
+              <label>用户名</label>
+              <input type="text" id="cfg-git-name" autocomplete="off">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label>邮箱</label>
+              <input type="text" id="cfg-git-email" autocomplete="off">
+            </div>
+          </div>
+        </div>
+
+        <!-- Cloudflare Tunnel -->
+        <div class="adv-block">
+          <div class="adv-block-title">Cloudflare Tunnel</div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>Tunnel Token</label>
+            <div class="input-with-eye">
+              <input type="password" id="cfg-cf-token" placeholder="留空则不修改" autocomplete="new-password">
+              <button type="button" class="eye-toggle" data-target="cfg-cf-token">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 服务开关 -->
+        <div class="adv-block" style="margin-bottom:0">
+          <div class="adv-block-title">服务自启动</div>
+          <div style="display:flex;gap:20px">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+              <input type="checkbox" id="cfg-enable-kanban" style="accent-color:var(--accent)">
+              <span>看板 (Vibe Kanban)</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+              <input type="checkbox" id="cfg-enable-openclaw" style="accent-color:var(--accent)">
+              <span>AI (OpenClaw)</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-footer">
+        <button class="btn-secondary" id="btn-cancel-config">取消</button>
+        <button class="btn-primary" id="btn-save-config">保存并应用</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── i18n ──────────────────────────────────────────────────────────────────
+    const MESSAGES = {
+      'zh-CN': { desktop: '桌面', ide: 'IDE', kanban: '看板', ai: 'AI',
+                 online: '所有服务正常', partial: '部分服务异常', offline: '服务离线',
+                 fullscreen: '全屏', exit: '退出全屏', refresh: '刷新', open_in_new_tab: '在新标签页打开',
+                 theme_dark: '暗色', theme_light: '亮色', theme_system: '跟随系统',
+                 proc_status: '进程状态', restart: '重启进程', show_log: '查看日志',
+                 logs_title: '进程日志', collapse_header: '收起顶部栏', expand_header: '展开顶部栏' },
+      'en':    { desktop: 'Desktop', ide: 'IDE', kanban: 'Kanban', ai: 'AI',
+                 online: 'All Systems Online', partial: 'Some Services Down', offline: 'Services Offline',
+                 fullscreen: 'Fullscreen', exit: 'Exit', refresh: 'Refresh', open_in_new_tab: 'Open in new tab',
+                 theme_dark: 'Dark', theme_light: 'Light', theme_system: 'System',
+                 proc_status: 'Process Status', restart: 'Restart', show_log: 'Show Logs',
+                 logs_title: 'Process Logs', collapse_header: 'Collapse header', expand_header: 'Expand header' }
+    };
+
+    const LANG_KEY   = 'webcode-lang';
+    const THEME_KEY  = 'webcode-theme';
+    const COLLAPSE_KEY = 'webcode-topbar-collapsed';
+    const DRAG_POS_KEY = 'webcode-topbar-drag-pos';
+    const THEME_ORDER = ['dark', 'light', 'system'];
+
+    function getLang() {
+      try { return localStorage.getItem(LANG_KEY) || 'zh-CN'; } catch(e) { return 'zh-CN'; }
+    }
+    function setLang(l) {
+      try { localStorage.setItem(LANG_KEY, l); } catch(e) {}
+    }
+    function t(key) {
+      return (MESSAGES[getLang()] || MESSAGES['zh-CN'])[key] || key;
+    }
+    function getTheme() {
+      try { return localStorage.getItem(THEME_KEY) || 'dark'; } catch(e) { return 'dark'; }
+    }
+    function setTheme(th) {
+      try { localStorage.setItem(THEME_KEY, th); } catch(e) {}
+      document.documentElement.setAttribute('data-theme', th);
+    }
+
+    // ── Theme icons ───────────────────────────────────────────────────────────
+    const THEME_ICONS = {
+      dark:   '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>',
+      light:  '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>',
+      system: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>'
+    };
+    const LANG_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>';
+
+    // ── Apply translations ────────────────────────────────────────────────────
+    function applyTranslations() {
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        el.textContent = t(el.getAttribute('data-i18n'));
+      });
+      document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        el.title = t(el.getAttribute('data-i18n-title'));
+      });
+      document.documentElement.lang = getLang();
+      updateThemeBtn();
+      updateLangBtn();
+    }
+
+    function updateThemeBtn() {
+      const theme = getTheme();
+      const btn = document.getElementById('themeCycleBtn');
+      btn.innerHTML = THEME_ICONS[theme] + '<span>\u00a0' + t('theme_' + theme) + '</span>';
+      const btnCollapsed = document.getElementById('themeBtnCollapsed');
+      if (btnCollapsed) btnCollapsed.innerHTML = THEME_ICONS[theme];
+    }
+
+    function updateLangBtn() {
+      const btn = document.getElementById('langCycleBtn');
+      const label = getLang() === 'zh-CN' ? '中文' : 'EN';
+      btn.innerHTML = LANG_ICON + '<span>\u00a0' + label + '</span>';
+    }
+
+    // ── Utility functions ───────────────────────────────────────────────────────
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // ── Tab switching ─────────────────────────────────────────────────────────
+    const IFRAME_IDS = {
+      desktop: 'frame-desktop',
+      ide:     'frame-ide',
+      kanban:  'frame-kanban',
+      ai:      'frame-ai'
+    };
+
+    // Default to desktop in full mode, IDE in lite mode; fallback to first enabled tab
+    const isLiteMode = document.documentElement.getAttribute('data-mode') === 'lite';
+    const isKanbanEnabled = document.documentElement.getAttribute('data-enable-kanban') !== 'false';
+    const isOpenclawEnabled = document.documentElement.getAttribute('data-enable-openclaw') !== 'false';
+    function isTabEnabled(tab) {
+      if (tab === 'desktop') return !isLiteMode;
+      if (tab === 'kanban') return isKanbanEnabled;
+      if (tab === 'ai') return isOpenclawEnabled;
+      return true; // ide always enabled
+    }
+    const preferredTab = isLiteMode ? 'ide' : 'desktop';
+    const firstVisible = ['desktop', 'ide', 'kanban', 'ai'].find(t => isTabEnabled(t));
+    let currentTab = isTabEnabled(preferredTab) ? preferredTab : (firstVisible || 'ide');
+
+    // Set initial active tab based on mode, and initialize iframe srcs using current hostname
+    document.addEventListener('DOMContentLoaded', () => {
+      // Derive service ports from the dashboard port (base+1..base+4)
+      const host = location.hostname;
+      const base = parseInt(location.port, 10);
+
+      // Fetch real passwords/tokens from server, then set iframe srcs
+      fetch('/api/iframe-urls').then(r => r.json()).then(urls => {
+        document.getElementById('frame-desktop').src =
+          `http://${host}:${base + 4}/vnc.html?autoconnect=true&resize=remote&password=${encodeURIComponent(urls.vncPassword)}`;
+        document.getElementById('frame-ai').src =
+          `http://${host}:${base + 3}/?token=${encodeURIComponent(urls.openclawToken)}`;
+      }).catch(() => {
+        // Fallback: use default values if API unavailable
+        document.getElementById('frame-desktop').src =
+          `http://${host}:${base + 4}/vnc.html?autoconnect=true&resize=remote&password=changeme`;
+        document.getElementById('frame-ai').src =
+          `http://${host}:${base + 3}/?token=changeme`;
+      });
+      document.getElementById('frame-ide').src    = `http://${host}:${base + 1}`;
+      document.getElementById('frame-kanban').src  = `http://${host}:${base + 2}`;
+
+      // Set active tab: remove desktop's default active if needed, then set currentTab
+      document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+      document.querySelector(`.tab-btn[data-tab="${currentTab}"]`)?.classList.add('active');
+      Object.values(IFRAME_IDS).forEach(id => document.getElementById(id).classList.remove('visible'));
+      document.getElementById(IFRAME_IDS[currentTab])?.classList.add('visible');
+      syncCollapsedTabs();
+    });
+
+    // Sync collapsed tabs with main tabs
+    function syncCollapsedTabs() {
+      const mainActiveBtn = document.querySelector('.tab-btn.active');
+      const tabName = mainActiveBtn?.dataset.tab || 'desktop';
+
+      // Update collapsed tabs active state
+      document.querySelectorAll('.collapsed-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tabName);
+      });
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tabName = tab.dataset.tab;
+        if (tabName === currentTab) return;
+        document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        Object.values(IFRAME_IDS).forEach(id => document.getElementById(id).classList.remove('visible'));
+        document.getElementById(IFRAME_IDS[tabName]).classList.add('visible');
+        currentTab = tabName;
+        syncCollapsedTabs();
+      });
+    });
+
+    // Add collapsed tab click handlers
+    document.querySelectorAll('.collapsed-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tabName = btn.dataset.tab;
+
+        // Update main tabs
+        document.querySelectorAll('.tab-btn').forEach(t => {
+          t.classList.toggle('active', t.dataset.tab === tabName);
+        });
+
+        // Switch iframe
+        Object.values(IFRAME_IDS).forEach(id => document.getElementById(id).classList.remove('visible'));
+        document.getElementById(IFRAME_IDS[tabName]).classList.add('visible');
+        currentTab = tabName;
+
+        // Update collapsed tabs active state
+        syncCollapsedTabs();
+      });
+    });
+
+    // ── Refresh ───────────────────────────────────────────────────────────────
+    document.getElementById('btn-refresh').addEventListener('click', () => {
+      const iframe = document.getElementById(IFRAME_IDS[currentTab]);
+      if (iframe) { showLoading(); iframe.src = iframe.src; setTimeout(hideLoading, 1500); }
+    });
+
+    // ── Open in new tab ───────────────────────────────────────────────────────
+    document.getElementById('btn-popout').addEventListener('click', () => {
+      const iframe = document.getElementById(IFRAME_IDS[currentTab]);
+      if (iframe && iframe.src) window.open(iframe.src, '_blank');
+    });
+
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    function showLoading() { loadingOverlay.classList.remove('hidden'); }
+    function hideLoading() { loadingOverlay.classList.add('hidden'); }
+    document.querySelectorAll('.iframe-area iframe').forEach(fr => fr.addEventListener('load', hideLoading));
+
+    // ── Theme cycle ───────────────────────────────────────────────────────────
+    function cycleTheme() {
+      const cur = getTheme();
+      const next = THEME_ORDER[(THEME_ORDER.indexOf(cur) + 1) % THEME_ORDER.length];
+      setTheme(next);
+      updateThemeBtn();
+    }
+    document.getElementById('themeCycleBtn').addEventListener('click', cycleTheme);
+    document.getElementById('themeBtnCollapsed').addEventListener('click', cycleTheme);
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      if (getTheme() === 'system') document.documentElement.setAttribute('data-theme', 'system');
+    });
+
+    // ── Language cycle ────────────────────────────────────────────────────────
+    document.getElementById('langCycleBtn').addEventListener('click', () => {
+      setLang(getLang() === 'zh-CN' ? 'en' : 'zh-CN');
+      applyTranslations();
+    });
+
+    // ── Fullscreen ────────────────────────────────────────────────────────────
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    fullscreenBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+      const isFs = !!document.fullscreenElement;
+      const fsIcon = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="${isFs ? 'M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3' : 'M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3'}"></path></svg>`;
+      fullscreenBtn.innerHTML = fsIcon + `<span data-i18n="${isFs ? 'exit' : 'fullscreen'}">${t(isFs ? 'exit' : 'fullscreen')}</span>`;
+      // Sync collapsed fullscreen button icon
+      const fsCollapsed = document.getElementById('fullscreenBtnCollapsed');
+      if (fsCollapsed) {
+        fsCollapsed.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="${isFs ? 'M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3' : 'M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3'}"></path></svg>`;
+        fsCollapsed.title = t(isFs ? 'exit' : 'fullscreen');
+      }
+    });
+
+    // ── Topbar collapse ─────────────────────────────────────────────────────────
+    const topbar = document.getElementById('topbar');
+    const collapseBtn = document.getElementById('collapseBtn');  // In drag area (collapsed state)
+    const collapseBtnExpanded = document.getElementById('collapseBtnExpanded');  // Expanded state
+    const dragArea = document.getElementById('dragArea');
+    const dragCaptureOverlay = document.getElementById('dragCaptureOverlay');
+    let isDragging = false;
+    let dragStartX = 0;
+    let handleStartLeft = 0;
+
+    function toggleTopbar() {
+      const isCollapsed = topbar.classList.toggle('collapsed');
+      try { localStorage.setItem(COLLAPSE_KEY, isCollapsed); } catch(e) {}
+
+      // Reset position when expanding - remove the left offset from collapsed state
+      if (!isCollapsed) {
+        topbar.style.removeProperty('left');
+        topbar.style.removeProperty('--drag-pos');
+      }
+
+      updateCollapseButton();
+    }
+
+    function updateCollapseButton() {
+      const isCollapsed = topbar.classList.contains('collapsed');
+      // Update both collapse buttons
+      [collapseBtn, collapseBtnExpanded].forEach(btn => {
+        if (btn) {
+          btn.title = t(isCollapsed ? 'expand_header' : 'collapse_header');
+          btn.setAttribute('data-i18n-title', isCollapsed ? 'expand_header' : 'collapse_header');
+        }
+      });
+    }
+
+    // Collapse button click (expanded state)
+    collapseBtnExpanded?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleTopbar();
+    });
+
+    // Collapse button click (in drag area - collapsed state)
+    collapseBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleTopbar();
+    });
+
+    // Drag handlers - only on drag-area
+    dragArea.addEventListener('mousedown', (e) => {
+      if (!topbar.classList.contains('collapsed')) return;
+      isDragging = true;
+      dragStartX = e.clientX;
+      const rect = topbar.getBoundingClientRect();
+      handleStartLeft = rect.left;
+      // Show capture overlay to prevent drag interruption
+      dragCaptureOverlay.classList.add('active');
+      e.preventDefault();
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const deltaX = e.clientX - dragStartX;
+      let newLeft = handleStartLeft + deltaX;
+      // Constrain to screen bounds
+      const maxWidth = window.innerWidth - 200;  // 200px = collapsed width
+      newLeft = Math.max(0, Math.min(newLeft, maxWidth));
+      topbar.style.left = newLeft + 'px';
+      e.preventDefault();
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        // Hide capture overlay
+        dragCaptureOverlay.classList.remove('active');
+        // Save position
+        const rect = topbar.getBoundingClientRect();
+        try {
+          localStorage.setItem(DRAG_POS_KEY, JSON.stringify({ left: rect.left }));
+        } catch(e) {}
+      }
+    });
+
+    // Prevent content clicks from triggering expand when collapsed
+    document.querySelector('.topbar-content').addEventListener('click', (e) => {
+      if (topbar.classList.contains('collapsed')) {
+        e.stopPropagation();
+      }
+    });
+
+    // Prevent tab clicks from expanding when collapsed
+    document.querySelectorAll('.tab-btn, .btn-icon, .theme-cycle-btn, .lang-cycle-btn, .btn-fullscreen, .status-pill').forEach(el => {
+      el.addEventListener('click', (e) => {
+        if (topbar.classList.contains('collapsed')) {
+          e.stopPropagation();
+        }
+      });
+    });
+
+    // Restore saved state on load
+    try {
+      if (localStorage.getItem(COLLAPSE_KEY) === 'true') {
+        topbar.classList.add('collapsed');
+      }
+      // Load saved drag position
+      const savedPos = JSON.parse(localStorage.getItem(DRAG_POS_KEY) || '{"left":null}');
+      if (savedPos.left !== null) {
+        topbar.style.setProperty('--drag-pos', savedPos.left + 'px');
+      }
+    } catch(e) {}
+    updateCollapseButton();
+    syncCollapsedTabs();
+
+    // ── Process status ────────────────────────────────────────────────────────
+    const RESTART_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 21H3v-5"/></svg>`;
+    const LOG_ICON     = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg>`;
+
+    let pollTimer = null;
+    let lastServices = [];
+
+    function dotClass(state) {
+      if (state === 'RUNNING')  return 'dot-green';
+      if (state === 'STARTING') return 'dot-yellow';
+      return 'dot-red';
+    }
+
+    function renderProcessGrid(services) {
+      const grid = document.getElementById('processGrid');
+      grid.innerHTML = '';
+      if (!services.length) {
+        const msg = document.createElement('div');
+        msg.style.cssText = 'color:var(--text-muted);font-size:13px;padding:8px 0';
+        msg.textContent = t('offline');
+        grid.appendChild(msg);
+        return;
+      }
+      services.forEach(svc => {
+        const card = document.createElement('div');
+        card.className = 'svc-card';
+
+        const nameEl = document.createElement('div');
+        nameEl.className = 'svc-name';
+        nameEl.textContent = svc.name;
+
+        const stateEl = document.createElement('div');
+        stateEl.className = 'svc-state';
+        const dotEl = document.createElement('span');
+        dotEl.className = 'dot ' + dotClass(svc.state);
+        stateEl.appendChild(dotEl);
+        stateEl.appendChild(document.createTextNode(svc.state.toLowerCase()));
+
+        const actions = document.createElement('div');
+        actions.className = 'svc-actions';
+
+        // Restart button
+        const restartBtn = document.createElement('button');
+        restartBtn.className = 'svc-restart-btn';
+        restartBtn.title = t('restart');
+        restartBtn.innerHTML = RESTART_ICON;
+
+        // Log toggle button
+        const logBtn = document.createElement('button');
+        logBtn.className = 'svc-log-btn';
+        logBtn.title = t('show_log');
+        logBtn.innerHTML = LOG_ICON;
+        logBtn.dataset.process = svc.name;
+
+        restartBtn.addEventListener('click', e => {
+          e.stopPropagation();
+          restartProcess(restartBtn, svc.name);
+        });
+
+        logBtn.addEventListener('click', e => {
+          e.stopPropagation();
+          openLogsModal(svc.name);
+        });
+
+        actions.appendChild(restartBtn);
+        actions.appendChild(logBtn);
+        card.appendChild(nameEl);
+        card.appendChild(stateEl);
+        card.appendChild(actions);
+        grid.appendChild(card);
+      });
+    }
+
+    function updateStatusDot(services) {
+      const dot  = document.getElementById('status-dot');
+      const text = document.getElementById('status-text');
+      if (!services.length) {
+        dot.className = 'dot dot-gray'; text.textContent = t('offline'); return;
+      }
+      const anyStarting = services.some(s => s.state === 'STARTING');
+      const anyBad      = services.some(s => !['RUNNING','STARTING'].includes(s.state));
+      if (anyStarting) {
+        dot.className = 'dot dot-yellow'; text.textContent = t('partial');
+      } else if (anyBad) {
+        dot.className = 'dot dot-red'; text.textContent = t('partial');
+      } else {
+        dot.className = 'dot dot-green'; text.textContent = t('online');
+      }
+    }
+
+    async function fetchStatus() {
+      try {
+        const r = await fetch('/api/status', { credentials: 'include' });
+        const services = await r.json();
+        lastServices = services;
+        updateStatusDot(services);
+        // Re-render grid whenever status modal is visible
+        if (!statusModal.classList.contains('hidden')) {
+          renderProcessGrid(services);
+        }
+      } catch(e) {
+        updateStatusDot([]);
+      }
+    }
+
+    function startPolling() {
+      fetchStatus();
+      pollTimer = setInterval(fetchStatus, 5000);
+    }
+
+    // ── Status modal open / close ─────────────────────────────────────────────
+    const statusModal = document.getElementById('statusModal');
+
+    document.getElementById('statusPill').addEventListener('click', () => {
+      document.getElementById('modalTitle').textContent = t('proc_status');
+      renderProcessGrid(lastServices);
+      statusModal.classList.remove('hidden');
+    });
+
+    document.getElementById('closeModal').addEventListener('click', () => {
+      statusModal.classList.add('hidden');
+    });
+
+    statusModal.addEventListener('click', e => {
+      if (e.target === statusModal) statusModal.classList.add('hidden');
+    });
+
+    document.getElementById('modalRefreshBtn').addEventListener('click', async () => {
+      const r = await fetch('/api/status', { credentials: 'include' });
+      const services = await r.json();
+      lastServices = services;
+      updateStatusDot(services);
+      renderProcessGrid(services);
+    });
+
+    // ── Restart process ───────────────────────────────────────────────────────
+    async function restartProcess(btn, name) {
+      btn.disabled = true;
+      btn.style.background = 'var(--accent)';
+      btn.style.color = '#fff';
+      try {
+        const r = await fetch(`/api/restart/${encodeURIComponent(name)}`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+        const data = await r.json();
+        btn.style.background = data.ok ? 'var(--success)' : '#e05252';
+      } catch (err) {
+        btn.style.background = '#e05252';
+        console.error('Restart failed:', err);
+      }
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.style.background = '';
+        btn.style.color = '';
+        fetchStatus();
+      }, 1500);
+    }
+
+    // ── Logs modal ─────────────────────────────────────────────────────────────
+    let currentLogProcess = null;
+    const logsModal = document.getElementById('logsModal');
+
+    function openLogsModal(processName) {
+      currentLogProcess = processName;
+      document.getElementById('logsModalTitle').textContent = `${t('logs_title')} - ${processName}`;
+      logsModal.classList.remove('hidden');
+      loadLogs();
+    }
+
+    async function loadLogs() {
+      if (!currentLogProcess) return;
+      const contentEl = document.getElementById('logsContent');
+      contentEl.innerHTML = '<div style="color:var(--text-muted)">加载中...</div>';
+
+      try {
+        const r = await fetch(`/api/logs/${encodeURIComponent(currentLogProcess)}`, { credentials: 'include' });
+        const text = await r.text();
+
+        // Format logs: highlight [ERROR] lines and stderr header
+        const lines = text.split('\n');
+        const formatted = lines.map(line => {
+          // stderr separator
+          if (line.trim() === '=== stderr ===') {
+            return '<div class="log-stderr-header">' + escHtml(line) + '</div>';
+          }
+          // [ERROR] prefixed lines
+          if (line.startsWith('[ERROR]')) {
+            return '<div class="log-line-error">' + escHtml(line) + '</div>';
+          }
+          return escHtml(line) + '<br>';
+        }).join('');
+
+        contentEl.innerHTML = formatted || '<div style="color:var(--text-muted)">(无日志输出)</div>';
+        contentEl.scrollTop = contentEl.scrollHeight;
+      } catch(e) {
+        contentEl.textContent = 'Error fetching logs: ' + e.message;
+      }
+    }
+
+    document.getElementById('closeLogsModal').addEventListener('click', () => {
+      logsModal.classList.add('hidden');
+      currentLogProcess = null;
+    });
+
+    logsModal.addEventListener('click', e => {
+      if (e.target === logsModal) {
+        logsModal.classList.add('hidden');
+        currentLogProcess = null;
+      }
+    });
+
+    document.getElementById('logsRefreshBtn').addEventListener('click', () => {
+      loadLogs();
+    });
+
+    // ── Settings Modal ────────────────────────────────────────────────────────
+    const settingsModal = document.getElementById('settingsModal');
+
+    document.getElementById('btn-settings').addEventListener('click', () => {
+      // Load current config into form
+      fetch('/api/config').then(r => r.json()).then(cfg => {
+        document.getElementById('cfg-auth-user').value = cfg.AUTH_USER || '';
+        document.getElementById('cfg-auth-password').value = '';
+        document.getElementById('cfg-vnc-password').value = '';
+        document.getElementById('cfg-openclaw-token').value = '';
+        document.getElementById('cfg-git-name').value = cfg.GIT_USER_NAME || '';
+        document.getElementById('cfg-git-email').value = cfg.GIT_USER_EMAIL || '';
+        document.getElementById('cfg-cf-token').value = '';
+        const cfInput = document.getElementById('cfg-cf-token');
+        cfInput.placeholder = cfg.CF_TUNNEL_TOKEN ? '已设置，留空则不修改' : '未设置';
+        document.getElementById('cfg-enable-kanban').checked = cfg.ENABLE_KANBAN !== 'false';
+        document.getElementById('cfg-enable-openclaw').checked = cfg.ENABLE_OPENCLAW !== 'false';
+      }).catch(() => {});
+      settingsModal.classList.remove('hidden');
+    });
+
+    document.getElementById('closeSettingsModal').addEventListener('click', () => {
+      settingsModal.classList.add('hidden');
+    });
+    document.getElementById('btn-cancel-config').addEventListener('click', () => {
+      settingsModal.classList.add('hidden');
+    });
+    settingsModal.addEventListener('click', e => {
+      if (e.target === settingsModal) settingsModal.classList.add('hidden');
+    });
+
+    document.getElementById('btn-save-config').addEventListener('click', () => {
+      const body = {
+        AUTH_USER:       document.getElementById('cfg-auth-user').value,
+        AUTH_PASSWORD:   document.getElementById('cfg-auth-password').value,
+        VNC_PASSWORD:    document.getElementById('cfg-vnc-password').value,
+        OPENCLAW_TOKEN:  document.getElementById('cfg-openclaw-token').value,
+        GIT_USER_NAME:   document.getElementById('cfg-git-name').value,
+        GIT_USER_EMAIL:  document.getElementById('cfg-git-email').value,
+        CF_TUNNEL_TOKEN: document.getElementById('cfg-cf-token').value,
+        ENABLE_KANBAN:   document.getElementById('cfg-enable-kanban').checked ? 'true' : 'false',
+        ENABLE_OPENCLAW: document.getElementById('cfg-enable-openclaw').checked ? 'true' : 'false',
+      };
+      fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      }).then(r => r.json()).then(d => {
+        if (d.ok) {
+          settingsModal.classList.add('hidden');
+          // Show a brief toast-like notification via status text
+          const st = document.getElementById('status-text');
+          const prev = st.textContent;
+          st.textContent = '配置已保存，相关服务正在重启…';
+          setTimeout(() => { if (st.textContent.includes('保存')) st.textContent = prev; }, 3000);
+        }
+      }).catch(e => { console.error('config save failed:', e); });
+    });
+
+    // Eye toggle buttons (show/hide password)
+    document.querySelectorAll('.eye-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = document.getElementById(btn.dataset.target);
+        if (target) target.type = target.type === 'password' ? 'text' : 'password';
+      });
+    });
+
+    // ── Keyboard shortcuts ────────────────────────────────────────────────────
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        statusModal.classList.add('hidden');
+        logsModal.classList.add('hidden');
+        settingsModal.classList.add('hidden');
+        currentLogProcess = null;
+      }
+      // Ctrl/Cmd + Shift + H to toggle header
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'H' || e.key === 'h')) {
+        e.preventDefault();
+        toggleTopbar();
+      }
+    });
+
+    // ── Init ──────────────────────────────────────────────────────────────────
+    applyTranslations();
+    startPolling();
+    showLoading();
+  </script>
+</body>
+</html>
