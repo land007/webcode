@@ -16,6 +16,15 @@ RUN su -l ubuntu -c \
      npm install -g @openai/codex && \
      npm install -g opencode-ai@latest'
 
+# Install and configure oh-my-opencode
+RUN su -l ubuntu -c \
+    'bunx oh-my-opencode install \
+     --no-tui \
+     --claude no \
+     --openai no \
+     --gemini no \
+     --copilot no'
+
 # Install Cursor CLI (cursor-agent) - direct binary download
 RUN su -l ubuntu -c \
     'mkdir -p ~/.local/bin && \
