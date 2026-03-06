@@ -46,7 +46,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install setuptools for Python distutils compatibility (needed for node-gyp)
 RUN curl -fsSL https://bootstrap.pypa.io/get-pip.py | python3 \
-    && pip3 install --no-cache-dir setuptools
+    && pip3 install --no-cache-dir --break-system-packages setuptools
 
 # ─── 2b. http-proxy for dashboard service ───────────────────────────
 RUN npm install -g http-proxy
