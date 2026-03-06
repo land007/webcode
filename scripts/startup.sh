@@ -23,7 +23,7 @@ mkdir -p /home/ubuntu/.local/share/vibe-kanban
 
 # 后台执行 projects 目录的 chown，避免阻塞启动（包含大量文件）
 echo "[startup] Starting background chown for /home/ubuntu/projects (may take several minutes)..."
-(chown -R ubuntu:ubuntu /home/ubuntu/projects >/dev/null 2>&1 &)
+(chown -R ubuntu:ubuntu /home/ubuntu/projects >/dev/null 2>&1 || true) &
 
 chown -R ubuntu:ubuntu /home/ubuntu/Desktop
 chown -R ubuntu:ubuntu /home/ubuntu/.local
