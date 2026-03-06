@@ -14,16 +14,8 @@ RUN su -l ubuntu -c \
     'source ~/.nvm/nvm.sh && \
      npm install -g @google/gemini-cli && \
      npm install -g @openai/codex && \
-     npm install -g opencode-ai@latest'
-
-# Install and configure oh-my-opencode
-RUN su -l ubuntu -c \
-    'bunx oh-my-opencode install \
-     --no-tui \
-     --claude no \
-     --openai no \
-     --gemini no \
-     --copilot no'
+     npm install -g opencode-ai@latest && \
+     npm install -g oh-my-opencode'
 
 # Install Cursor CLI (cursor-agent) - direct binary download
 RUN su -l ubuntu -c \
