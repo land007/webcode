@@ -19,7 +19,7 @@ import datetime
 import opuslib
 
 HOST = "127.0.0.1"
-PORT = 10006
+PORT = int(os.environ.get("AUDIO_PORT", "10006"))
 SAMPLE_RATE = 48000       # Opus native rate (upsample from 44100)
 CHANNELS = 2
 FRAME_SIZE = 960          # 20ms per frame at 48000Hz

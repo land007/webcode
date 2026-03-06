@@ -86,8 +86,9 @@ function loadConfig() {
     GIT_USER_NAME:   fileCfg.GIT_USER_NAME   || process.env.GIT_USER_NAME   || '',
     GIT_USER_EMAIL:  fileCfg.GIT_USER_EMAIL  || process.env.GIT_USER_EMAIL  || '',
     CF_TUNNEL_TOKEN: fileCfg.CF_TUNNEL_TOKEN || process.env.CF_TUNNEL_TOKEN || '',
-    ENABLE_KANBAN:   fileCfg.ENABLE_KANBAN   || process.env.ENABLE_KANBAN   || 'true',
-    ENABLE_OPENCLAW: fileCfg.ENABLE_OPENCLAW || process.env.ENABLE_OPENCLAW || 'true',
+    ENABLE_KANBAN:     fileCfg.ENABLE_KANBAN     || process.env.ENABLE_KANBAN     || 'true',
+    ENABLE_OPENCLAW:   fileCfg.ENABLE_OPENCLAW   || process.env.ENABLE_OPENCLAW   || 'true',
+    ENABLE_CLAUDECODEUI: fileCfg.ENABLE_CLAUDECODEUI || process.env.ENABLE_CLAUDECODEUI || 'true',
   };
 }
 
@@ -111,6 +112,7 @@ const PROXY_CONFIG = [
   { listen: 20001, target: 10001, authType: 'basic' },  // code-server IDE
   { listen: 20002, target: 10002, authType: 'basic' },  // Vibe Kanban
   { listen: 20003, target: 10003, authType: 'bearer' }, // OpenClaw AI
+  { listen: 20007, target: 10007, authType: 'basic' },  // claudecodeui (CloudCLI UI)
   {
     listen: 20004,
     authType: 'basic',
@@ -302,8 +304,9 @@ function startDashboardServer() {
         GIT_USER_NAME:   runtimeConfig.GIT_USER_NAME,
         GIT_USER_EMAIL:  runtimeConfig.GIT_USER_EMAIL,
         CF_TUNNEL_TOKEN: runtimeConfig.CF_TUNNEL_TOKEN ? '••••' : '',
-        ENABLE_KANBAN:   runtimeConfig.ENABLE_KANBAN,
-        ENABLE_OPENCLAW: runtimeConfig.ENABLE_OPENCLAW,
+        ENABLE_KANBAN:     runtimeConfig.ENABLE_KANBAN,
+        ENABLE_OPENCLAW:   runtimeConfig.ENABLE_OPENCLAW,
+        ENABLE_CLAUDECODEUI: runtimeConfig.ENABLE_CLAUDECODEUI,
         MODE:            process.env.MODE || 'desktop',
       }));
       return;
@@ -323,7 +326,8 @@ function startDashboardServer() {
 
           // Merge non-empty fields only (empty string = leave unchanged)
           const FIELDS = ['AUTH_USER','AUTH_PASSWORD','VNC_PASSWORD','OPENCLAW_TOKEN',
-                          'GIT_USER_NAME','GIT_USER_EMAIL','CF_TUNNEL_TOKEN','ENABLE_KANBAN','ENABLE_OPENCLAW'];
+                          'GIT_USER_NAME','GIT_USER_EMAIL','CF_TUNNEL_TOKEN',
+                          'ENABLE_KANBAN','ENABLE_OPENCLAW','ENABLE_CLAUDECODEUI'];
           for (const key of FIELDS) {
             if (patch[key] !== undefined && patch[key] !== '') {
               fileCfg[key] = patch[key];
@@ -351,6 +355,12 @@ function startDashboardServer() {
             const action = patch.ENABLE_OPENCLAW === 'true' ? 'start' : 'stop';
             exec(`supervisorctl ${action} openclaw`, (err) => {
               if (err) console.error(`[config] supervisorctl ${action} openclaw:`, err.message);
+            });
+          }
+          if (patch.ENABLE_CLAUDECODEUI !== undefined && patch.ENABLE_CLAUDECODEUI !== '') {
+            const action = patch.ENABLE_CLAUDECODEUI === 'true' ? 'start' : 'stop';
+            exec(`supervisorctl ${action} claudecodeui`, (err) => {
+              if (err) console.error(`[config] supervisorctl ${action} claudecodeui:`, err.message);
             });
           }
           if (patch.OPENCLAW_TOKEN && patch.OPENCLAW_TOKEN !== prevConfig.OPENCLAW_TOKEN) {
@@ -521,10 +531,12 @@ function startDashboardServer() {
         // 直接从配置读取是否启用，而不是检测端口
         const kanbanEnabled = runtimeConfig.ENABLE_KANBAN !== 'false';
         const openclawEnabled = runtimeConfig.ENABLE_OPENCLAW !== 'false';
+        const claudecodeuiEnabled = runtimeConfig.ENABLE_CLAUDECODEUI !== 'false';
         const html = data
           .replace('__MODE__', process.env.MODE || 'desktop')
           .replace('__ENABLE_KANBAN__', kanbanEnabled ? 'true' : 'false')
-          .replace('__ENABLE_OPENCLAW__', openclawEnabled ? 'true' : 'false');
+          .replace('__ENABLE_OPENCLAW__', openclawEnabled ? 'true' : 'false')
+          .replace('__ENABLE_CLAUDECODEUI__', claudecodeuiEnabled ? 'true' : 'false');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(html);
       });

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-mode="__MODE__" data-enable-kanban="__ENABLE_KANBAN__" data-enable-openclaw="__ENABLE_OPENCLAW__">
+<html lang="zh-CN" data-mode="__MODE__" data-enable-kanban="__ENABLE_KANBAN__" data-enable-openclaw="__ENABLE_OPENCLAW__" data-enable-claudecodeui="__ENABLE_CLAUDECODEUI__">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -49,9 +49,10 @@
       display: none !important;
     }
 
-    /* Hide kanban/openclaw tabs when service is unavailable */
+    /* Hide kanban/openclaw/claudecodeui tabs when service is unavailable */
     html[data-enable-kanban="false"] .kanban-tab-hide { display: none !important; }
     html[data-enable-openclaw="false"] .openclaw-tab-hide { display: none !important; }
+    html[data-enable-claudecodeui="false"] .claudecodeui-tab-hide { display: none !important; }
 
     html, body {
       height: 100%;
@@ -648,6 +649,15 @@
       <span data-i18n="ai">AI</span>
     </button>
 
+    <button class="tab-btn claudecodeui-tab-hide" data-tab="claudecodeui">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
+        <path d="M12 12 2.1 12a10.1 10.1 0 0 0 9.9 10"></path>
+        <path d="M21.9 12a10.1 10.1 0 0 0-9.9-10"></path>
+      </svg>
+      <span data-i18n="claudecodeui">CLI</span>
+    </button>
+
     <span class="spacer"></span>
 
     <div class="tab-actions" id="tab-actions">
@@ -734,6 +744,13 @@
           <circle cx="15.5" cy="6" r="1"></circle>
         </svg>
       </button>
+      <button class="collapsed-tab-btn claudecodeui-tab-hide" data-tab="claudecodeui" title="CLI">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
+          <path d="M12 12 2.1 12a10.1 10.1 0 0 0 9.9 10"></path>
+          <path d="M21.9 12a10.1 10.1 0 0 0-9.9-10"></path>
+        </svg>
+      </button>
 
       <!-- 2.5. Theme toggle button -->
       <button class="collapsed-tab-btn" id="themeBtnCollapsed" title="切换主题"></button>
@@ -774,6 +791,8 @@
     <iframe id="frame-kanban"
       allow="clipboard-read; clipboard-write;"></iframe>
     <iframe id="frame-ai"
+      allow="clipboard-read; clipboard-write;"></iframe>
+    <iframe id="frame-claudecodeui"
       allow="clipboard-read; clipboard-write;"></iframe>
   </div>
 
@@ -926,6 +945,10 @@
               <input type="checkbox" id="cfg-enable-openclaw" style="accent-color:var(--accent)">
               <span>AI (OpenClaw)</span>
             </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+              <input type="checkbox" id="cfg-enable-claudecodeui" style="accent-color:var(--accent)">
+              <span>CLI</span>
+            </label>
           </div>
         </div>
       </div>
@@ -940,13 +963,13 @@
   <script>
     // ── i18n ──────────────────────────────────────────────────────────────────
     const MESSAGES = {
-      'zh-CN': { desktop: '桌面', ide: 'IDE', kanban: '看板', ai: 'AI',
+      'zh-CN': { desktop: '桌面', ide: 'IDE', kanban: '看板', ai: 'AI', claudecodeui: 'CLI',
                  online: '所有服务正常', partial: '部分服务异常', offline: '服务离线',
                  fullscreen: '全屏', exit: '退出全屏', refresh: '刷新', open_in_new_tab: '在新标签页打开',
                  theme_dark: '暗色', theme_light: '亮色', theme_system: '跟随系统',
                  proc_status: '进程状态', restart: '重启进程', show_log: '查看日志',
                  logs_title: '进程日志', collapse_header: '收起顶部栏', expand_header: '展开顶部栏' },
-      'en':    { desktop: 'Desktop', ide: 'IDE', kanban: 'Kanban', ai: 'AI',
+      'en':    { desktop: 'Desktop', ide: 'IDE', kanban: 'Kanban', ai: 'AI', claudecodeui: 'CLI',
                  online: 'All Systems Online', partial: 'Some Services Down', offline: 'Services Offline',
                  fullscreen: 'Fullscreen', exit: 'Exit', refresh: 'Refresh', open_in_new_tab: 'Open in new tab',
                  theme_dark: 'Dark', theme_light: 'Light', theme_system: 'System',
@@ -1027,21 +1050,24 @@
       desktop: 'frame-desktop',
       ide:     'frame-ide',
       kanban:  'frame-kanban',
-      ai:      'frame-ai'
+      ai:      'frame-ai',
+      claudecodeui: 'frame-claudecodeui'
     };
 
     // Default to desktop in full mode, IDE in lite mode; fallback to first enabled tab
     const isLiteMode = document.documentElement.getAttribute('data-mode') === 'lite';
     const isKanbanEnabled = document.documentElement.getAttribute('data-enable-kanban') !== 'false';
     const isOpenclawEnabled = document.documentElement.getAttribute('data-enable-openclaw') !== 'false';
+    const isClaudecodeuiEnabled = document.documentElement.getAttribute('data-enable-claudecodeui') !== 'false';
     function isTabEnabled(tab) {
       if (tab === 'desktop') return !isLiteMode;
       if (tab === 'kanban') return isKanbanEnabled;
       if (tab === 'ai') return isOpenclawEnabled;
+      if (tab === 'claudecodeui') return isClaudecodeuiEnabled;
       return true; // ide always enabled
     }
     const preferredTab = isLiteMode ? 'ide' : 'desktop';
-    const firstVisible = ['desktop', 'ide', 'kanban', 'ai'].find(t => isTabEnabled(t));
+    const firstVisible = ['desktop', 'ide', 'kanban', 'ai', 'claudecodeui'].find(t => isTabEnabled(t));
     let currentTab = isTabEnabled(preferredTab) ? preferredTab : (firstVisible || 'ide');
 
     // Set initial active tab based on mode, and initialize iframe srcs using current hostname
@@ -1065,6 +1091,7 @@
       });
       document.getElementById('frame-ide').src    = `http://${host}:${base + 1}`;
       document.getElementById('frame-kanban').src  = `http://${host}:${base + 2}`;
+      document.getElementById('frame-claudecodeui').src = `http://${host}:${base + 7}`;
 
       // Set active tab: remove desktop's default active if needed, then set currentTab
       document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
@@ -1519,6 +1546,7 @@
         cfInput.placeholder = cfg.CF_TUNNEL_TOKEN ? '已设置，留空则不修改' : '未设置';
         document.getElementById('cfg-enable-kanban').checked = cfg.ENABLE_KANBAN !== 'false';
         document.getElementById('cfg-enable-openclaw').checked = cfg.ENABLE_OPENCLAW !== 'false';
+        document.getElementById('cfg-enable-claudecodeui').checked = cfg.ENABLE_CLAUDECODEUI !== 'false';
       }).catch(() => {});
       settingsModal.classList.remove('hidden');
     });
@@ -1542,8 +1570,9 @@
         GIT_USER_NAME:   document.getElementById('cfg-git-name').value,
         GIT_USER_EMAIL:  document.getElementById('cfg-git-email').value,
         CF_TUNNEL_TOKEN: document.getElementById('cfg-cf-token').value,
-        ENABLE_KANBAN:   document.getElementById('cfg-enable-kanban').checked ? 'true' : 'false',
-        ENABLE_OPENCLAW: document.getElementById('cfg-enable-openclaw').checked ? 'true' : 'false',
+        ENABLE_KANBAN:     document.getElementById('cfg-enable-kanban').checked ? 'true' : 'false',
+        ENABLE_OPENCLAW:   document.getElementById('cfg-enable-openclaw').checked ? 'true' : 'false',
+        ENABLE_CLAUDECODEUI: document.getElementById('cfg-enable-claudecodeui').checked ? 'true' : 'false',
       };
       fetch('/api/config', {
         method: 'POST',

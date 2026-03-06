@@ -10,6 +10,7 @@ services:
       - "20003:20003"  # OpenClaw (via Caddy)
       - "20004:20004"  # noVNC (via Caddy) + Audio WebSocket (/audio path)
       - "20005:10005"  # TigerVNC (direct connection)
+      - "20007:10007"  # claudecodeui (via Caddy)
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - dna-data:/home/ubuntu/dna          # DNA 目录：项目源码，空时自动 clone
@@ -37,6 +38,7 @@ services:
       - DNA_REPO_URL=${DNA_REPO_URL:-https://github.com/land007/webcode}
       - ENABLE_KANBAN=${ENABLE_KANBAN:-true}
       - ENABLE_OPENCLAW=${ENABLE_OPENCLAW:-true}
+      - ENABLE_CLAUDECODEUI=${ENABLE_CLAUDECODEUI:-true}
       - HOST_API_TOKEN=${HOST_API_TOKEN:-webcode-host-token-change-me}
     extra_hosts:
       - "host.docker.internal:host-gateway"

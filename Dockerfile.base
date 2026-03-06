@@ -37,6 +37,17 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y nodejs \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# ─── 2a. Native module build dependencies for node-pty ──────────────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3-dev \
+        build-essential \
+        libsecret-1-dev \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install setuptools for Python distutils compatibility (needed for node-gyp)
+RUN curl -fsSL https://bootstrap.pypa.io/get-pip.py | python3 \
+    && pip3 install --no-cache-dir setuptools
+
 # ─── 2b. http-proxy for dashboard service ───────────────────────────
 RUN npm install -g http-proxy
 
@@ -65,6 +76,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends supervisor \
 
 # ─── 5b. Pre-install OpenClaw globally (易变，放最后避免破坏缓存) ─────
 RUN npm install -g openclaw@2026.2.22
+
+# ─── 5c. Pre-install Vibe Kanban globally ────────────────────────────────
+RUN npm install -g vibe-kanban@0.1.8
+
+# ─── 5d. Pre-install claudecodeui globally (CLI UI for lite mode support) ─
+# This package requires native compilation (node-pty), takes time to build
+RUN npm install -g @siteboon/claude-code-ui
 
 # ─── Metadata ───────────────────────────────────────────────────────
 ARG CODE_SERVER_VER=4.100.2

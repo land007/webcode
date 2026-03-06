@@ -195,6 +195,7 @@ COPY configs/supervisord-lite.conf /etc/supervisor/conf.d/supervisord-lite.conf
 COPY configs/supervisor-vibe-kanban.conf /etc/supervisor/conf.d/supervisor-vibe-kanban.conf
 COPY configs/supervisor-code-server.conf /etc/supervisor/conf.d/supervisor-code-server.conf
 COPY configs/supervisor-openclaw.conf /etc/supervisor/conf.d/supervisor-openclaw.conf
+COPY configs/supervisor-claudecodeui.conf /etc/supervisor/conf.d/supervisor-claudecodeui.conf
 COPY configs/supervisor-cloudflared.conf /etc/supervisor/conf.d/supervisor-cloudflared.conf
 COPY configs/supervisor-analytics.conf /etc/supervisor/conf.d/supervisor-analytics.conf
 COPY configs/supervisor-dind.conf /etc/supervisor/conf.d/supervisor-dind.conf
