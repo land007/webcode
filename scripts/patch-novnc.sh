@@ -13,6 +13,9 @@ if [ -f "$VNC_HTML" ]; then
     # Add touch-handler.js reference (after audio-bar.js)
     sed -i 's|<script src="audio-bar.js"></script>|<script src="audio-bar.js"></script><script src="touch-handler.js"></script>|' "$VNC_HTML"
 
+    # Add key-remap.js reference (after touch-handler.js)
+    sed -i 's|<script src="touch-handler.js"></script>|<script src="touch-handler.js"></script><script src="key-remap.js"></script>|' "$VNC_HTML"
+
     echo "noVNC HTML patched successfully"
 else
     echo "noVNC HTML not found, skipping (lite mode)"

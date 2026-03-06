@@ -209,6 +209,7 @@ COPY configs/supervisor-audio.conf /tmp/
 COPY configs/audio-player.html /tmp/
 COPY configs/audio-bar.js /tmp/
 COPY configs/touch-handler.js /tmp/
+COPY configs/key-remap.js /tmp/
 COPY configs/xsession /tmp/
 COPY scripts/audio-ws-server.py /tmp/
 COPY scripts/audio-ws-wrapper.sh /tmp/
@@ -219,6 +220,7 @@ RUN if [ "$INSTALL_DESKTOP" = "true" ]; then \
         && cp /tmp/audio-player.html /opt/noVNC/audio.html \
         && cp /tmp/audio-bar.js /opt/noVNC/audio-bar.js \
         && cp /tmp/touch-handler.js /opt/noVNC/touch-handler.js \
+        && cp /tmp/key-remap.js /opt/noVNC/key-remap.js \
         && chmod +x /tmp/patch-novnc.sh \
         && /tmp/patch-novnc.sh \
         && cp /tmp/xsession /opt/xsession \
@@ -229,7 +231,7 @@ RUN if [ "$INSTALL_DESKTOP" = "true" ]; then \
         && chmod +x /opt/audio-ws-server.py /opt/audio-ws-wrapper.sh; \
     fi \
     && rm -rf /tmp/supervisor-audio.conf /tmp/audio-player.html /tmp/audio-bar.js \
-           /tmp/touch-handler.js /tmp/xsession /tmp/desktop-shortcuts/ \
+           /tmp/touch-handler.js /tmp/key-remap.js /tmp/xsession /tmp/desktop-shortcuts/ \
            /tmp/audio-ws-server.py /tmp/audio-ws-wrapper.sh \
            /tmp/patch-novnc.sh
 
