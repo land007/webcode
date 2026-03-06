@@ -512,20 +512,19 @@ function startDashboardServer() {
 
     // Serve dashboard.html for root path
     if (req.url === '/' || req.url === '/index.html') {
-      fs.readFile(DASHBOARD_HTML, 'utf8', async (err, data) => {
+      fs.readFile(DASHBOARD_HTML, 'utf8', (err, data) => {
         if (err) {
           res.writeHead(500, { 'Content-Type': 'text/plain' });
           res.end('Error loading dashboard');
           return;
         }
-        const [kanbanUp, openclawUp] = await Promise.all([
-          checkPort(10002),
-          checkPort(10003),
-        ]);
+        // 直接从配置读取是否启用，而不是检测端口
+        const kanbanEnabled = runtimeConfig.ENABLE_KANBAN !== 'false';
+        const openclawEnabled = runtimeConfig.ENABLE_OPENCLAW !== 'false';
         const html = data
           .replace('__MODE__', process.env.MODE || 'desktop')
-          .replace('__ENABLE_KANBAN__', kanbanUp ? 'true' : 'false')
-          .replace('__ENABLE_OPENCLAW__', openclawUp ? 'true' : 'false');
+          .replace('__ENABLE_KANBAN__', kanbanEnabled ? 'true' : 'false')
+          .replace('__ENABLE_OPENCLAW__', openclawEnabled ? 'true' : 'false');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(html);
       });
