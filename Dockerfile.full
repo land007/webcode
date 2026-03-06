@@ -5,15 +5,16 @@
 FROM land007/webcode:latest
 
 LABEL org.opencontainers.image.title="webcode_full" \
-      org.opencontainers.image.description="webcode with additional AI CLIs (Gemini + Codex + Cursor)" \
+      org.opencontainers.image.description="webcode with additional AI CLIs (Gemini + Codex + Cursor + OpenCode AI)" \
       org.opencontainers.image.source="https://github.com/land007/webcode"
 
-# ─── AI CLI Tools: Gemini CLI, Codex CLI, Cursor CLI ───────────────
+# ─── AI CLI Tools: Gemini CLI, Codex CLI, Cursor CLI, OpenCode AI ───────────────
 # Install additional AI CLI tools for CloudUI compatibility
 RUN su -l ubuntu -c \
     'source ~/.nvm/nvm.sh && \
      npm install -g @google/gemini-cli && \
-     npm install -g @openai/codex'
+     npm install -g @openai/codex && \
+     npm install -g opencode-ai@latest'
 
 # Install Cursor CLI (cursor-agent) - direct binary download
 RUN su -l ubuntu -c \
