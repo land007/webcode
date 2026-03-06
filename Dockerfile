@@ -174,28 +174,6 @@ RUN su -l ubuntu -c \
      nvm alias default 22.22.0 && \
      npm install -g @anthropic-ai/claude-code@latest'
 
-# ─── 11c+. AI CLI Tools: Gemini CLI, Codex CLI, Cursor CLI ───────────────
-# Install additional AI CLI tools for CloudUI compatibility
-RUN su -l ubuntu -c \
-    'source ~/.nvm/nvm.sh && \
-     npm install -g @google/gemini-cli && \
-     npm install -g @openai/codex'
-
-# Install Cursor CLI (cursor-agent) - direct binary download
-RUN su -l ubuntu -c \
-    'mkdir -p ~/.local/bin && \
-     cd /tmp && \
-     ARCH=$(dpkg --print-architecture) && \
-     if [ "$ARCH" = "amd64" ]; then \
-         curl -fsSL "https://api2.cursor.sh/updates/download-latest?os=cli-alpine-x64" -o cursor-cli.tar.gz; \
-     else \
-         curl -fsSL "https://api2.cursor.sh/updates/download-latest?os=cli-alpine-arm64" -o cursor-cli.tar.gz; \
-     fi && \
-     tar -xvf cursor-cli.tar.gz && \
-     chmod +x cursor && \
-     mv cursor ~/.local/bin/ && \
-     rm cursor-cli.tar.gz'
-
 # ─── 11d. v2rayN (GUI proxy client) ─────────────────────────────────
 RUN if [ "$INSTALL_DESKTOP" = "true" ]; then \
         ARCH=$(dpkg --print-architecture) \
