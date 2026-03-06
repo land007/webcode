@@ -166,6 +166,8 @@ su -l ubuntu -c \
 # ─── Export service enable flags for supervisor ───────────────────────
 export ENABLE_KANBAN="${ENABLE_KANBAN:-true}"
 export ENABLE_OPENCLAW="${ENABLE_OPENCLAW:-true}"
+export ENABLE_CLAUDECODEUI="${ENABLE_CLAUDECODEUI:-true}"
+export ENABLE_FUSE="${ENABLE_FUSE:-false}"
 
 # ─── Mode selection ─────────────────────────────────────────────────
 if [ "$MODE" = "lite" ]; then
