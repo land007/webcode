@@ -20,7 +20,11 @@ usermod -aG docker ubuntu 2>/dev/null || true
 mkdir -p /home/ubuntu/projects
 mkdir -p /home/ubuntu/Desktop
 mkdir -p /home/ubuntu/.local/share/vibe-kanban
-chown -R ubuntu:ubuntu /home/ubuntu/projects
+
+# 后台执行 projects 目录的 chown，避免阻塞启动（包含大量文件）
+echo "[startup] Starting background chown for /home/ubuntu/projects (may take several minutes)..."
+(chown -R ubuntu:ubuntu /home/ubuntu/projects >/dev/null 2>&1 &)
+
 chown -R ubuntu:ubuntu /home/ubuntu/Desktop
 chown -R ubuntu:ubuntu /home/ubuntu/.local
 
