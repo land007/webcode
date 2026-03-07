@@ -20,8 +20,6 @@ const fs = require('fs');
 const path = require('path');
 const { exec } = require('child_process');
 const httpProxy = require('http-proxy');
-const crypto = require('crypto');
-const jwt = require('jsonwebtoken');
 
 function checkPort(port) {
   return new Promise(resolve => {
@@ -84,7 +82,6 @@ function loadConfig() {
     AUTH_PASSWORD:   fileCfg.AUTH_PASSWORD   || process.env.AUTH_PASSWORD   || 'changeme',
     VNC_PASSWORD:    fileCfg.VNC_PASSWORD    || process.env.VNC_PASSWORD    || 'changeme',
     OPENCLAW_TOKEN:  fileCfg.OPENCLAW_TOKEN  || process.env.OPENCLAW_TOKEN  || 'changeme',
-    JWT_SECRET:      fileCfg.JWT_SECRET      || process.env.JWT_SECRET      || crypto.randomBytes(32).toString('base64'),
     GIT_USER_NAME:   fileCfg.GIT_USER_NAME   || process.env.GIT_USER_NAME   || '',
     GIT_USER_EMAIL:  fileCfg.GIT_USER_EMAIL  || process.env.GIT_USER_EMAIL  || '',
     CF_TUNNEL_TOKEN: fileCfg.CF_TUNNEL_TOKEN || process.env.CF_TUNNEL_TOKEN || '',
@@ -100,21 +97,7 @@ function getBasicAuth() {
   return 'Basic ' + Buffer.from(`${runtimeConfig.AUTH_USER}:${runtimeConfig.AUTH_PASSWORD}`).toString('base64');
 }
 
-// Generate JWT token for claude-code-ui (never expires, single-user)
-function getClaudeCodeUIToken() {
-  // In a real deployment, this would be a persistent user ID from the database
-  // For now, we use a fixed user ID (1) since claude-code-ui is single-user
-  const token = jwt.sign(
-    { userId: 1, username: runtimeConfig.AUTH_USER },
-    runtimeConfig.JWT_SECRET
-  );
-  return token;
-}
-
 function getBearerAuth(service) {
-  if (service === 'claudecodeui') {
-    return 'Bearer ' + getClaudeCodeUIToken();
-  }
   return 'Bearer ' + runtimeConfig.OPENCLAW_TOKEN;
 }
 
@@ -128,7 +111,7 @@ const PROXY_CONFIG = [
   { listen: 20001, target: 10001, authType: 'basic' },                    // code-server IDE
   { listen: 20002, target: 10002, authType: 'basic' },                    // Vibe Kanban
   { listen: 20003, target: 10003, authType: 'bearer', service: 'openclaw' }, // OpenClaw AI
-  { listen: 20007, target: 10007, authType: 'bearer', service: 'claudecodeui' }, // claudecodeui (JWT SSO)
+  { listen: 20007, target: 10007, authType: 'basic' },                    // claudecodeui (Platform mode, no auth needed)
   {
     listen: 20004,
     authType: 'basic',
@@ -173,7 +156,9 @@ function startProxy(listenPort, targetPort, authType, routes, service) {
       // Inject Authorization header on proxy request (dynamic, reads runtimeConfig)
       proxy.on('proxyReq', (proxyReq) => {
         const authHeader = authType === 'bearer' ? getBearerAuth(service) : getBasicAuth();
-        proxyReq.setHeader('Authorization', authHeader);
+        if (authHeader) {
+          proxyReq.setHeader('Authorization', authHeader);
+        }
       });
 
       // Remove security headers to allow iframe embedding
@@ -319,7 +304,6 @@ function startDashboardServer() {
         AUTH_PASSWORD:   '••••',
         VNC_PASSWORD:    '••••',
         OPENCLAW_TOKEN:  '••••',
-        JWT_SECRET:      runtimeConfig.JWT_SECRET ? '••••' : '',
         GIT_USER_NAME:   runtimeConfig.GIT_USER_NAME,
         GIT_USER_EMAIL:  runtimeConfig.GIT_USER_EMAIL,
         CF_TUNNEL_TOKEN: runtimeConfig.CF_TUNNEL_TOKEN ? '••••' : '',
@@ -344,7 +328,7 @@ function startDashboardServer() {
           try { fileCfg = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8')); } catch(e) {}
 
           // Merge non-empty fields only (empty string = leave unchanged)
-          const FIELDS = ['AUTH_USER','AUTH_PASSWORD','VNC_PASSWORD','OPENCLAW_TOKEN','JWT_SECRET',
+          const FIELDS = ['AUTH_USER','AUTH_PASSWORD','VNC_PASSWORD','OPENCLAW_TOKEN',
                           'GIT_USER_NAME','GIT_USER_EMAIL','CF_TUNNEL_TOKEN',
                           'ENABLE_KANBAN','ENABLE_OPENCLAW','ENABLE_CLAUDECODEUI'];
           for (const key of FIELDS) {
@@ -385,11 +369,6 @@ function startDashboardServer() {
           if (patch.OPENCLAW_TOKEN && patch.OPENCLAW_TOKEN !== prevConfig.OPENCLAW_TOKEN) {
             exec('supervisorctl restart openclaw', (err) => {
               if (err) console.error('[config] supervisorctl restart openclaw:', err.message);
-            });
-          }
-          if (patch.JWT_SECRET && patch.JWT_SECRET !== prevConfig.JWT_SECRET) {
-            exec('supervisorctl restart claudecodeui', (err) => {
-              if (err) console.error('[config] supervisorctl restart claudecodeui:', err.message);
             });
           }
           if (patch.GIT_USER_NAME && patch.GIT_USER_NAME !== prevConfig.GIT_USER_NAME) {
@@ -580,79 +559,6 @@ function startDashboardServer() {
 }
 
 /**
- * Initialize claude-code-ui user (SSO setup)
- */
-async function initializeClaudeCodeUI() {
-  if (runtimeConfig.ENABLE_CLAUDECODEUI === 'false') {
-    console.log('[claudecodeui] Disabled, skipping initialization');
-    return;
-  }
-
-  console.log('[claudecodeui] Initializing SSO user...');
-
-  // Wait for claude-code-ui to be ready
-  let retries = 30;
-  while (retries > 0) {
-    try {
-      await new Promise((resolve) => {
-        http.get('http://127.0.0.1:10007/api/auth/status', (res) => {
-          let data = '';
-          res.on('data', chunk => data += chunk);
-          res.on('end', () => {
-            try {
-              const status = JSON.parse(data);
-              if (status.needsSetup) {
-                console.log('[claudecodeui] Creating initial user...');
-                const req = http.request('http://127.0.0.1:10007/api/auth/register', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' }
-                }, res => {
-                  let body = '';
-                  res.on('data', chunk => body += chunk);
-                  res.on('end', () => {
-                    if (res.statusCode === 200) {
-                      console.log('[claudecodeui] ✓ User created successfully');
-                    } else {
-                      console.error('[claudecodeui] ✗ Failed to create user:', body);
-                    }
-                    resolve();
-                  });
-                });
-                req.on('error', err => {
-                  console.error('[claudecodeui] ✗ Register request failed:', err.message);
-                  resolve();
-                });
-                req.write(JSON.stringify({
-                  username: runtimeConfig.AUTH_USER || 'admin',
-                  password: runtimeConfig.AUTH_PASSWORD || 'changeme'
-                }));
-                req.end();
-              } else {
-                console.log('[claudecodeui] ✓ User already exists, SSO ready');
-                resolve();
-              }
-            } catch (e) {
-              console.error('[claudecodeui] ✗ Failed to parse status:', e.message);
-              resolve();
-            }
-          });
-        }).on('error', () => resolve());
-      });
-      break;
-    } catch (e) {
-      retries--;
-      if (retries > 0) {
-        await new Promise(r => setTimeout(r, 1000));
-      }
-    }
-  }
-
-  if (retries === 0) {
-    console.error('[claudecodeui] ✗ Failed to connect after 30 retries');
-  }
-}
-
-/**
  * Start all services
  */
 async function start() {
@@ -664,11 +570,6 @@ async function start() {
   // Start all proxy servers
   PROXY_CONFIG.forEach(config => {
     startProxy(config.listen, config.target, config.authType, config.routes, config.service);
-  });
-
-  // Initialize claude-code-ui SSO (async, non-blocking)
-  initializeClaudeCodeUI().catch(err => {
-    console.error('[claudecodeui] Initialization error:', err.message);
   });
 
   console.log('Dashboard Server fully started');

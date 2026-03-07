@@ -127,7 +127,7 @@ if [ -f "$WEBCODE_CFG" ]; then
   echo "[startup] Loading persisted config from $WEBCODE_CFG"
   for KEY in AUTH_USER AUTH_PASSWORD VNC_PASSWORD OPENCLAW_TOKEN \
              GIT_USER_NAME GIT_USER_EMAIL CF_TUNNEL_TOKEN \
-             ENABLE_KANBAN ENABLE_OPENCLAW; do
+             ENABLE_KANBAN ENABLE_OPENCLAW ENABLE_CLAUDECODEUI; do
     VAL=$(python3 -c "
 import json,sys
 try:
@@ -162,6 +162,11 @@ nohup npm install -g openclaw@2026.2.22 >> /tmp/npm-upgrade.log 2>&1 &
 # Upgrade claude-code for ubuntu user via nvm
 su -l ubuntu -c \
     'source ~/.nvm/nvm.sh 2>/dev/null && npm install -g @anthropic-ai/claude-code@latest >> /tmp/claude-upgrade.log 2>&1' &
+
+# ─── Enable ClaudeCodeUI Platform mode (no authentication required) ───
+if [ -f /opt/enable-claudecodeui-platform-mode.sh ]; then
+    bash /opt/enable-claudecodeui-platform-mode.sh
+fi
 
 # ─── Export service enable flags for supervisor ───────────────────────
 export ENABLE_KANBAN="${ENABLE_KANBAN:-true}"

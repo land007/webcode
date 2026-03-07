@@ -901,15 +901,6 @@
                 </button>
               </div>
             </div>
-            <div class="form-group">
-              <label>JWT Secret (ClaudeCodeUI SSO)</label>
-              <div class="input-with-eye">
-                <input type="password" id="cfg-jwt-secret" placeholder="留空则自动生成" autocomplete="new-password">
-                <button type="button" class="eye-toggle" data-target="cfg-jwt-secret">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                </button>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -1100,7 +1091,15 @@
       });
       document.getElementById('frame-ide').src    = `http://${host}:${base + 1}`;
       document.getElementById('frame-kanban').src  = `http://${host}:${base + 2}`;
+
+      // For ClaudeCodeUI, we need to handle login differently
+      // Since we can't directly access cross-origin iframe storage,
+      // we'll set the iframe src and let user login once manually
+      // The session will be maintained across reloads
       document.getElementById('frame-claudecodeui').src = `http://${host}:${base + 7}`;
+
+      // Alternatively, we could provide a button to auto-login via a separate window
+      // But for now, user needs to login once manually
 
       // Set active tab: remove desktop's default active if needed, then set currentTab
       document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
@@ -1548,7 +1547,6 @@
         document.getElementById('cfg-auth-password').value = '';
         document.getElementById('cfg-vnc-password').value = '';
         document.getElementById('cfg-openclaw-token').value = '';
-        document.getElementById('cfg-jwt-secret').value = '';
         document.getElementById('cfg-git-name').value = cfg.GIT_USER_NAME || '';
         document.getElementById('cfg-git-email').value = cfg.GIT_USER_EMAIL || '';
         document.getElementById('cfg-cf-token').value = '';
@@ -1577,7 +1575,7 @@
         AUTH_PASSWORD:   document.getElementById('cfg-auth-password').value,
         VNC_PASSWORD:    document.getElementById('cfg-vnc-password').value,
         OPENCLAW_TOKEN:  document.getElementById('cfg-openclaw-token').value,
-        JWT_SECRET:      document.getElementById('cfg-jwt-secret').value,
+        JWT_SECRET:      '', // Platform mode不需要JWT
         GIT_USER_NAME:   document.getElementById('cfg-git-name').value,
         GIT_USER_EMAIL:  document.getElementById('cfg-git-email').value,
         CF_TUNNEL_TOKEN: document.getElementById('cfg-cf-token').value,
