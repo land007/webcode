@@ -48,8 +48,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN apt-get update && apt-get install -y --no-install-recommends python3-setuptools \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# ─── 2b. http-proxy for dashboard service ───────────────────────────
-RUN npm install -g http-proxy
+# ─── 2b. http-proxy and jsonwebtoken for dashboard service ─────────────
+RUN npm install -g http-proxy jsonwebtoken
 
 # ─── 4. code-server (pre-compiled binary — replaces Theia build) ────
 ARG CODE_SERVER_VERSION=4.100.2
