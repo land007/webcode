@@ -8,7 +8,7 @@ on:
 
 jobs:
   # ─────────────────────────────────────────────────────────────
-  # Job 1: Build base Theia image (slow, but cached)
+  # Job 1: Build base Code Server image (slow, but cached)
   # ─────────────────────────────────────────────────────────────
   build-base:
     runs-on: ubuntu-latest
@@ -47,7 +47,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push base Theia image
+      - name: Build and push base Code Server image
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -62,13 +62,13 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/webclaw_base:latest
             ghcr.io/${{ github.repository_owner }}/webclaw_base:${{ github.sha }}
           labels: |
-            org.opencontainers.image.title=webcode-base-theia
-            org.opencontainers.image.description=Base image with Theia IDE and Supervisor
-            org.opencontainers.image.source=https://github.com/land007/webcode
+            org.opencontainers.image.title=webclaw
+            org.opencontainers.image.description=Base image with Code Server IDE and Supervisor
+            org.opencontainers.image.source=https://github.com/land007/webclaw
           cache-from: type=gha
           cache-to: type=gha,mode=max
           outputs: |
-            type=image,push=true,annotation-index.org.opencontainers.image.description=Base Theia IDE image with Supervisor (no desktop)
+            type=image,push=true,annotation-index.org.opencontainers.image.description=Base Code Server IDE image with Supervisor (no desktop)
 
   # ─────────────────────────────────────────────────────────────
   # Job 2: Build FULL version (depends on base)
@@ -104,7 +104,7 @@ jobs:
         id: meta-full
         with:
           images: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/webcode
+            ${{ secrets.DOCKERHUB_USERNAME }}/webclaw
             ghcr.io/${{ github.repository }}
             ${{ secrets.DOCKERHUB_USERNAME }}/openclaw
             ghcr.io/${{ github.repository_owner }}/openclaw
@@ -113,7 +113,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
           labels: |
-            org.opencontainers.image.description=Full image with GNOME desktop, VNC, Theia IDE
+            org.opencontainers.image.description=Full image with GNOME desktop, VNC, Code Server IDE
 
       - name: Build and push full image
         uses: docker/build-push-action@v6
@@ -169,7 +169,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           build-args: |
-            BASE_IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/webcode:${{ github.sha }}
+            BASE_IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/webclaw:${{ github.sha }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/webclaw_full:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/webclaw_full:${{ github.sha }}
@@ -195,7 +195,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: ${{ secrets.DOCKERHUB_USERNAME }}/webcode
+          repository: ${{ secrets.DOCKERHUB_USERNAME }}/webclaw
           readme-filepath: ./README.md
 
   # ─────────────────────────────────────────────────────────────
@@ -211,7 +211,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Generate openclaw README
         run: |
-          sed 's|land007/webclaw_lite|land007/openclaw_lite|g; s|land007/webcode|land007/openclaw|g' README.md > README-openclaw.md
+          sed 's|land007/webclaw_lite|land007/openclaw_lite|g; s|land007/webclaw|land007/openclaw|g' README.md > README-openclaw.md
       - uses: peter-evans/dockerhub-description@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -262,7 +262,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
           labels: |
-            org.opencontainers.image.description=Lite image without desktop (Theia + Vibe Kanban + OpenClaw)
+            org.opencontainers.image.description=Lite image without desktop (Code Server + Vibe Kanban + OpenClaw)
 
       - name: Build and push lite image
         uses: docker/build-push-action@v6
@@ -312,7 +312,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Generate openclaw_lite README
         run: |
-          sed 's|land007/webclaw_lite|land007/openclaw_lite|g; s|land007/webcode|land007/openclaw|g' README.md > README-openclaw-lite.md
+          sed 's|land007/webclaw_lite|land007/openclaw_lite|g; s|land007/webclaw|land007/openclaw|g' README.md > README-openclaw-lite.md
       - uses: peter-evans/dockerhub-description@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
